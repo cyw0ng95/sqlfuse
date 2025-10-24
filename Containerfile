@@ -8,4 +8,7 @@ RUN apk add --no-cache go bash
 RUN go env -w GO111MODULE=on && \
     go env -w GOPROXY=https://goproxy.cn,direct
 
+
+ENV SQLSMITH_GO_CONTAINER_TYPE=dev
+
 WORKDIR /opt
