@@ -3,8 +3,10 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"sqlsmith-go/internal/generators/turso"
+	"strings"
 	"sync"
 
 	_ "github.com/tursodatabase/turso-go"
@@ -17,6 +19,25 @@ func main() {
 		os.Exit(1)
 	}
 	defer conn.Close()
+
+	// --- INIT DB ---
+	initSQL, err := ioutil.ReadFile("/opt/assets/turso/init.sql")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to read init.sql: %v\n", err)
+		os.Exit(1)
+	}
+	for _, stmt := range strings.Split(string(initSQL), ";") {
+		stmt = strings.TrimSpace(stmt)
+		if stmt == "" {
+			continue
+		}
+		_, err := conn.Exec(stmt)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Init SQL error: %v (stmt: %s)\n", err, stmt)
+			os.Exit(1)
+		}
+	}
+	// --- END INIT ---
 
 	const (
 		numWorkers       = 8
