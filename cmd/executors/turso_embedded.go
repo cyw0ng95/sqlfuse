@@ -79,6 +79,8 @@ func main() {
 		totalTokens += tokens
 	}
 
+	fmt.Println("\n---[Summary]---")
+	fmt.Println("Total queries executed:", numWorkers*queriesPerWorker)
 	fmt.Printf("Total tokens used: %d\n", totalTokens)
 
 	for err := range errCh {
