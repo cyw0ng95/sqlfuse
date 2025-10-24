@@ -68,3 +68,8 @@ func (g *Generator) GenerateWithDB(db *sql.DB) string {
 
 	return "SELECT 1" // placeholder for other directions
 }
+
+// TokensUsed returns the number of tokens used by the underlying LCG.
+func (g *Generator) TokensUsed() uint64 {
+	return g.lcg.TokensUsed()
+}

@@ -52,12 +52,11 @@ func main() {
 	wg.Add(numWorkers)
 
 	errCh := make(chan error, numWorkers*queriesPerWorker)
+	tokenCh := make(chan uint64, numWorkers)
 
 	for w := 0; w < numWorkers; w++ {
 		go func(workerID int) {
 			defer wg.Done()
-			// Create one generator per worker. Generators emit an initial PRAGMA on
-			// their first call (NewGenerator sets that behavior in this branch).
 			gen := turso.NewGenerator(uint64(workerID + 1))
 			for i := 0; i < queriesPerWorker; i++ {
 				query := gen.GenerateWithDB(conn)
@@ -67,11 +66,20 @@ func main() {
 					errCh <- fmt.Errorf("[worker %d] Error executing query: %v", workerID, err)
 				}
 			}
+			tokenCh <- gen.TokensUsed()
 		}(w)
 	}
 
 	wg.Wait()
 	close(errCh)
+	close(tokenCh)
+
+	totalTokens := uint64(0)
+	for tokens := range tokenCh {
+		totalTokens += tokens
+	}
+
+	fmt.Printf("Total tokens used: %d\n", totalTokens)
 
 	for err := range errCh {
 		fmt.Println(err)
