@@ -63,7 +63,14 @@ func main() {
 			gen := turso.NewGenerator(uint64(workerID + 1))
 			for i := 0; i < queriesPerWorker; i++ {
 				query := gen.GenerateWithDB(conn)
-				common.Logger.Info().Msgf("Worker %d executing query %d: \x1b[1;34m%s\x1b[0m", workerID, i+1, query)
+				_, execErr := conn.Exec(query)
+				if execErr != nil {
+					common.Logger.Info().Msgf("Worker %d executing query %d: \x1b[1;31m%s\x1b[0m", workerID, i+1, query) // red on error
+					errCh <- execErr
+					continue
+				}
+				common.Logger.Info().Msgf("Worker %d executing query %d: \x1b[1;32m%s\x1b[0m", workerID, i+1, query) // green on success
+				continue
 				_, err := conn.Exec(query)
 				if err != nil {
 					errCh <- err
