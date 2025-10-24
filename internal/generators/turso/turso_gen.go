@@ -33,26 +33,32 @@ func (g *Generator) Direction() string {
 	switch {
 	case r < 40:
 		return "insert"
-	case r < 55:
+	case r < 52:
 		return "select_basic"
-	case r < 70:
+	case r < 62:
 		return "select_where"
-	case r < 77:
+	case r < 70:
 		return "select_like"
-	case r < 82:
+	case r < 76:
 		return "select_limit"
-	case r < 86:
+	case r < 80:
 		return "select_order"
-	case r < 89:
+	case r < 84:
 		return "select_group"
-	case r < 91:
+	case r < 88:
 		return "select_having"
-	case r < 93:
-		return "create_table"
+	case r < 90:
+		return "select_join"
+	case r < 92:
+		return "select_crossjoin"
 	case r < 94:
-		return "drop_table"
+		return "select_innerjoin"
+	case r < 96:
+		return "select_outerjoin"
+	case r < 98:
+		return "select_joinusing"
 	case r < 100:
-		return "alter_table"
+		return "select_naturaljoin"
 	default:
 		return "pragma"
 	}
@@ -121,6 +127,48 @@ func (g *Generator) GenerateWithDB(db *sql.DB) string {
 			return "SELECT 1"
 		}
 		return stmtH.SQL()
+	case "select_join":
+		stmtJ, err := stmts.GenSelectJoin(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT JOIN:", err)
+			return "SELECT 1"
+		}
+		return stmtJ.SQL()
+	case "select_crossjoin":
+		stmtCJ, err := stmts.GenSelectCrossJoin(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT CROSS JOIN:", err)
+			return "SELECT 1"
+		}
+		return stmtCJ.SQL()
+	case "select_innerjoin":
+		stmtIJ, err := stmts.GenSelectInnerJoin(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT INNER JOIN:", err)
+			return "SELECT 1"
+		}
+		return stmtIJ.SQL()
+	case "select_outerjoin":
+		stmtOJ, err := stmts.GenSelectOuterJoin(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT OUTER JOIN:", err)
+			return "SELECT 1"
+		}
+		return stmtOJ.SQL()
+	case "select_joinusing":
+		stmtJU, err := stmts.GenSelectJoinUsing(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT JOIN USING:", err)
+			return "SELECT 1"
+		}
+		return stmtJU.SQL()
+	case "select_naturaljoin":
+		stmtNJ, err := stmts.GenSelectNaturalJoin(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT NATURAL JOIN:", err)
+			return "SELECT 1"
+		}
+		return stmtNJ.SQL()
 	case "create_table":
 		stmt, err := stmts.GenCreateTable(g.lcg)
 		if err != nil {
