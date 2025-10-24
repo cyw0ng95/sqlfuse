@@ -5,48 +5,28 @@ import (
 	"fmt"
 	"os"
 
-	_ "github.com/tursodatabase/go-libsql"
+	_ "github.com/tursodatabase/turso-go"
 )
 
-type User struct {
-	ID   int
-	Name string
-}
-
-func queryUsers(db *sql.DB) {
-	rows, err := db.Query("SELECT * FROM users")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to execute query: %v\n", err)
-		os.Exit(1)
-	}
-	defer rows.Close()
-
-	var users []User
-
-	for rows.Next() {
-		var user User
-
-		if err := rows.Scan(&user.ID, &user.Name); err != nil {
-			fmt.Println("Error scanning row:", err)
-			return
-		}
-
-		users = append(users, user)
-		fmt.Println(user.ID, user.Name)
-	}
-
-	if err := rows.Err(); err != nil {
-		fmt.Println("Error during rows iteration:", err)
-	}
-}
-
 func main() {
-	dbName := "file:./local.db"
-
-	db, err := sql.Open("libsql", dbName)
+	conn, err := sql.Open("turso", ":memory:")
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to open db %s", err)
+		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
 	}
-	defer db.Close()
+	sql := "CREATE table go_turso (foo INTEGER, bar TEXT)"
+	_, _ = conn.Exec(sql)
+
+	sql = "INSERT INTO go_turso (foo, bar) values (?, ?)"
+	stmt, _ := conn.Prepare(sql)
+	defer stmt.Close()
+	_, _ = stmt.Exec(42, "turso")
+	rows, _ := conn.Query("SELECT * from go_turso")
+	defer rows.Close()
+	for rows.Next() {
+		var a int
+		var b string
+		_ = rows.Scan(&a, &b)
+		fmt.Printf("%d, %s", a, b)
+	}
 }

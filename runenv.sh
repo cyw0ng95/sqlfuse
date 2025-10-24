@@ -10,8 +10,12 @@ if [ -n "${SQLSMITH_GO_CONTAINER_TYPE:-}" ]; then
         exit 0
     fi
 fi
+
+mkdir -p .cache/go
+
 podman build -f Containerfile -t sqlsmith-go/dev .
 podman run -it --rm \
   -v "$(pwd)":/opt:Z \
+  -v "$(pwd)/.cache/go":/root/go:Z \
   sqlsmith-go/dev \
   bash
