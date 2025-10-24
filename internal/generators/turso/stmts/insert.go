@@ -3,7 +3,9 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
+	"sqlsmith-go/internal/common"
 	"sqlsmith-go/internal/generators/turso/helper"
+	"sqlsmith-go/internal/generators/turso/types"
 	"strings"
 )
 
@@ -15,9 +17,52 @@ type InsertStmt struct {
 func (s *InsertStmt) SQL() string  { return s.sql }
 func (s *InsertStmt) Type() string { return "insert" }
 
-// GenInsert generates a single-row INSERT (existing behavior).
-func GenInsert(db *sql.DB, lcgOrRand interface{}) (Stmt, error) {
-	return genInsertInternal(db, lcgOrRand, 1)
+// GenInsert generates a type-aware INSERT for a random user table.
+// lcg should be *common.LCG.
+func GenInsert(db *sql.DB, lcg *common.LCG) (Stmt, error) {
+	tables, err := helper.GetAllTablesAndCols(db)
+	if err != nil || len(tables) == 0 {
+		return nil, fmt.Errorf("no tables available for INSERT: %v", err)
+	}
+
+	// rnd and u64 helpers
+	var rnd func(int) int
+	if lcg != nil {
+		rnd = lcg.Intn
+	} else {
+		rnd = func(n int) int { return 0 }
+	}
+
+	// pick a table
+	tbl := tables[rnd(len(tables))]
+	if len(tbl.Cols) == 0 {
+		// no columns -> use DEFAULT VALUES
+		return &InsertStmt{sql: fmt.Sprintf("INSERT INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name))}, nil
+	}
+
+	cols := []string{}
+	vals := []string{}
+	for _, c := range tbl.Cols {
+		// Skip common autoincrement/id columns by name
+		if strings.EqualFold(c.Name, "id") {
+			continue
+		}
+		cols = append(cols, quoteIdent(c.Name))
+		val := types.ValueForType(c.Type, lcg, c.Name)
+		// If ValueForType returns an unquoted numeric, keep as is; it returns quoted strings already
+		vals = append(vals, val)
+	}
+
+	if len(cols) == 0 {
+		return &InsertStmt{sql: fmt.Sprintf("INSERT INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name))}, nil
+	}
+
+	sql := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s);", quoteIdent(tbl.Name), strings.Join(cols, ", "), strings.Join(vals, ", "))
+	return &InsertStmt{sql: sql}, nil
+}
+
+func quoteIdent(s string) string {
+	return fmt.Sprintf("\"%s\"", strings.ReplaceAll(s, "\"", "\"\""))
 }
 
 // GenInsertMultiple generates an INSERT with multiple VALUES rows (2..N rows).
@@ -193,42 +238,21 @@ func genInsertInternal(db *sql.DB, lcgOrRand interface{}, rowsCount int) (Stmt, 
 
 // buildValuesRow returns comma-joined values for the provided columns using lcgOrRand
 func buildValuesRow(cols []helper.ColumnInfo, lcgOrRand interface{}) (string, error) {
-	var rnd func(int) int
-	switch r := lcgOrRand.(type) {
-	case interface{ Intn(int) int }:
-		rnd = r.Intn
+	// obtain a *common.LCG to pass into types.ValueForType
+	var lcg *common.LCG
+	switch v := lcgOrRand.(type) {
+	case *common.LCG:
+		lcg = v
+	case interface{ Uint64() uint64 }:
+		// seed a new LCG from the provided Uint64 source
+		lcg = common.NewLCG(v.Uint64())
 	default:
-		rnd = func(n int) int { return 0 }
-	}
-
-	var u64 func() uint64
-	if u, ok := lcgOrRand.(interface{ Uint64() uint64 }); ok {
-		u64 = u.Uint64
-	} else {
-		u64 = func() uint64 { return uint64(rnd(1 << 30)) }
+		lcg = common.NewLCG(1)
 	}
 
 	vals := []string{}
 	for _, c := range cols {
-		t := stringsToUpper(c.Type)
-		var val string
-		if t == "" {
-			if containsTypeHint(c.Name, "id", "count", "num", "qty", "amount") {
-				val = fmt.Sprintf("%d", 1+rnd(1000))
-			} else {
-				val = fmt.Sprintf("'%s'", escapeSingle(fmt.Sprintf("s%08x", u64())))
-			}
-		} else if containsAny(t, "INT") {
-			val = fmt.Sprintf("%d", 1+rnd(100000))
-		} else if containsAny(t, "REAL", "FLOA", "DOUB", "DEC", "NUM") {
-			val = fmt.Sprintf("%f", float64(rnd(100000))/100.0)
-		} else if containsAny(t, "CHAR", "CLOB", "TEXT") {
-			val = fmt.Sprintf("'%s'", escapeSingle(fmt.Sprintf("s%08x", u64())))
-		} else if containsAny(t, "BLOB") {
-			val = fmt.Sprintf("X'%016x'", u64())
-		} else {
-			val = fmt.Sprintf("'%s'", escapeSingle(fmt.Sprintf("s%08x", u64())))
-		}
+		val := types.ValueForType(c.Type, lcg, c.Name)
 		vals = append(vals, val)
 	}
 	return strings.Join(vals, ", "), nil

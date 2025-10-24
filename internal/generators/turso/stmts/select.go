@@ -3,7 +3,9 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
+	"sqlsmith-go/internal/common"
 	"sqlsmith-go/internal/generators/turso/helper"
+	"sqlsmith-go/internal/generators/turso/types"
 )
 
 type SelectStmt struct {
@@ -14,24 +16,19 @@ func (s *SelectStmt) SQL() string  { return s.sql }
 func (s *SelectStmt) Type() string { return "select" }
 
 // GenSelect generates a simple SELECT statement using available tables/columns.
-// lcgOrRand should be an object implementing Intn(n int) int (e.g. *common.LCG).
-func GenSelect(db *sql.DB, lcgOrRand interface{}) (SelectStmt, error) {
+// lcg should be *common.LCG.
+func GenSelect(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	tables, err := helper.GetAllTablesAndCols(db)
-	if err != nil {
-		// propagate error so caller can decide fallback
-		return SelectStmt{}, err
-	}
-	if len(tables) == 0 {
+	if err != nil || len(tables) == 0 {
 		// No real user tables available — return a harmless no-op select
-		return SelectStmt{sql: "SELECT 3;"}, nil
+		return SelectStmt{sql: "SELECT 1;"}, nil
 	}
 
 	// choose rnd function from provided generator
 	var rnd func(int) int
-	switch r := lcgOrRand.(type) {
-	case interface{ Intn(int) int }:
-		rnd = r.Intn
-	default:
+	if lcg != nil {
+		rnd = lcg.Intn
+	} else {
 		// fallback to deterministic choice
 		rnd = func(n int) int { return 0 }
 	}
@@ -85,8 +82,8 @@ func GenSelect(db *sql.DB, lcgOrRand interface{}) (SelectStmt, error) {
 
 	where := ""
 	if numericIdx >= 0 {
-		v := 1 + rnd(100)
-		where = fmt.Sprintf(" WHERE %s > %d", quoteIdent(cols[numericIdx].Name), v)
+		val := types.ValueForType(cols[numericIdx].Type, lcg, cols[numericIdx].Name)
+		where = fmt.Sprintf(" WHERE %s > %s", quoteIdent(cols[numericIdx].Name), val)
 	}
 
 	limit := 1 + rnd(50)
@@ -104,11 +101,6 @@ func joinCols(cols []helper.ColumnInfo) string {
 		q += quoteIdent(c.Name)
 	}
 	return q
-}
-
-func quoteIdent(s string) string {
-	// use double quotes for identifiers
-	return fmt.Sprintf("\"%s\"", s)
 }
 
 func stringsToUpper(s string) string {
