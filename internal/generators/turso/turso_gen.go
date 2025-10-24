@@ -46,7 +46,6 @@ func (g *Generator) Direction() string {
 // If db is provided, can generate SELECTs using schema.
 func (g *Generator) GenerateWithDB(db *sql.DB) string {
 	dir := g.Direction()
-	fmt.Println(dir)
 	switch dir {
 	case "pragma":
 		return stmts.GenPragma(g.lcg).SQL()

@@ -63,7 +63,7 @@ func main() {
 			gen := turso.NewGenerator(uint64(workerID + 1))
 			for i := 0; i < queriesPerWorker; i++ {
 				query := gen.GenerateWithDB(conn)
-				common.Logger.Info().Int("worker", workerID).Int("query_num", i+1).Str("query", query).Msg("Executing query")
+				common.Logger.Info().Msgf("Worker %d executing query %d: \x1b[1;34m%s\x1b[0m", workerID, i+1, query)
 				_, err := conn.Exec(query)
 				if err != nil {
 					errCh <- err
@@ -82,8 +82,8 @@ func main() {
 		totalTokens += tokens
 	}
 
-	common.Logger.Info().Int("total_queries", numWorkers*queriesPerWorker).Uint64("total_tokens", totalTokens).Msg("Summary of execution")
-
+	common.Logger.Info().Msgf("Total queries executed: %d", numWorkers*queriesPerWorker)
+	common.Logger.Info().Msgf("Total tokens used: %d", totalTokens)
 	for err := range errCh {
 		common.Logger.Error().Err(err).Msg("Query execution error")
 	}
