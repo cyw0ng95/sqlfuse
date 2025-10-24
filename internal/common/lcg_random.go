@@ -1,0 +1,57 @@
+package common
+
+type LCG struct {
+	state uint64
+}
+
+const (
+	lcgMultiplier = 6364136223846793005
+	lcgIncrement  = 1442695040888963407
+)
+
+// NewLCG returns a new LCG seeded with the provided value.
+func NewLCG(seed uint64) *LCG {
+	l := &LCG{}
+	l.SetSeed(seed)
+	return l
+}
+
+// SetSeed sets the internal state using an unsigned seed.
+func (l *LCG) SetSeed(seed uint64) {
+	l.state = seed
+}
+
+// Seed implements math/rand.Source.Seed (accepts int64).
+func (l *LCG) Seed(seed int64) {
+	l.SetSeed(uint64(seed))
+}
+
+// Uint64 advances the generator and returns the next 64-bit value.
+func (l *LCG) Uint64() uint64 {
+	l.state = l.state*lcgMultiplier + lcgIncrement
+	return l.state
+}
+
+// Uint32 returns the high 32 bits of the next value.
+func (l *LCG) Uint32() uint32 {
+	return uint32(l.Uint64() >> 32)
+}
+
+// Int63 implements math/rand.Source.Int63, returning a non-negative 63-bit integer.
+func (l *LCG) Int63() int64 {
+	return int64(l.Uint64() >> 1)
+}
+
+// Float64 returns a float64 in [0.0, 1.0).
+func (l *LCG) Float64() float64 {
+	// use 53 bits of randomness
+	return float64(l.Uint64()>>11) / (1 << 53)
+}
+
+// Intn returns an integer in [0, n). If n <= 0 returns 0.
+func (l *LCG) Intn(n int) int {
+	if n <= 0 {
+		return 0
+	}
+	return int(l.Uint64() % uint64(n))
+}

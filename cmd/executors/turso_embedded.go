@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"sqlsmith-go/internal/generators/turso"
 
 	_ "github.com/tursodatabase/turso-go"
 )
@@ -14,19 +15,14 @@ func main() {
 		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
 	}
-	sql := "CREATE table go_turso (foo INTEGER, bar TEXT)"
-	_, _ = conn.Exec(sql)
 
-	sql = "INSERT INTO go_turso (foo, bar) values (?, ?)"
-	stmt, _ := conn.Prepare(sql)
-	defer stmt.Close()
-	_, _ = stmt.Exec(42, "turso")
-	rows, _ := conn.Query("SELECT * from go_turso")
-	defer rows.Close()
-	for rows.Next() {
-		var a int
-		var b string
-		_ = rows.Scan(&a, &b)
-		fmt.Printf("%d, %s", a, b)
+	for i := 0; i < 100; i++ {
+		gen := turso.NewGenerator(uint64(i + 1))
+		query := gen.Generate()
+		fmt.Printf("Executing query: %s\n", query)
+		_, err := conn.Exec(query)
+		if err != nil {
+			fmt.Printf("Error executing query: %v\n", err)
+		}
 	}
 }
