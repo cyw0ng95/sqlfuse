@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"sqlsmith-go/internal/generators/turso"
+	"sqlsmith-go/internal/generators/turso/helper"
 	"strings"
 	"sync"
 
@@ -39,9 +40,12 @@ func main() {
 	}
 	// --- END INIT ---
 
+	// Print all tables and columns discovered after initialization
+	print_schema(conn)
+
 	const (
-		numWorkers       = 8
-		queriesPerWorker = 100
+		numWorkers       = 2
+		queriesPerWorker = 10
 	)
 
 	var wg sync.WaitGroup
@@ -52,9 +56,11 @@ func main() {
 	for w := 0; w < numWorkers; w++ {
 		go func(workerID int) {
 			defer wg.Done()
+			// Create one generator per worker. Generators emit an initial PRAGMA on
+			// their first call (NewGenerator sets that behavior in this branch).
+			gen := turso.NewGenerator(uint64(workerID + 1))
 			for i := 0; i < queriesPerWorker; i++ {
-				gen := turso.NewGenerator(uint64(workerID*queriesPerWorker + i + 1))
-				query := gen.Generate()
+				query := gen.GenerateWithDB(conn)
 				fmt.Printf("[worker %d] Executing query: %s\n", workerID, query)
 				_, err := conn.Exec(query)
 				if err != nil {
@@ -69,5 +75,19 @@ func main() {
 
 	for err := range errCh {
 		fmt.Println(err)
+	}
+
+	print_schema(conn)
+}
+
+func print_schema(db *sql.DB) {
+	tables, err := helper.GetAllTablesAndCols(db)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to get tables: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Println("Discovered schema:")
+	for _, t := range tables {
+		fmt.Printf("- %s: %v\n", t.Name, t.Cols)
 	}
 }

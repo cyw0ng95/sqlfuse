@@ -1,6 +1,7 @@
 package turso
 
 import (
+	"database/sql"
 	"fmt"
 	"sqlsmith-go/internal/common"
 	"sqlsmith-go/internal/generators/turso/stmts"
@@ -30,36 +31,33 @@ func (g *Generator) Direction() string {
 	}
 	r := g.lcg.Intn(100)
 	switch {
-	case r < 60:
+	case r < 30:
+		// 30% chance
 		return "pragma"
-	case r < 85:
-		return "ddl"
-	default:
-		return "dml"
+	case r < 100:
+		// next 70% -> select
+		return "select"
 	}
+
+	return "pragma" // fallback
 }
 
 // Generate produces a single SQL statement according to the chosen direction.
-func (g *Generator) Generate() string {
-	switch g.Direction() {
+// If db is provided, can generate SELECTs using schema.
+func (g *Generator) GenerateWithDB(db *sql.DB) string {
+	dir := g.Direction()
+	fmt.Println(dir)
+	switch dir {
 	case "pragma":
 		return stmts.GenPragma(g.lcg).SQL()
-	case "ddl":
-		return g.genDDL()
-	default:
-		return g.genDML()
+	case "select":
+		stmt, err := stmts.GenSelect(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT:", err)
+			return "SELECT 1" // fallback
+		}
+		return stmt.SQL()
 	}
-}
 
-// genDDL creates a simple CREATE TABLE statement driven by the LCG.
-func (g *Generator) genDDL() string {
-	id := g.lcg.Intn(100000)
-	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS t_%d (id INTEGER PRIMARY KEY, v TEXT);", id)
-}
-
-// genDML creates a simple INSERT statement driven by the LCG.
-func (g *Generator) genDML() string {
-	id := g.lcg.Intn(100000)
-	val := g.lcg.Uint64()
-	return fmt.Sprintf("INSERT INTO t_%d (v) VALUES ('x%016x');", id, val)
+	return "SELECT 1" // placeholder for other directions
 }
