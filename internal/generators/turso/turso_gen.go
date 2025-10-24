@@ -31,17 +31,25 @@ func (g *Generator) Direction() string {
 	}
 	r := g.lcg.Intn(100)
 	switch {
-	case r < 50:
+	case r < 40:
 		return "insert"
-	case r < 74:
+	case r < 55:
 		return "select_basic"
-	case r < 86:
+	case r < 70:
 		return "select_where"
-	case r < 92:
+	case r < 77:
 		return "select_like"
-	case r < 96:
+	case r < 82:
+		return "select_limit"
+	case r < 86:
+		return "select_order"
+	case r < 89:
+		return "select_group"
+	case r < 91:
+		return "select_having"
+	case r < 93:
 		return "create_table"
-	case r < 98:
+	case r < 94:
 		return "drop_table"
 	case r < 100:
 		return "alter_table"
@@ -85,6 +93,34 @@ func (g *Generator) GenerateWithDB(db *sql.DB) string {
 			return "SELECT 1"
 		}
 		return stmtL.SQL()
+	case "select_limit":
+		stmtLim, err := stmts.GenSelectLimit(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT LIMIT:", err)
+			return "SELECT 1"
+		}
+		return stmtLim.SQL()
+	case "select_order":
+		stmtOrd, err := stmts.GenSelectOrderBy(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT ORDER BY:", err)
+			return "SELECT 1"
+		}
+		return stmtOrd.SQL()
+	case "select_group":
+		stmtG, err := stmts.GenSelectGroupBy(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT GROUP BY:", err)
+			return "SELECT 1"
+		}
+		return stmtG.SQL()
+	case "select_having":
+		stmtH, err := stmts.GenSelectHaving(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT HAVING:", err)
+			return "SELECT 1"
+		}
+		return stmtH.SQL()
 	case "create_table":
 		stmt, err := stmts.GenCreateTable(g.lcg)
 		if err != nil {
