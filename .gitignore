@@ -54,3 +54,6 @@ temp/
 # Coverage files
 coverage.out
 coverage.html
+
+# Vendor
+vendor/
