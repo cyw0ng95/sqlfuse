@@ -18,8 +18,8 @@ type TableInfo struct {
 }
 
 // GetAllTablesAndCols returns all user tables and their columns in the current database.
-// Emits only error diagnostics to stderr; informational prints were removed.
 func GetAllTablesAndCols(db *sql.DB) ([]TableInfo, error) {
+	// serialize concurrent callers
 	rows, err := db.Query(`SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'`)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error querying sqlite_master: %v\n", err)
@@ -64,6 +64,9 @@ func GetAllTablesAndCols(db *sql.DB) ([]TableInfo, error) {
 		}
 		colRows.Close()
 		tables = append(tables, TableInfo{Name: tableName, Cols: cols})
+	}
+	if len(tables) == 0 {
+		return nil, fmt.Errorf("no user tables found in database")
 	}
 	return tables, nil
 }

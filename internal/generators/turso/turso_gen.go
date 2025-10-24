@@ -31,11 +31,11 @@ func (g *Generator) Direction() string {
 	}
 	r := g.lcg.Intn(100)
 	switch {
-	case r < 30:
-		// 30% chance
+	case r < 0:
 		return "pragma"
+	case r < 80:
+		return "insert"
 	case r < 100:
-		// next 70% -> select
 		return "select"
 	}
 
@@ -50,6 +50,13 @@ func (g *Generator) GenerateWithDB(db *sql.DB) string {
 	switch dir {
 	case "pragma":
 		return stmts.GenPragma(g.lcg).SQL()
+	case "insert":
+		stmt, err := stmts.GenInsert(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating INSERT:", err)
+			return "INSERT INTO sqlite_master DEFAULT VALUES;" // fallback
+		}
+		return stmt.SQL()
 	case "select":
 		stmt, err := stmts.GenSelect(db, g.lcg)
 		if err != nil {

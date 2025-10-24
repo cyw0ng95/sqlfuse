@@ -44,7 +44,7 @@ func main() {
 	print_schema(conn)
 
 	const (
-		numWorkers       = 2
+		numWorkers       = 1
 		queriesPerWorker = 10
 	)
 

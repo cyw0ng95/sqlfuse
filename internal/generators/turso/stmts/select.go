@@ -18,11 +18,12 @@ func (s *SelectStmt) Type() string { return "select" }
 func GenSelect(db *sql.DB, lcgOrRand interface{}) (SelectStmt, error) {
 	tables, err := helper.GetAllTablesAndCols(db)
 	if err != nil {
-		// fallback: query sqlite_master directly
-		return SelectStmt{sql: "SELECT name, type FROM sqlite_master WHERE type='table' LIMIT 1;"}, nil
+		// propagate error so caller can decide fallback
+		return SelectStmt{}, err
 	}
 	if len(tables) == 0 {
-		return SelectStmt{sql: "SELECT name, type FROM sqlite_master WHERE type='table' LIMIT 1;"}, nil
+		// No real user tables available — return a harmless no-op select
+		return SelectStmt{sql: "SELECT 3;"}, nil
 	}
 
 	// choose rnd function from provided generator
