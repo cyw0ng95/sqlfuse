@@ -54,7 +54,6 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(numWorkers)
 
-	errCh := make(chan error, numWorkers*queriesPerWorker)
 	tokenCh := make(chan uint64, numWorkers)
 
 	for w := 0; w < numWorkers; w++ {
@@ -66,22 +65,17 @@ func main() {
 				_, execErr := conn.Exec(query)
 				if execErr != nil {
 					common.Logger.Info().Msgf("Worker %d executing query %d: \x1b[1;31m%s\x1b[0m", workerID, i+1, query) // red on error
-					errCh <- execErr
 					continue
 				}
 				common.Logger.Info().Msgf("Worker %d executing query %d: \x1b[1;32m%s\x1b[0m", workerID, i+1, query) // green on success
 				continue
-				_, err := conn.Exec(query)
-				if err != nil {
-					errCh <- err
-				}
+				conn.Exec(query)
 			}
 			tokenCh <- gen.TokensUsed()
 		}(w)
 	}
 
 	wg.Wait()
-	close(errCh)
 	close(tokenCh)
 
 	totalTokens := uint64(0)
@@ -91,9 +85,6 @@ func main() {
 
 	common.Logger.Info().Msgf("Total queries executed: %d", numWorkers*queriesPerWorker)
 	common.Logger.Info().Msgf("Total tokens used: %d", totalTokens)
-	for err := range errCh {
-		common.Logger.Error().Err(err).Msg("Query execution error")
-	}
 
 	print_schema(conn)
 }

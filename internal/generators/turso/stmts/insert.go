@@ -40,24 +40,26 @@ func GenInsert(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 		return &InsertStmt{sql: fmt.Sprintf("INSERT INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name))}, nil
 	}
 
-	cols := []string{}
-	vals := []string{}
+	// Filter columns (skip 'id') and build values together
+	filteredCols := []helper.ColumnInfo{}
 	for _, c := range tbl.Cols {
-		// Skip common autoincrement/id columns by name
-		if strings.EqualFold(c.Name, "id") {
+		if strings.EqualFold(c.Name, "id") { // skip common autoincrement id
 			continue
 		}
-		cols = append(cols, quoteIdent(c.Name))
-		val := types.ValueForType(c.Type, lcg, c.Name)
-		// If ValueForType returns an unquoted numeric, keep as is; it returns quoted strings already
-		vals = append(vals, val)
+		filteredCols = append(filteredCols, c)
 	}
 
-	if len(cols) == 0 {
+	if len(filteredCols) == 0 {
 		return &InsertStmt{sql: fmt.Sprintf("INSERT INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name))}, nil
 	}
 
-	sql := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s);", quoteIdent(tbl.Name), strings.Join(cols, ", "), strings.Join(vals, ", "))
+	cols := colsNames(filteredCols)
+	vals, err := buildValuesRow(filteredCols, lcg)
+	if err != nil {
+		return nil, err
+	}
+
+	sql := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s);", quoteIdent(tbl.Name), strings.Join(cols, ", "), vals)
 	return &InsertStmt{sql: sql}, nil
 }
 
@@ -175,13 +177,31 @@ func GenInsertFromSelect(db *sql.DB, lcgOrRand interface{}) (Stmt, error) {
 		return nil, fmt.Errorf("tables lack columns for insert-select")
 	}
 
-	// pick up to 3 columns present in both (by position/name)
-	n := 1
-	if len(target.Cols) > 1 {
-		n = 1 + rnd(min(3, len(target.Cols)))
+	// Find columns present in both tables by name (excluding 'id')
+	commonCols := []helper.ColumnInfo{}
+	for _, tc := range target.Cols {
+		if strings.EqualFold(tc.Name, "id") {
+			continue
+		}
+		for _, sc := range source.Cols {
+			if strings.EqualFold(tc.Name, sc.Name) {
+				commonCols = append(commonCols, tc)
+				break
+			}
+		}
 	}
-	cols := target.Cols[:min(n, len(target.Cols))]
-	// build SELECT projection from source: reuse names but quote
+	if len(commonCols) == 0 {
+		return nil, fmt.Errorf("no common columns for insert-select")
+	}
+
+	// pick up to 3 columns
+	n := 1
+	if len(commonCols) > 1 {
+		n = 1 + rnd(min(3, len(commonCols)))
+	}
+	cols := commonCols[:min(n, len(commonCols))]
+
+	// build SELECT projection from source: use the same column names
 	selectCols := []string{}
 	for _, c := range cols {
 		selectCols = append(selectCols, quoteIdent(c.Name))
@@ -211,28 +231,28 @@ func genInsertInternal(db *sql.DB, lcgOrRand interface{}, rowsCount int) (Stmt, 
 		return &InsertStmt{sql: fmt.Sprintf("INSERT INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name))}, nil
 	}
 
-	// choose columns excluding common autoincrement 'id'
-	cols := []helper.ColumnInfo{}
+	// Filter columns (skip 'id')
+	filteredCols := []helper.ColumnInfo{}
 	for _, c := range tbl.Cols {
 		if strings.EqualFold(c.Name, "id") {
 			continue
 		}
-		cols = append(cols, c)
+		filteredCols = append(filteredCols, c)
 	}
-	if len(cols) == 0 {
+	if len(filteredCols) == 0 {
 		return &InsertStmt{sql: fmt.Sprintf("INSERT INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name))}, nil
 	}
 
 	rowsVals := []string{}
 	for rIdx := 0; rIdx < rowsCount; rIdx++ {
-		vals, err := buildValuesRow(cols, lcgOrRand)
+		vals, err := buildValuesRow(filteredCols, lcgOrRand)
 		if err != nil {
 			return nil, err
 		}
 		rowsVals = append(rowsVals, fmt.Sprintf("(%s)", vals))
 	}
 
-	sql := fmt.Sprintf("INSERT INTO %s (%s) VALUES %s;", quoteIdent(tbl.Name), strings.Join(colsNames(cols), ", "), strings.Join(rowsVals, ", "))
+	sql := fmt.Sprintf("INSERT INTO %s (%s) VALUES %s;", quoteIdent(tbl.Name), strings.Join(colsNames(filteredCols), ", "), strings.Join(rowsVals, ", "))
 	return &InsertStmt{sql: sql}, nil
 }
 
@@ -253,6 +273,9 @@ func buildValuesRow(cols []helper.ColumnInfo, lcgOrRand interface{}) (string, er
 	vals := []string{}
 	for _, c := range cols {
 		val := types.ValueForType(c.Type, lcg, c.Name)
+		if val == "" {
+			val = "NULL"
+		}
 		vals = append(vals, val)
 	}
 	return strings.Join(vals, ", "), nil
