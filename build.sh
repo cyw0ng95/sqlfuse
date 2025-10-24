@@ -8,18 +8,22 @@ if [ -z "${SQLSMITH_GO_CONTAINER_TYPE:-}" ]; then
 fi
 
 run_tests() {
-    echo "Running tests with coverage..."
+    echo "-- [INFO] Running tests with coverage..."
     mkdir -p .cache
     go test -coverprofile=.cache/coverage.out ./...
     go tool cover -html=.cache/coverage.out -o .cache/coverage.html
-    echo "Coverage report generated: .cache/coverage.html"
+    echo "-- [INFO] Coverage report generated: .cache/coverage.html"
 }
 
 build_project() {
+    echo "-- [INFO] Starting build..."
     mkdir -p output
+    echo "-- [INFO] Running go mod vendor..."
     go mod vendor
-    go build -v \
+    echo "-- [INFO] Building turso_embedded_executor..."
+    go build \
         -asan -o output/turso_embedded_executor cmd/executors/turso_embedded.go
+    echo "-- [INFO] Build complete. Output: output/turso_embedded_executor"
 }
 
 # Parse arguments with getopt
