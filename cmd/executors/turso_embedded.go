@@ -4,89 +4,113 @@ import (
 	"database/sql"
 	"io/ioutil"
 	"os"
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/generators/turso"
-	"sqlsmith-go/internal/generators/turso/helper"
 	"strings"
 	"sync"
 
+	"sqlsmith-go/internal/common"
+	"sqlsmith-go/internal/generators/turso"
+	"sqlsmith-go/internal/generators/turso/helper"
+
+	"github.com/spf13/cobra"
 	_ "github.com/tursodatabase/turso-go"
 )
 
+var (
+	dsn         string
+	initSQLPath string
+	workers     int
+	queries     int
+)
+
 func main() {
-	common.InitLogger()
-	common.Logger.Info().Msg("Starting turso_embedded executor")
+	rootCmd := &cobra.Command{
+		Use:   "turso_embedded",
+		Short: "Embedded Turso/LibSQL executor for SQL fuzzing",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			common.InitLogger()
+			common.Logger.Info().Msg("Starting turso_embedded executor")
 
-	conn, err := sql.Open("turso", ":memory:")
-	if err != nil {
-		common.Logger.Error().Err(err).Msg("Error opening database")
-		os.Exit(1)
-	}
-	defer conn.Close()
-
-	// --- INIT DB ---
-	initSQL, err := ioutil.ReadFile("/opt/assets/turso/init.sql")
-	if err != nil {
-		common.Logger.Error().Err(err).Msg("Failed to read init.sql")
-		os.Exit(1)
-	}
-	common.Logger.Info().Msg("Initializing database schema from init.sql")
-	for _, stmt := range strings.Split(string(initSQL), ";") {
-		stmt = strings.TrimSpace(stmt)
-		if stmt == "" {
-			continue
-		}
-		_, err := conn.Exec(stmt)
-		if err != nil {
-			common.Logger.Error().Err(err).Str("stmt", stmt).Msg("Init SQL error")
-			os.Exit(1)
-		}
-	}
-	// --- END INIT ---
-
-	print_schema(conn)
-
-	const (
-		numWorkers       = 1
-		queriesPerWorker = 10
-	)
-
-	var wg sync.WaitGroup
-	wg.Add(numWorkers)
-
-	tokenCh := make(chan uint64, numWorkers)
-
-	for w := 0; w < numWorkers; w++ {
-		go func(workerID int) {
-			defer wg.Done()
-			gen := turso.NewGenerator(uint64(workerID + 1))
-			for i := 0; i < queriesPerWorker; i++ {
-				query := gen.GenerateWithDB(conn)
-				_, execErr := conn.Exec(query)
-				if execErr != nil {
-					common.Logger.Info().Msgf("Worker %d executing query %d: \x1b[1;31m%s\x1b[0m", workerID, i+1, query) // red on error
-					continue
-				}
-				common.Logger.Info().Msgf("Worker %d executing query %d: \x1b[1;32m%s\x1b[0m", workerID, i+1, query) // green on success
-				continue
-				conn.Exec(query)
+			conn, err := sql.Open("turso", dsn)
+			if err != nil {
+				common.Logger.Error().Err(err).Msg("Error opening database")
+				os.Exit(1)
 			}
-			tokenCh <- gen.TokensUsed()
-		}(w)
+			defer conn.Close()
+
+			// Initialize schema if provided
+			if strings.TrimSpace(initSQLPath) != "" {
+				initSQL, err := ioutil.ReadFile(initSQLPath)
+				if err != nil {
+					common.Logger.Error().Err(err).Str("path", initSQLPath).Msg("Failed to read init SQL file")
+					os.Exit(1)
+				}
+				common.Logger.Info().Msgf("Initializing database schema from %s", initSQLPath)
+				for _, stmt := range strings.Split(string(initSQL), ";") {
+					stmt = strings.TrimSpace(stmt)
+					if stmt == "" {
+						continue
+					}
+					if _, err := conn.Exec(stmt); err != nil {
+						common.Logger.Error().Err(err).Str("stmt", stmt).Msg("Init SQL error")
+						os.Exit(1)
+					}
+				}
+			}
+
+			print_schema(conn)
+
+			if workers < 1 {
+				workers = 1
+			}
+			if queries < 1 {
+				queries = 1
+			}
+
+			var wg sync.WaitGroup
+			wg.Add(workers)
+			tokenCh := make(chan uint64, workers)
+
+			for w := 0; w < workers; w++ {
+				go func(workerID int) {
+					defer wg.Done()
+					gen := turso.NewGenerator(uint64(workerID + 1))
+					for i := 0; i < queries; i++ {
+						query := gen.GenerateWithDB(conn)
+						_, execErr := conn.Exec(query)
+						if execErr != nil {
+							common.Logger.Info().Msgf("Worker %d executing query %d: %s", workerID, i+1, query)
+							continue
+						}
+						common.Logger.Info().Msgf("Worker %d executing query %d: %s", workerID, i+1, query)
+					}
+					tokenCh <- gen.TokensUsed()
+				}(w)
+			}
+
+			wg.Wait()
+			close(tokenCh)
+
+			var totalTokens uint64
+			for t := range tokenCh {
+				totalTokens += t
+			}
+
+			common.Logger.Info().Msgf("Total queries executed: %d", workers*queries)
+			common.Logger.Info().Msgf("Total tokens used: %d", totalTokens)
+
+			print_schema(conn)
+			return nil
+		},
 	}
 
-	wg.Wait()
-	close(tokenCh)
+	rootCmd.Flags().StringVarP(&dsn, "dsn", "d", ":memory:", "Database DSN for the turso driver (e.g., :memory: or file path)")
+	rootCmd.Flags().StringVarP(&initSQLPath, "init-sql", "i", "/opt/assets/turso/init.sql", "Path to SQL file to initialize schema; set empty to skip")
+	rootCmd.Flags().IntVarP(&workers, "workers", "w", 1, "Number of concurrent workers")
+	rootCmd.Flags().IntVarP(&queries, "queries", "q", 10, "Number of queries per worker")
 
-	totalTokens := uint64(0)
-	for tokens := range tokenCh {
-		totalTokens += tokens
+	if err := rootCmd.Execute(); err != nil {
+		os.Exit(1)
 	}
-
-	common.Logger.Info().Msgf("Total queries executed: %d", numWorkers*queriesPerWorker)
-	common.Logger.Info().Msgf("Total tokens used: %d", totalTokens)
-
-	print_schema(conn)
 }
 
 func print_schema(db *sql.DB) {

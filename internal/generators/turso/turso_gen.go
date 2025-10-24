@@ -31,15 +31,19 @@ func (g *Generator) Direction() string {
 	}
 	r := g.lcg.Intn(100)
 	switch {
-	case r < 0:
-		return "pragma"
-	case r < 80:
+	case r < 60:
 		return "insert"
-	case r < 100:
+	case r < 85:
 		return "select"
+	case r < 92:
+		return "create_table"
+	case r < 96:
+		return "drop_table"
+	case r < 100:
+		return "alter_table"
+	default:
+		return "pragma"
 	}
-
-	return "pragma" // fallback
 }
 
 // Generate produces a single SQL statement according to the chosen direction.
@@ -61,6 +65,27 @@ func (g *Generator) GenerateWithDB(db *sql.DB) string {
 		if err != nil {
 			fmt.Println("Error generating SELECT:", err)
 			return "SELECT 1" // fallback
+		}
+		return stmt.SQL()
+	case "create_table":
+		stmt, err := stmts.GenCreateTable(g.lcg)
+		if err != nil {
+			fmt.Println("Error generating CREATE TABLE:", err)
+			return "CREATE TABLE IF NOT EXISTS fallback (id INTEGER);" // fallback
+		}
+		return stmt.SQL()
+	case "drop_table":
+		stmt, err := stmts.GenDropTable(g.lcg)
+		if err != nil {
+			fmt.Println("Error generating DROP TABLE:", err)
+			return "DROP TABLE IF EXISTS fallback;"
+		}
+		return stmt.SQL()
+	case "alter_table":
+		stmt, err := stmts.GenAlterTable(g.lcg)
+		if err != nil {
+			fmt.Println("Error generating ALTER TABLE:", err)
+			return "ALTER TABLE fallback RENAME TO fallback2;"
 		}
 		return stmt.SQL()
 	}
