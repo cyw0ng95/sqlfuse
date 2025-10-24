@@ -31,13 +31,17 @@ func (g *Generator) Direction() string {
 	}
 	r := g.lcg.Intn(100)
 	switch {
-	case r < 60:
+	case r < 50:
 		return "insert"
-	case r < 85:
-		return "select"
+	case r < 74:
+		return "select_basic"
+	case r < 86:
+		return "select_where"
 	case r < 92:
-		return "create_table"
+		return "select_like"
 	case r < 96:
+		return "create_table"
+	case r < 98:
 		return "drop_table"
 	case r < 100:
 		return "alter_table"
@@ -60,13 +64,27 @@ func (g *Generator) GenerateWithDB(db *sql.DB) string {
 			return "INSERT INTO sqlite_master DEFAULT VALUES;" // fallback
 		}
 		return stmt.SQL()
-	case "select":
+	case "select_basic":
 		stmt, err := stmts.GenSelect(db, g.lcg)
 		if err != nil {
 			fmt.Println("Error generating SELECT:", err)
 			return "SELECT 1" // fallback
 		}
 		return stmt.SQL()
+	case "select_where":
+		stmtW, err := stmts.GenSelectWhere(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT WHERE:", err)
+			return "SELECT 1"
+		}
+		return stmtW.SQL()
+	case "select_like":
+		stmtL, err := stmts.GenSelectWhereLike(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT LIKE:", err)
+			return "SELECT 1"
+		}
+		return stmtL.SQL()
 	case "create_table":
 		stmt, err := stmts.GenCreateTable(g.lcg)
 		if err != nil {
