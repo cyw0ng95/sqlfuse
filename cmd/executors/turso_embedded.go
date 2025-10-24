@@ -2,9 +2,9 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"io/ioutil"
 	"os"
+	"sqlsmith-go/internal/common"
 	"sqlsmith-go/internal/generators/turso"
 	"sqlsmith-go/internal/generators/turso/helper"
 	"strings"
@@ -14,9 +14,12 @@ import (
 )
 
 func main() {
+	common.InitLogger()
+	common.Logger.Info().Msg("Starting turso_embedded executor")
+
 	conn, err := sql.Open("turso", ":memory:")
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		common.Logger.Error().Err(err).Msg("Error opening database")
 		os.Exit(1)
 	}
 	defer conn.Close()
@@ -24,9 +27,10 @@ func main() {
 	// --- INIT DB ---
 	initSQL, err := ioutil.ReadFile("/opt/assets/turso/init.sql")
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to read init.sql: %v\n", err)
+		common.Logger.Error().Err(err).Msg("Failed to read init.sql")
 		os.Exit(1)
 	}
+	common.Logger.Info().Msg("Initializing database schema from init.sql")
 	for _, stmt := range strings.Split(string(initSQL), ";") {
 		stmt = strings.TrimSpace(stmt)
 		if stmt == "" {
@@ -34,13 +38,12 @@ func main() {
 		}
 		_, err := conn.Exec(stmt)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Init SQL error: %v (stmt: %s)\n", err, stmt)
+			common.Logger.Error().Err(err).Str("stmt", stmt).Msg("Init SQL error")
 			os.Exit(1)
 		}
 	}
 	// --- END INIT ---
 
-	// Print all tables and columns discovered after initialization
 	print_schema(conn)
 
 	const (
@@ -60,10 +63,10 @@ func main() {
 			gen := turso.NewGenerator(uint64(workerID + 1))
 			for i := 0; i < queriesPerWorker; i++ {
 				query := gen.GenerateWithDB(conn)
-				fmt.Printf("[worker %d] Executing query: %s\n", workerID, query)
+				common.Logger.Info().Int("worker", workerID).Int("query_num", i+1).Str("query", query).Msg("Executing query")
 				_, err := conn.Exec(query)
 				if err != nil {
-					errCh <- fmt.Errorf("[worker %d] Error executing query: %v", workerID, err)
+					errCh <- err
 				}
 			}
 			tokenCh <- gen.TokensUsed()
@@ -79,12 +82,10 @@ func main() {
 		totalTokens += tokens
 	}
 
-	fmt.Println("\n---[Summary]---")
-	fmt.Println("Total queries executed:", numWorkers*queriesPerWorker)
-	fmt.Printf("Total tokens used: %d\n", totalTokens)
+	common.Logger.Info().Int("total_queries", numWorkers*queriesPerWorker).Uint64("total_tokens", totalTokens).Msg("Summary of execution")
 
 	for err := range errCh {
-		fmt.Println(err)
+		common.Logger.Error().Err(err).Msg("Query execution error")
 	}
 
 	print_schema(conn)
@@ -93,11 +94,21 @@ func main() {
 func print_schema(db *sql.DB) {
 	tables, err := helper.GetAllTablesAndCols(db)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to get tables: %v\n", err)
+		common.Logger.Error().Err(err).Msg("Failed to get tables")
 		os.Exit(1)
 	}
-	fmt.Println("Discovered schema:")
+	var b strings.Builder
+	b.WriteString("Discovered schema after execution:\n")
 	for _, t := range tables {
-		fmt.Printf("- %s: %v\n", t.Name, t.Cols)
+		colNames := make([]string, len(t.Cols))
+		for i, c := range t.Cols {
+			colNames[i] = c.Name
+		}
+		b.WriteString("  ")
+		b.WriteString(t.Name)
+		b.WriteString(": ")
+		b.WriteString(strings.Join(colNames, ", "))
+		b.WriteString("\n")
 	}
+	common.Logger.Info().Msg(b.String())
 }
