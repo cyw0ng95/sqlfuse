@@ -23,7 +23,9 @@ build_project() {
     echo "-- [INFO] Building turso_embedded_executor..."
     go build \
         -asan -o output/turso_embedded_executor cmd/executors/turso_embedded.go
-    echo "-- [INFO] Build complete. Output: output/turso_embedded_executor"
+    go build \
+        -asan -o output/server ./cmd/server/main.go
+    echo "-- [INFO] Build complete. Output: output/turso_embedded_executor, output/server"
 }
 
 # Parse arguments with getopt
