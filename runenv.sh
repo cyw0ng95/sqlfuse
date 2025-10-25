@@ -16,6 +16,7 @@ mkdir -p .cache/go
 podman build -f Containerfile -t sqlsmith-go/dev .
 podman run -it --rm \
   -p 8080:8080 \
+  -p 3000:3000 \
   -v "$(pwd)":/opt:Z \
   -v "$(pwd)/.cache/go":/root/go:Z \
   sqlsmith-go/dev \

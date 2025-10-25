@@ -63,3 +63,6 @@ output/
 
 # Cache
 .cache
+
+# pnpm store
+.pnpm-store/

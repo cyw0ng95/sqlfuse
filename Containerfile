@@ -39,6 +39,8 @@ RUN npm config set registry https://registry.npmmirror.com/ --location=global &&
     npm install -g pnpm@latest-10 && \
     pnpm config set registry https://registry.npmmirror.com/
 
+ENV NUXT_TELEMETRY_DISABLED=1
+
 ENV SQLSMITH_GO_CONTAINER_TYPE=dev
 ENV CC=clang
 ENV LD_LIBRARY_PATH=/opt/vendor/github.com/tursodatabase/turso-go/libs/linux_amd64/
