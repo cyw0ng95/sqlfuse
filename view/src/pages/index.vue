@@ -1,7 +1,5 @@
 <template>
-  <v-app>
-    <router-view />
-  </v-app>
+  <HelloWorld />
 </template>
 
 <script setup>
