@@ -2,7 +2,9 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"net/http"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
@@ -44,12 +46,25 @@ type Job struct {
 	cmd *exec.Cmd `json:"-"`
 }
 
+// JobMeta is the persisted representation of a job (no buffers/cmd)
+type JobMeta struct {
+	ID        string     `json:"id"`
+	Cmd       string     `json:"cmd"`
+	Status    JobStatus  `json:"status"`
+	PID       int        `json:"pid,omitempty"`
+	ExitCode  *int       `json:"exit_code,omitempty"`
+	StartedAt *time.Time `json:"started_at,omitempty"`
+	EndedAt   *time.Time `json:"ended_at,omitempty"`
+}
+
 var (
 	jobStore     = make(map[string]*Job)
 	jobMu        sync.Mutex
 	jobIDCounter uint64
 	// max bytes to return for stdout/stderr in /job/info
 	maxOutputReturn = 64 * 1024 // 64KB
+	// persistence path (moved to ./output so it is colocated with executables/output artifacts)
+	jobsPersistPath = filepath.Join(".", "output", "jobs.json")
 )
 
 // helper to truncate output for responses
@@ -60,10 +75,73 @@ func truncate(b []byte, n int) string {
 	return string(b[:n]) + "\n...(truncated)"
 }
 
+// saveJobs persists job metadata to disk (best-effort)
+func saveJobs() {
+	jobMu.Lock()
+	defer jobMu.Unlock()
+	// prepare directory
+	dir := filepath.Dir(jobsPersistPath)
+	_ = os.MkdirAll(dir, 0o755)
+
+	metas := make([]JobMeta, 0, len(jobStore))
+	for _, j := range jobStore {
+		m := JobMeta{
+			ID:        j.ID,
+			Cmd:       j.Cmd,
+			Status:    j.Status,
+			PID:       j.PID,
+			ExitCode:  j.ExitCode,
+			StartedAt: j.StartedAt,
+			EndedAt:   j.EndedAt,
+		}
+		metas = append(metas, m)
+	}
+	b, err := json.MarshalIndent(metas, "", "  ")
+	if err != nil {
+		return
+	}
+	_ = os.WriteFile(jobsPersistPath, b, 0o644)
+}
+
+// loadJobs loads persisted jobs from disk into memory (best-effort)
+func loadJobs() {
+	b, err := os.ReadFile(jobsPersistPath)
+	if err != nil {
+		return
+	}
+	var metas []JobMeta
+	if err := json.Unmarshal(b, &metas); err != nil {
+		return
+	}
+	jobMu.Lock()
+	defer jobMu.Unlock()
+	for _, m := range metas {
+		// only restore metadata; stdout/stderr/cmd remain empty
+		jobStore[m.ID] = &Job{
+			ID:        m.ID,
+			Cmd:       m.Cmd,
+			Status:    m.Status,
+			PID:       m.PID,
+			ExitCode:  m.ExitCode,
+			StartedAt: m.StartedAt,
+			EndedAt:   m.EndedAt,
+		}
+		// update jobIDCounter to avoid collisions
+		if v, err := strconv.ParseUint(m.ID, 10, 64); err == nil {
+			if v > jobIDCounter {
+				jobIDCounter = v
+			}
+		}
+	}
+}
+
 // RegisterJobRoutes registers job-related HTTP endpoints on the provided Echo instance.
 func RegisterJobRoutes(e *echo.Echo) {
 	// Prepare absolute output dir for validation
 	outputDir, _ := filepath.Abs("./output")
+
+	// load persisted jobs if any
+	loadJobs()
 
 	// POST /job/new { "cmd": "..." }
 	e.POST("/job/new", func(c echo.Context) error {
@@ -113,30 +191,44 @@ func RegisterJobRoutes(e *echo.Echo) {
 		jobStore[id] = job
 		jobMu.Unlock()
 
+		// persist
+		saveJobs()
+
 		// start the job asynchronously
 		go func(j *Job, cmdToRun *exec.Cmd) {
+			// mark running
+			jobMu.Lock()
 			j.Status = JobRunning
 			now := time.Now()
 			j.StartedAt = &now
+			jobMu.Unlock()
+			saveJobs()
 
 			j.cmd = cmdToRun
 			cmdToRun.Stdout = &j.Stdout
 			cmdToRun.Stderr = &j.Stderr
 
 			if err := cmdToRun.Start(); err != nil {
+				jobMu.Lock()
 				j.Status = JobFailed
 				end := time.Now()
 				j.EndedAt = &end
+				jobMu.Unlock()
+				saveJobs()
 				return
 			}
 
 			if cmdToRun.Process != nil {
+				jobMu.Lock()
 				j.PID = cmdToRun.Process.Pid
+				jobMu.Unlock()
+				saveJobs()
 			}
 
 			// wait for completion
 			err := cmdToRun.Wait()
 			end := time.Now()
+			jobMu.Lock()
 			j.EndedAt = &end
 			if err != nil {
 				if cmdToRun.ProcessState != nil {
@@ -146,6 +238,8 @@ func RegisterJobRoutes(e *echo.Echo) {
 				if j.Status != JobStopped {
 					j.Status = JobFailed
 				}
+				jobMu.Unlock()
+				saveJobs()
 				return
 			}
 
@@ -154,6 +248,8 @@ func RegisterJobRoutes(e *echo.Echo) {
 				j.ExitCode = &exit
 			}
 			j.Status = JobDone
+			jobMu.Unlock()
+			saveJobs()
 		}(job, cmdObj)
 
 		return c.JSON(http.StatusAccepted, map[string]string{"id": id})
@@ -165,13 +261,13 @@ func RegisterJobRoutes(e *echo.Echo) {
 		if id == "" {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "id is required"})
 		}
+		// copy fields under lock to avoid races
 		jobMu.Lock()
 		job, ok := jobStore[id]
-		jobMu.Unlock()
 		if !ok {
+			jobMu.Unlock()
 			return c.JSON(http.StatusNotFound, map[string]string{"error": "job not found"})
 		}
-
 		resp := map[string]interface{}{
 			"id":     job.ID,
 			"cmd":    job.Cmd,
@@ -187,6 +283,7 @@ func RegisterJobRoutes(e *echo.Echo) {
 		if job.ExitCode != nil {
 			resp["exit_code"] = *job.ExitCode
 		}
+		jobMu.Unlock()
 		return c.JSON(http.StatusOK, resp)
 	})
 
@@ -209,9 +306,12 @@ func RegisterJobRoutes(e *echo.Echo) {
 		if err := job.cmd.Process.Kill(); err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to stop job"})
 		}
+		jobMu.Lock()
 		job.Status = JobStopped
 		end := time.Now()
 		job.EndedAt = &end
+		jobMu.Unlock()
+		saveJobs()
 		return c.JSON(http.StatusOK, map[string]string{"status": "stopped"})
 	})
 
@@ -223,20 +323,19 @@ func RegisterJobRoutes(e *echo.Echo) {
 		}
 		jobMu.Lock()
 		job, ok := jobStore[id]
-		jobMu.Unlock()
 		if !ok {
+			jobMu.Unlock()
 			return c.JSON(http.StatusNotFound, map[string]string{"error": "job not found"})
 		}
-
-		stdout := truncate(job.Stdout.Bytes(), maxOutputReturn)
-		stderr := truncate(job.Stderr.Bytes(), maxOutputReturn)
-
+		// copy buffers and metadata under lock
+		stdoutBytes := append([]byte(nil), job.Stdout.Bytes()...)
+		stderrBytes := append([]byte(nil), job.Stderr.Bytes()...)
 		resp := map[string]interface{}{
 			"id":     job.ID,
 			"cmd":    job.Cmd,
 			"status": job.Status,
-			"stdout": stdout,
-			"stderr": stderr,
+			"stdout": truncate(stdoutBytes, maxOutputReturn),
+			"stderr": truncate(stderrBytes, maxOutputReturn),
 		}
 		if job.ExitCode != nil {
 			resp["exit_code"] = *job.ExitCode
@@ -247,6 +346,7 @@ func RegisterJobRoutes(e *echo.Echo) {
 		if job.EndedAt != nil {
 			resp["ended_at"] = job.EndedAt.Format(time.RFC3339)
 		}
+		jobMu.Unlock()
 		return c.JSON(http.StatusOK, resp)
 	})
 }

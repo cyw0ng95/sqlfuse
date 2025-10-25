@@ -24,7 +24,7 @@ build_project() {
     go build \
         -asan -o output/turso_embedded_executor cmd/executors/turso_embedded.go
     go build \
-        -asan -o output/server ./cmd/server/main.go
+        -asan -o output/server ./cmd/server
     echo "-- [INFO] Build complete. Output: output/turso_embedded_executor, output/server"
 }
 

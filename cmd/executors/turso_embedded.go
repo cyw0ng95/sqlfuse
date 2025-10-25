@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"sqlsmith-go/internal/common"
+	"sqlsmith-go/internal/executors"
 	"sqlsmith-go/internal/generators/turso"
 	"sqlsmith-go/internal/generators/turso/helper"
 
@@ -15,14 +16,9 @@ import (
 	_ "github.com/tursodatabase/turso-go"
 )
 
-var (
-	dsn         string
-	initSQLPath string
-	workers     int
-	queries     int
-)
-
 func main() {
+	var flags executors.CommonFlags
+
 	rootCmd := &cobra.Command{
 		Use:   "turso_embedded",
 		Short: "Embedded Turso/LibSQL executor for SQL fuzzing",
@@ -30,7 +26,7 @@ func main() {
 			common.InitLogger()
 			common.Logger.Info().Msg("Starting turso_embedded executor")
 
-			conn, err := sql.Open("turso", dsn)
+			conn, err := sql.Open("turso", flags.Dsn)
 			if err != nil {
 				common.Logger.Error().Err(err).Msg("Error opening database")
 				os.Exit(1)
@@ -38,13 +34,13 @@ func main() {
 			defer conn.Close()
 
 			// Initialize schema if provided
-			if strings.TrimSpace(initSQLPath) != "" {
-				initSQL, err := ioutil.ReadFile(initSQLPath)
+			if strings.TrimSpace(flags.InitSQLPath) != "" {
+				initSQL, err := ioutil.ReadFile(flags.InitSQLPath)
 				if err != nil {
-					common.Logger.Error().Err(err).Str("path", initSQLPath).Msg("Failed to read init SQL file")
+					common.Logger.Error().Err(err).Str("path", flags.InitSQLPath).Msg("Failed to read init SQL file")
 					os.Exit(1)
 				}
-				common.Logger.Info().Msgf("Initializing database schema from %s", initSQLPath)
+				common.Logger.Info().Msgf("Initializing database schema from %s", flags.InitSQLPath)
 				for _, stmt := range strings.Split(string(initSQL), ";") {
 					stmt = strings.TrimSpace(stmt)
 					if stmt == "" {
@@ -59,6 +55,8 @@ func main() {
 
 			print_schema(conn)
 
+			workers := flags.Workers
+			queries := flags.Queries
 			if workers < 1 {
 				workers = 1
 			}
@@ -103,10 +101,7 @@ func main() {
 		},
 	}
 
-	rootCmd.Flags().StringVarP(&dsn, "dsn", "d", ":memory:", "Database DSN for the turso driver (e.g., :memory: or file path)")
-	rootCmd.Flags().StringVarP(&initSQLPath, "init-sql", "i", "/opt/assets/turso/init.sql", "Path to SQL file to initialize schema; set empty to skip")
-	rootCmd.Flags().IntVarP(&workers, "workers", "w", 1, "Number of concurrent workers")
-	rootCmd.Flags().IntVarP(&queries, "queries", "q", 10, "Number of queries per worker")
+	executors.AddCommonFlags(rootCmd, &flags)
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
