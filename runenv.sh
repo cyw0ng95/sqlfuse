@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 # If SQLSMITH_GO_CONTAINER_TYPE is set, skip running inside a container.
 if [ -n "${SQLSMITH_GO_CONTAINER_TYPE:-}" ]; then
@@ -14,10 +15,23 @@ fi
 mkdir -p .cache/go
 
 podman build -f Containerfile -t sqlsmith-go/dev .
-podman run -it --rm \
-  -p 8080:8080 \
-  -p 3000:3000 \
-  -v "$(pwd)":/opt:Z \
-  -v "$(pwd)/.cache/go":/root/go:Z \
-  sqlsmith-go/dev \
-  bash
+
+# If a command is provided to this script, forward it to the container and run it non-interactively.
+# Otherwise, open an interactive bash shell inside the container.
+if [ "$#" -gt 0 ]; then
+    podman run --rm \
+      -p 8080:8080 \
+      -p 3000:3000 \
+      -v "$(pwd)":/opt:Z \
+      -v "$(pwd)/.cache/go":/root/go:Z \
+      sqlsmith-go/dev \
+      "$@"
+else
+    podman run -it --rm \
+      -p 8080:8080 \
+      -p 3000:3000 \
+      -v "$(pwd)":/opt:Z \
+      -v "$(pwd)/.cache/go":/root/go:Z \
+      sqlsmith-go/dev \
+      bash
+fi
