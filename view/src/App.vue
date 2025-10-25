@@ -33,6 +33,9 @@
               </v-card-actions>
             </v-card>
 
+            <!-- Job manager component -->
+            <JobManager />
+
             <v-card outlined>
               <v-card-title>Generators</v-card-title>
               <v-card-text>
@@ -59,6 +62,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import JobManager from './components/JobManager.vue'
 
 const health = ref({})
 const info = ref({})

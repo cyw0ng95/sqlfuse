@@ -1,0 +1,6 @@
+[
+    {
+        "executor": "turso_embedded",
+        "path": "/opt/output/turso_embedded_executor"
+    }
+]
