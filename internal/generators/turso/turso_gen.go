@@ -9,181 +9,310 @@ import (
 
 // Generator uses an LCG to drive generation directions and produce SQL snippets.
 type Generator struct {
-	lcg   *common.LCG
-	first bool // first generation is forced into pragma
+	lcg         *common.LCG
+	first       bool // first generation is forced into pragma
+	weights     map[StmtType]uint64
+	totalWeight uint64
 }
 
-// NewGenerator creates a generator seeded with the provided seed.
+// StmtType represents a generation direction / statement category.
+type StmtType string
+
+const (
+	StmtPragma          StmtType = "pragma"
+	StmtInsert          StmtType = "insert"
+	StmtSelectBasic     StmtType = "select_basic"
+	StmtSelectWhere     StmtType = "select_where"
+	StmtSelectLike      StmtType = "select_like"
+	StmtSelectLimit     StmtType = "select_limit"
+	StmtSelectOrder     StmtType = "select_order"
+	StmtSelectGroup     StmtType = "select_group"
+	StmtSelectHaving    StmtType = "select_having"
+	StmtSelectJoin      StmtType = "select_join"
+	StmtSelectCross     StmtType = "select_crossjoin"
+	StmtSelectInner     StmtType = "select_innerjoin"
+	StmtSelectOuter     StmtType = "select_outerjoin"
+	StmtSelectJoinUsing StmtType = "select_joinusing"
+	StmtSelectNatural   StmtType = "select_naturaljoin"
+	StmtCreateTable     StmtType = "create_table"
+	StmtDropTable       StmtType = "drop_table"
+	StmtAlterTable      StmtType = "alter_table"
+)
+
+// AllStmtTypes defines a deterministic ordering used when selecting by weights.
+var AllStmtTypes = []StmtType{
+	StmtInsert,
+	StmtSelectBasic,
+	StmtSelectWhere,
+	StmtSelectLike,
+	StmtSelectLimit,
+	StmtSelectOrder,
+	StmtSelectGroup,
+	StmtSelectHaving,
+	StmtSelectJoin,
+	StmtSelectCross,
+	StmtSelectInner,
+	StmtSelectOuter,
+	StmtSelectJoinUsing,
+	StmtSelectNatural,
+	StmtCreateTable,
+	StmtDropTable,
+	StmtAlterTable,
+}
+
+// DefaultStmtWeights returns a sensible default weight distribution.
+// Values are token-like weights; probabilities are weight / sum(weights).
+func DefaultStmtWeights() map[StmtType]uint64 {
+	w := map[StmtType]uint64{}
+	// scaled by 10 to allow token-like numbers; proportions reflect previous Intn(100) cutoffs
+	w[StmtInsert] = 400
+	w[StmtSelectBasic] = 120
+	w[StmtSelectWhere] = 100
+	w[StmtSelectLike] = 80
+	w[StmtSelectLimit] = 60
+	w[StmtSelectOrder] = 40
+	w[StmtSelectGroup] = 40
+	w[StmtSelectHaving] = 40
+	w[StmtSelectJoin] = 20
+	w[StmtSelectCross] = 20
+	w[StmtSelectInner] = 20
+	w[StmtSelectOuter] = 20
+	w[StmtSelectJoinUsing] = 20
+	w[StmtSelectNatural] = 20
+	// leave DDL low by default
+	w[StmtCreateTable] = 0
+	w[StmtDropTable] = 0
+	w[StmtAlterTable] = 0
+	return w
+}
+
+// NewGenerator creates a generator seeded with the provided seed and default weights.
 func NewGenerator(seed uint64) *Generator {
-	return &Generator{
+	g := &Generator{
 		lcg:   common.NewLCG(seed),
 		first: true,
 	}
+	g.SetWeights(DefaultStmtWeights())
+	return g
+}
+
+// SetWeights replaces the current weights and recalculates totals.
+func (g *Generator) SetWeights(weights map[StmtType]uint64) {
+	if g.weights == nil {
+		g.weights = make(map[StmtType]uint64, len(weights))
+	}
+	for k, v := range weights {
+		g.weights[k] = v
+	}
+	g.recalcTotalWeight()
+}
+
+// SetWeight sets a single statement type weight and updates totals.
+func (g *Generator) SetWeight(t StmtType, weight uint64) {
+	if g.weights == nil {
+		g.weights = DefaultStmtWeights()
+	}
+	g.weights[t] = weight
+	g.recalcTotalWeight()
+}
+
+// GetWeights returns a copy of the current weights map.
+func (g *Generator) GetWeights() map[StmtType]uint64 {
+	out := make(map[StmtType]uint64, len(g.weights))
+	for k, v := range g.weights {
+		out[k] = v
+	}
+	return out
+}
+
+func (g *Generator) recalcTotalWeight() {
+	var sum uint64
+	for _, t := range AllStmtTypes {
+		sum += g.weights[t]
+	}
+	g.totalWeight = sum
 }
 
 // Direction picks a direction to drive generation.
-// On the very first call this is 100% "pragma". Afterwards it uses the LCG
-// to pick between pragma, ddl, and dml.
-func (g *Generator) Direction() string {
+// On the very first call this is 100% StmtPragma. Afterwards it uses the LCG
+// to pick between pragma, ddl, and dml. If weights are set (totalWeight>0)
+// selection is proportional to weights.
+func (g *Generator) Direction() StmtType {
 	if g.first {
 		g.first = false
-		return "pragma"
+		return StmtPragma
 	}
+	// If weights are configured, pick proportionally.
+	if g.totalWeight > 0 {
+		r := g.lcg.Uint64() % g.totalWeight
+		var cum uint64
+		for _, t := range AllStmtTypes {
+			w := g.weights[t]
+			cum += w
+			if r < cum {
+				return t
+			}
+		}
+		// fallback
+		return StmtPragma
+	}
+
+	// Fallback to legacy behavior when no weights configured
 	r := g.lcg.Intn(100)
 	switch {
 	case r < 40:
-		return "insert"
+		return StmtInsert
 	case r < 52:
-		return "select_basic"
+		return StmtSelectBasic
 	case r < 62:
-		return "select_where"
+		return StmtSelectWhere
 	case r < 70:
-		return "select_like"
+		return StmtSelectLike
 	case r < 76:
-		return "select_limit"
+		return StmtSelectLimit
 	case r < 80:
-		return "select_order"
+		return StmtSelectOrder
 	case r < 84:
-		return "select_group"
+		return StmtSelectGroup
 	case r < 88:
-		return "select_having"
+		return StmtSelectHaving
 	case r < 90:
-		return "select_join"
+		return StmtSelectJoin
 	case r < 92:
-		return "select_crossjoin"
+		return StmtSelectCross
 	case r < 94:
-		return "select_innerjoin"
+		return StmtSelectInner
 	case r < 96:
-		return "select_outerjoin"
+		return StmtSelectOuter
 	case r < 98:
-		return "select_joinusing"
+		return StmtSelectJoinUsing
 	case r < 100:
-		return "select_naturaljoin"
+		return StmtSelectNatural
 	default:
-		return "pragma"
+		return StmtPragma
 	}
 }
 
-// Generate produces a single SQL statement according to the chosen direction.
+// GenerateWithDB produces a single SQL statement according to the chosen direction.
 // If db is provided, can generate SELECTs using schema.
 func (g *Generator) GenerateWithDB(db *sql.DB) string {
 	dir := g.Direction()
 	switch dir {
-	case "pragma":
+	case StmtPragma:
 		return stmts.GenPragma(g.lcg).SQL()
-	case "insert":
+	case StmtInsert:
 		stmt, err := stmts.GenInsert(db, g.lcg)
 		if err != nil {
 			fmt.Println("Error generating INSERT:", err)
 			return "INSERT INTO sqlite_master DEFAULT VALUES;" // fallback
 		}
 		return stmt.SQL()
-	case "select_basic":
+	case StmtSelectBasic:
 		stmt, err := stmts.GenSelect(db, g.lcg)
 		if err != nil {
 			fmt.Println("Error generating SELECT:", err)
 			return "SELECT 1" // fallback
 		}
 		return stmt.SQL()
-	case "select_where":
+	case StmtSelectWhere:
 		stmtW, err := stmts.GenSelectWhere(db, g.lcg)
 		if err != nil {
 			fmt.Println("Error generating SELECT WHERE:", err)
 			return "SELECT 1"
 		}
 		return stmtW.SQL()
-	case "select_like":
+	case StmtSelectLike:
 		stmtL, err := stmts.GenSelectWhereLike(db, g.lcg)
 		if err != nil {
 			fmt.Println("Error generating SELECT LIKE:", err)
 			return "SELECT 1"
 		}
 		return stmtL.SQL()
-	case "select_limit":
+	case StmtSelectLimit:
 		stmtLim, err := stmts.GenSelectLimit(db, g.lcg)
 		if err != nil {
 			fmt.Println("Error generating SELECT LIMIT:", err)
 			return "SELECT 1"
 		}
 		return stmtLim.SQL()
-	case "select_order":
+	case StmtSelectOrder:
 		stmtOrd, err := stmts.GenSelectOrderBy(db, g.lcg)
 		if err != nil {
 			fmt.Println("Error generating SELECT ORDER BY:", err)
 			return "SELECT 1"
 		}
 		return stmtOrd.SQL()
-	case "select_group":
+	case StmtSelectGroup:
 		stmtG, err := stmts.GenSelectGroupBy(db, g.lcg)
 		if err != nil {
 			fmt.Println("Error generating SELECT GROUP BY:", err)
 			return "SELECT 1"
 		}
 		return stmtG.SQL()
-	case "select_having":
+	case StmtSelectHaving:
 		stmtH, err := stmts.GenSelectHaving(db, g.lcg)
 		if err != nil {
 			fmt.Println("Error generating SELECT HAVING:", err)
 			return "SELECT 1"
 		}
 		return stmtH.SQL()
-	case "select_join":
+	case StmtSelectJoin:
 		stmtJ, err := stmts.GenSelectJoin(db, g.lcg)
 		if err != nil {
 			fmt.Println("Error generating SELECT JOIN:", err)
 			return "SELECT 1"
 		}
 		return stmtJ.SQL()
-	case "select_crossjoin":
+	case StmtSelectCross:
 		stmtCJ, err := stmts.GenSelectCrossJoin(db, g.lcg)
 		if err != nil {
 			fmt.Println("Error generating SELECT CROSS JOIN:", err)
 			return "SELECT 1"
 		}
 		return stmtCJ.SQL()
-	case "select_innerjoin":
+	case StmtSelectInner:
 		stmtIJ, err := stmts.GenSelectInnerJoin(db, g.lcg)
 		if err != nil {
 			fmt.Println("Error generating SELECT INNER JOIN:", err)
 			return "SELECT 1"
 		}
 		return stmtIJ.SQL()
-	case "select_outerjoin":
+	case StmtSelectOuter:
 		stmtOJ, err := stmts.GenSelectOuterJoin(db, g.lcg)
 		if err != nil {
 			fmt.Println("Error generating SELECT OUTER JOIN:", err)
 			return "SELECT 1"
 		}
 		return stmtOJ.SQL()
-	case "select_joinusing":
+	case StmtSelectJoinUsing:
 		stmtJU, err := stmts.GenSelectJoinUsing(db, g.lcg)
 		if err != nil {
 			fmt.Println("Error generating SELECT JOIN USING:", err)
 			return "SELECT 1"
 		}
 		return stmtJU.SQL()
-	case "select_naturaljoin":
+	case StmtSelectNatural:
 		stmtNJ, err := stmts.GenSelectNaturalJoin(db, g.lcg)
 		if err != nil {
 			fmt.Println("Error generating SELECT NATURAL JOIN:", err)
 			return "SELECT 1"
 		}
 		return stmtNJ.SQL()
-	case "create_table":
+	case StmtCreateTable:
 		stmt, err := stmts.GenCreateTable(g.lcg)
 		if err != nil {
 			fmt.Println("Error generating CREATE TABLE:", err)
 			return "CREATE TABLE IF NOT EXISTS fallback (id INTEGER);" // fallback
 		}
 		return stmt.SQL()
-	case "drop_table":
+	case StmtDropTable:
 		stmt, err := stmts.GenDropTable(g.lcg)
 		if err != nil {
 			fmt.Println("Error generating DROP TABLE:", err)
 			return "DROP TABLE IF EXISTS fallback;"
 		}
 		return stmt.SQL()
-	case "alter_table":
+	case StmtAlterTable:
 		stmt, err := stmts.GenAlterTable(g.lcg)
 		if err != nil {
 			fmt.Println("Error generating ALTER TABLE:", err)

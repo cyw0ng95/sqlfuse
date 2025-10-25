@@ -10,6 +10,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 
 	"sqlsmith-go/internal/common"
+	"sqlsmith-go/internal/generators/turso"
 )
 
 func main() {
@@ -32,6 +33,17 @@ func main() {
 			"name":    "sqlsmith-go minimal server",
 			"version": "0.1",
 		})
+	})
+
+	// Generator metadata endpoint
+	e.GET("/generators/get", func(c echo.Context) error {
+		gen := turso.Info
+		resp := map[string]interface{}{
+			"generator": gen.Name(),
+			"stmts":     gen.SupportedStmts(),
+			"note":      "These are the high-level statement types the generator can produce with their default weights.",
+		}
+		return c.JSON(http.StatusOK, resp)
 	})
 
 	port := os.Getenv("PORT")
