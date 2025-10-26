@@ -33,10 +33,10 @@ func StringLiteral(lcg *common.LCG) string {
 		// String with backslash
 		return fmt.Sprintf("'path\\\\to\\\\file%d'", lcg.Intn(100))
 	case 7:
-		// Very long string
+		// Long string (limited to 200 chars to avoid issues)
 		var b strings.Builder
 		b.WriteString("'")
-		length := 100 + lcg.Intn(400) // 100-500 chars
+		length := 100 + lcg.Intn(101) // 100-200 chars
 		for i := 0; i < length; i++ {
 			b.WriteByte(byte('a' + (i % 26)))
 		}

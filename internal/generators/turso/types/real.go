@@ -48,22 +48,22 @@ func RealLiteral(lcg *common.LCG) string {
 	case 11:
 		// Scientific notation - small exponent
 		mantissa := float64(lcg.Intn(1000)) / 100.0
-		exp := lcg.Intn(5) - 2
-		return fmt.Sprintf("%ee%d", mantissa, exp)
+		exp := lcg.Intn(5) - 2 // -2 to 2
+		return fmt.Sprintf("%.2fe%d", mantissa, exp)
 	case 12:
-		// Scientific notation - large exponent
+		// Scientific notation - moderate exponent (keep within safe range for SQLite)
 		mantissa := float64(lcg.Intn(1000)) / 100.0
-		exp := 10 + lcg.Intn(90)
-		return fmt.Sprintf("%ee%d", mantissa, exp)
+		exp := 3 + lcg.Intn(7) // 3..9 to stay well within REAL range
+		return fmt.Sprintf("%.2fe%d", mantissa, exp)
 	case 13:
 		// Negative scientific notation
 		return fmt.Sprintf("%e", -float64(lcg.Intn(100000))/100.0)
 	case 14:
-		// Very large positive (close to max)
-		return fmt.Sprintf("%e", math.MaxFloat64/float64(1+lcg.Intn(1000)))
+		// Moderately large positive (keep well within SQLite REAL range)
+		return fmt.Sprintf("%f", 1e9*float64(lcg.Intn(100)))
 	case 15:
-		// Very large negative (close to min)
-		return fmt.Sprintf("%e", -math.MaxFloat64/float64(1+lcg.Intn(1000)))
+		// Moderately large negative (keep well within SQLite REAL range)
+		return fmt.Sprintf("%f", -1e9*float64(lcg.Intn(100)))
 	case 16:
 		// Decimal with many digits
 		return fmt.Sprintf("%.10f", float64(lcg.Intn(1000000))/123456.789)

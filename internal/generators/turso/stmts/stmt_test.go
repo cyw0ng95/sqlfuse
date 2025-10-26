@@ -96,10 +96,13 @@ func TestGenDropTable(t *testing.T) {
 
 // TestGenUpdate tests UPDATE statement generation
 func TestGenUpdate(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
 	lcg := common.NewLCG(456)
 
 	for i := 0; i < testIterations; i++ {
-		stmt, err := GenUpdate(lcg)
+		stmt, err := GenUpdate(db, lcg)
 		if err != nil {
 			t.Fatalf("GenUpdate failed: %v", err)
 		}
@@ -122,10 +125,13 @@ func TestGenUpdate(t *testing.T) {
 
 // TestGenDelete tests DELETE statement generation
 func TestGenDelete(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
 	lcg := common.NewLCG(789)
 
 	for i := 0; i < testIterations; i++ {
-		stmt, err := GenDelete(lcg)
+		stmt, err := GenDelete(db, lcg)
 		if err != nil {
 			t.Fatalf("GenDelete failed: %v", err)
 		}
@@ -281,29 +287,32 @@ func TestStmtInterface(t *testing.T) {
 
 // TestGeneratedSQLDeterminism tests that same seed produces same SQL
 func TestGeneratedSQLDeterminism(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
 	tests := []struct {
 		name string
-		gen  func(*common.LCG) (Stmt, error)
+		gen  func(*sql.DB, *common.LCG) (Stmt, error)
 	}{
-		{"CreateTable", func(lcg *common.LCG) (Stmt, error) { return GenCreateTable(lcg) }},
-		{"DropTable", func(lcg *common.LCG) (Stmt, error) { return GenDropTable(lcg) }},
-		{"Update", func(lcg *common.LCG) (Stmt, error) { return GenUpdate(lcg) }},
-		{"Delete", func(lcg *common.LCG) (Stmt, error) { return GenDelete(lcg) }},
-		{"CreateView", func(lcg *common.LCG) (Stmt, error) { return GenCreateView(lcg) }},
-		{"DropView", func(lcg *common.LCG) (Stmt, error) { return GenDropView(lcg) }},
-		{"AlterTable", func(lcg *common.LCG) (Stmt, error) { return GenAlterTable(lcg) }},
+		{"CreateTable", func(db *sql.DB, lcg *common.LCG) (Stmt, error) { return GenCreateTable(lcg) }},
+		{"DropTable", func(db *sql.DB, lcg *common.LCG) (Stmt, error) { return GenDropTable(lcg) }},
+		{"Update", func(db *sql.DB, lcg *common.LCG) (Stmt, error) { return GenUpdate(db, lcg) }},
+		{"Delete", func(db *sql.DB, lcg *common.LCG) (Stmt, error) { return GenDelete(db, lcg) }},
+		{"CreateView", func(db *sql.DB, lcg *common.LCG) (Stmt, error) { return GenCreateView(lcg) }},
+		{"DropView", func(db *sql.DB, lcg *common.LCG) (Stmt, error) { return GenDropView(lcg) }},
+		{"AlterTable", func(db *sql.DB, lcg *common.LCG) (Stmt, error) { return GenAlterTable(lcg) }},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			lcg1 := common.NewLCG(12345)
-			stmt1, err1 := tt.gen(lcg1)
+			stmt1, err1 := tt.gen(db, lcg1)
 			if err1 != nil {
 				t.Fatalf("First generation failed: %v", err1)
 			}
 
 			lcg2 := common.NewLCG(12345)
-			stmt2, err2 := tt.gen(lcg2)
+			stmt2, err2 := tt.gen(db, lcg2)
 			if err2 != nil {
 				t.Fatalf("Second generation failed: %v", err2)
 			}
@@ -332,6 +341,9 @@ func TestPragmaDeterminism(t *testing.T) {
 
 // TestSQLSyntaxValidity validates that generated SQL is syntactically correct
 func TestSQLSyntaxValidity(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
 	lcg := common.NewLCG(777)
 
 	generators := []struct {
@@ -340,8 +352,8 @@ func TestSQLSyntaxValidity(t *testing.T) {
 	}{
 		{"CreateTable", func() (Stmt, error) { return GenCreateTable(lcg) }},
 		{"DropTable", func() (Stmt, error) { return GenDropTable(lcg) }},
-		{"Update", func() (Stmt, error) { return GenUpdate(lcg) }},
-		{"Delete", func() (Stmt, error) { return GenDelete(lcg) }},
+		{"Update", func() (Stmt, error) { return GenUpdate(db, lcg) }},
+		{"Delete", func() (Stmt, error) { return GenDelete(db, lcg) }},
 		{"Pragma", func() (Stmt, error) { return GenPragma(lcg), nil }},
 		{"CreateView", func() (Stmt, error) { return GenCreateView(lcg) }},
 		{"DropView", func() (Stmt, error) { return GenDropView(lcg) }},
@@ -382,10 +394,16 @@ func BenchmarkGenCreateTable(b *testing.B) {
 
 // BenchmarkGenUpdate benchmarks UPDATE generation
 func BenchmarkGenUpdate(b *testing.B) {
+	db, err := sql.Open("libsql", "file::memory:?cache=shared")
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer db.Close()
+
 	lcg := common.NewLCG(1)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		stmt, err := GenUpdate(lcg)
+		stmt, err := GenUpdate(db, lcg)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -395,10 +413,16 @@ func BenchmarkGenUpdate(b *testing.B) {
 
 // BenchmarkGenDelete benchmarks DELETE generation
 func BenchmarkGenDelete(b *testing.B) {
+	db, err := sql.Open("libsql", "file::memory:?cache=shared")
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer db.Close()
+
 	lcg := common.NewLCG(1)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		stmt, err := GenDelete(lcg)
+		stmt, err := GenDelete(db, lcg)
 		if err != nil {
 			b.Fatal(err)
 		}
