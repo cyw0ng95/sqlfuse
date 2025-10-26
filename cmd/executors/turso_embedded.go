@@ -64,6 +64,14 @@ func main() {
 				queries = 1
 			}
 
+			// determine base seed: use provided seed if non-zero, otherwise time-based
+			var baseSeed uint64
+			if flags.Seed != 0 {
+				baseSeed = uint64(flags.Seed)
+			} else {
+				baseSeed = 0
+			}
+
 			var wg sync.WaitGroup
 			wg.Add(workers)
 			tokenCh := make(chan uint64, workers)
@@ -71,7 +79,8 @@ func main() {
 			for w := 0; w < workers; w++ {
 				go func(workerID int) {
 					defer wg.Done()
-					gen := turso.NewGenerator(uint64(workerID + 1))
+					// each worker gets a deterministic seed derived from base
+					gen := turso.NewGenerator(baseSeed + uint64(workerID))
 					for i := 0; i < queries; i++ {
 						query := gen.GenerateWithDB(conn)
 						_, execErr := conn.Exec(query)

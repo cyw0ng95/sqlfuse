@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
@@ -139,10 +140,11 @@ func RegisterJobRoutes(e *echo.Echo) {
 	// load persisted jobs if any
 	loadJobs()
 
-	// POST /job/new { "cmd": "..." }
+	// POST /job/new { "cmd": "...", "seed": 123 }
 	e.POST("/job/new", func(c echo.Context) error {
 		var req struct {
-			Cmd string `json:"cmd"`
+			Cmd  string `json:"cmd"`
+			Seed *int64 `json:"seed,omitempty"`
 		}
 		if err := c.Bind(&req); err != nil {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
@@ -168,14 +170,37 @@ func RegisterJobRoutes(e *echo.Echo) {
 			args = toks[1:]
 		}
 
-		// build executor and exec.Cmd
+		// build executor and exec.Cmd (forward optional seed)
 		execBin := executors.NewCmdExecutor(filepath.Base(absCmdPath), absCmdPath)
-		cmdObj := execBin.BuildCmd(args)
+		cmdObj := execBin.BuildCmd(args, req.Seed)
+
+		// Ensure seed flag is present in cmd args (some callers may not honor prepended seed)
+		if req.Seed != nil {
+			seedArg := "--seed=" + strconv.FormatInt(*req.Seed, 10)
+			found := false
+			for _, a := range cmdObj.Args[1:] {
+				if strings.HasPrefix(a, "--seed=") {
+					found = true
+					break
+				}
+			}
+			if !found {
+				cmdObj.Args = append(cmdObj.Args, seedArg)
+			}
+		}
+
+		// debug: print final args to stderr
+		if len(cmdObj.Args) > 0 {
+			fmt.Fprintf(os.Stderr, "Starting job cmd args: %v\n", cmdObj.Args)
+		}
 
 		id := strconv.FormatUint(atomic.AddUint64(&jobIDCounter, 1), 10)
 		fullCmd := absCmdPath
 		if len(args) > 0 {
 			fullCmd = absCmdPath + " " + strings.Join(args, " ")
+		}
+		if req.Seed != nil {
+			fullCmd = fullCmd + " --seed=" + strconv.FormatInt(*req.Seed, 10)
 		}
 		job := &Job{
 			ID:     id,
