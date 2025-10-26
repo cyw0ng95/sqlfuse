@@ -204,41 +204,8 @@ func (g *Generator) Direction() StmtType {
 		}
 		// fallback
 		return StmtPragma
-	}
-
-	// Fallback to legacy behavior when no weights configured
-	r := g.lcg.Intn(100)
-	switch {
-	case r < 40:
-		return StmtInsert
-	case r < 52:
-		return StmtSelectBasic
-	case r < 62:
-		return StmtSelectWhere
-	case r < 70:
-		return StmtSelectLike
-	case r < 76:
-		return StmtSelectLimit
-	case r < 80:
-		return StmtSelectOrder
-	case r < 84:
-		return StmtSelectGroup
-	case r < 88:
-		return StmtSelectHaving
-	case r < 90:
-		return StmtSelectJoin
-	case r < 92:
-		return StmtSelectCross
-	case r < 94:
-		return StmtSelectInner
-	case r < 96:
-		return StmtSelectOuter
-	case r < 98:
-		return StmtSelectJoinUsing
-	case r < 100:
-		return StmtSelectNatural
-	default:
-		return StmtPragma
+	} else {
+		panic("totalWeight < 0")
 	}
 }
 
