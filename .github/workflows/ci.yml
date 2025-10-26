@@ -31,6 +31,16 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-
 
+      - name: Cache Vite build cache and node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            view/node_modules
+            view/node_modules/.vite
+          key: ${{ runner.os }}-vite-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-vite-
+
       - name: Build and test
         run: |
           # ensure cache dirs exist for runenv script to mount

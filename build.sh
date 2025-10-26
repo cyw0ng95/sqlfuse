@@ -15,6 +15,17 @@ run_tests() {
     echo "-- [INFO] Coverage report generated: .cache/coverage.html"
 }
 
+build_view() {
+    echo "-- [INFO] Building view (frontend)..."
+    if [[ -d view ]]; then
+        (cd view && pnpm install)
+        (cd view && pnpm run build)
+        echo "-- [INFO] View build complete. Output: view/dist"
+    else
+        echo "-- [WARN] view directory not found; skipping frontend build"
+    fi
+}
+
 build_project() {
     echo "-- [INFO] Starting build..."
     mkdir -p output
@@ -26,6 +37,9 @@ build_project() {
     go build \
         -asan -o output/server ./cmd/server
     echo "-- [INFO] Build complete. Output: output/turso_embedded_executor, output/server"
+    
+    # Build the frontend view
+    build_view
 }
 
 # Function to start frontend dev server and the Go server, with cleanup trap
