@@ -1536,17 +1536,21 @@ func genTimeUnixFunction(lcg *common.LCG) string {
 }
 
 func genTimeMilliFunction(lcg *common.LCG) string {
-	msec := 1609459200000 + int64(lcg.Intn(63072000000))
+	// Use a smaller range to avoid integer overflow on 32-bit systems
+	// Add up to ~730 days (2 years) in milliseconds
+	msec := 1609459200000 + int64(lcg.Intn(63072000))*1000
 	return fmt.Sprintf("time_milli(%d)", msec)
 }
 
 func genTimeMicroFunction(lcg *common.LCG) string {
-	usec := 1609459200000000 + int64(lcg.Intn(100000000))
+	// Add up to ~1 day in microseconds for meaningful test coverage
+	usec := 1609459200000000 + int64(lcg.Intn(86400))*1000000
 	return fmt.Sprintf("time_micro(%d)", usec)
 }
 
 func genTimeNanoFunction(lcg *common.LCG) string {
-	nsec := 1609459200000000000 + int64(lcg.Intn(100000000))
+	// Add up to ~1 hour in nanoseconds for meaningful test coverage
+	nsec := 1609459200000000000 + int64(lcg.Intn(3600))*1000000000
 	return fmt.Sprintf("time_nano(%d)", nsec)
 }
 
