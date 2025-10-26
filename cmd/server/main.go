@@ -97,7 +97,7 @@ func main() {
 			ServerName:          "sqlsmith-go minimal server",
 			ServerVersion:       "0.1",
 			Job: JobConfig{
-				MaxOutputBytes: 64 * 1024,
+				MaxOutputBytes: 65536, // 64KB
 				PersistPath:    "./output/jobs.json",
 			},
 		}
