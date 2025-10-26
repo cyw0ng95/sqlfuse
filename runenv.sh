@@ -22,7 +22,7 @@ mkdir -p .cache/go
 #  SQLSMITH_GO_CACHE_REGISTRY (optional, used for --cache-from/--cache-to when pushing)
 #  DOCKER_IMAGE (override default image name)
 
-DOCKER_IMAGE="${DOCKER_IMAGE:-cyw0ng95/sqlsmith-go/dev}"
+DOCKER_IMAGE="${DOCKER_IMAGE:-cyw0ng95/sqlsmith-go:dev}"
 
 # Use Containerfile content digest as a lightweight image version so changes to Containerfile
 # produce a new image tag and invalidate caches. We append a short sha to the image name.

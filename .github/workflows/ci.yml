@@ -28,7 +28,7 @@ jobs:
 
       - name: Prepare container image (pull or build single-arch with buildx)
         env:
-          IMAGE: ${{ secrets.IMAGE_NAME || 'cyw0ng95/sqlsmith-go/dev' }}
+          IMAGE: ${{ secrets.IMAGE_NAME || 'cyw0ng95/sqlsmith-go:dev' }}
           CACHE_REGISTRY: ${{ secrets.CACHE_REGISTRY || '' }}
           REGISTRY_USERNAME: ${{ secrets.DOCKERHUB_USERNAME || '' }}
           REGISTRY_PASSWORD: ${{ secrets.DOCKERHUB_TOKEN || '' }}
