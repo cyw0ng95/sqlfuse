@@ -61,10 +61,6 @@ var (
 	jobStore     = make(map[string]*Job)
 	jobMu        sync.Mutex
 	jobIDCounter uint64
-	// max bytes to return for stdout/stderr in /job/info
-	maxOutputReturn = 64 * 1024 // 64KB
-	// persistence path (moved to ./output so it is colocated with executables/output artifacts)
-	jobsPersistPath = filepath.Join(".", "output", "jobs.json")
 )
 
 // helper to truncate output for responses
@@ -80,7 +76,7 @@ func saveJobs() {
 	jobMu.Lock()
 	defer jobMu.Unlock()
 	// prepare directory
-	dir := filepath.Dir(jobsPersistPath)
+	dir := filepath.Dir(serverConfig.Job.PersistPath)
 	_ = os.MkdirAll(dir, 0o755)
 
 	metas := make([]JobMeta, 0, len(jobStore))
@@ -100,12 +96,12 @@ func saveJobs() {
 	if err != nil {
 		return
 	}
-	_ = os.WriteFile(jobsPersistPath, b, 0o644)
+	_ = os.WriteFile(serverConfig.Job.PersistPath, b, 0o644)
 }
 
 // loadJobs loads persisted jobs from disk into memory (best-effort)
 func loadJobs() {
-	b, err := os.ReadFile(jobsPersistPath)
+	b, err := os.ReadFile(serverConfig.Job.PersistPath)
 	if err != nil {
 		return
 	}
@@ -334,8 +330,8 @@ func RegisterJobRoutes(e *echo.Echo) {
 			"id":     job.ID,
 			"cmd":    job.Cmd,
 			"status": job.Status,
-			"stdout": truncate(stdoutBytes, maxOutputReturn),
-			"stderr": truncate(stderrBytes, maxOutputReturn),
+			"stdout": truncate(stdoutBytes, serverConfig.Job.MaxOutputBytes),
+			"stderr": truncate(stderrBytes, serverConfig.Job.MaxOutputBytes),
 		}
 		if job.ExitCode != nil {
 			resp["exit_code"] = *job.ExitCode

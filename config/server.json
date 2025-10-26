@@ -1,0 +1,10 @@
+{
+  "port": "8080",
+  "executors_config_path": "./config/executors.json",
+  "server_name": "sqlsmith-go minimal server",
+  "server_version": "0.1",
+  "job": {
+    "max_output_bytes": 65536,
+    "persist_path": "./output/jobs.json"
+  }
+}
