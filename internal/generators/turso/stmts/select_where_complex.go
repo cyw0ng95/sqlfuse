@@ -52,24 +52,24 @@ func GenSelectWhereComplex(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	// Build complex WHERE clause with 2-4 conditions
 	numConditions := 2 + rnd(3) // 2..4 conditions
 	conditions := []string{}
-	
+
 	for i := 0; i < numConditions && i < len(tbl.Cols); i++ {
 		col := tbl.Cols[rnd(len(tbl.Cols))]
 		val := types.ValueForType(col.Type, lcg, col.Name)
-		
+
 		// Choose a random operator
 		operators := []string{"=", ">", "<", ">=", "<=", "!="}
 		if strings.Contains(strings.ToUpper(col.Type), "TEXT") || strings.Contains(strings.ToUpper(col.Type), "CHAR") {
 			operators = []string{"=", "!=", "LIKE"}
 		}
 		op := operators[rnd(len(operators))]
-		
+
 		// For LIKE operator, modify the value to include wildcards
 		if op == "LIKE" && val != "NULL" {
 			val = strings.TrimSuffix(strings.TrimPrefix(val, "'"), "'")
 			val = fmt.Sprintf("'%%%s%%'", escapeSingle(val))
 		}
-		
+
 		conditions = append(conditions, fmt.Sprintf("%s %s %s", quoteIdent(col.Name), op, val))
 	}
 
@@ -81,7 +81,7 @@ func GenSelectWhereComplex(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 		if rnd(2) == 0 {
 			connector = " OR "
 		}
-		
+
 		// For more complexity, sometimes mix AND and OR
 		if len(conditions) > 2 && rnd(2) == 0 {
 			// Mix: (cond1 AND cond2) OR cond3

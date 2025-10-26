@@ -30,7 +30,7 @@ func GenSelectCase(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 	// Pick a column for the CASE expression
 	caseCol := tbl.Cols[rnd(len(tbl.Cols))]
-	
+
 	// Build a CASE expression
 	var caseExpr string
 	if isNumericType(caseCol.Type) || containsTypeHintSimple(caseCol.Name, "id", "num", "count", "amount", "age") {
@@ -57,7 +57,7 @@ func GenSelectCase(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 		maxCols = 2
 	}
 	nCols := 1 + rnd(maxCols)
-	
+
 	selected := make(map[int]struct{})
 	for i := 0; i < nCols && len(selectCols) < 4; i++ {
 		idx := rnd(len(tbl.Cols))

@@ -30,15 +30,15 @@ func GenSelectAggregateComplex(db *sql.DB, lcg *common.LCG) (SelectStmt, error) 
 	// Build multiple aggregate expressions
 	aggregates := []string{}
 	aggregateFuncs := []string{"COUNT", "SUM", "AVG", "MIN", "MAX"}
-	
+
 	// Add 2-4 different aggregate functions
 	numAggs := 2 + rnd(3) // 2..4
 	used := make(map[string]bool)
-	
+
 	for i := 0; i < numAggs && len(aggregates) < 5; i++ {
 		col := tbl.Cols[rnd(len(tbl.Cols))]
 		aggFunc := aggregateFuncs[rnd(len(aggregateFuncs))]
-		
+
 		// COUNT can be used on any column or with *
 		if aggFunc == "COUNT" && rnd(2) == 0 {
 			key := "COUNT(*)"
@@ -48,7 +48,7 @@ func GenSelectAggregateComplex(db *sql.DB, lcg *common.LCG) (SelectStmt, error) 
 			}
 			continue
 		}
-		
+
 		// For SUM and AVG, prefer numeric columns
 		if (aggFunc == "SUM" || aggFunc == "AVG") && !isNumericType(col.Type) && !containsTypeHintSimple(col.Name, "id", "num", "count", "amount", "price", "quantity") {
 			// Try to find a numeric column
@@ -64,10 +64,10 @@ func GenSelectAggregateComplex(db *sql.DB, lcg *common.LCG) (SelectStmt, error) 
 				aggFunc = "COUNT" // fallback to COUNT if no numeric column
 			}
 		}
-		
+
 		key := fmt.Sprintf("%s(%s)", aggFunc, col.Name)
 		if !used[key] {
-			aggregates = append(aggregates, fmt.Sprintf("%s(%s) AS %s_%s", 
+			aggregates = append(aggregates, fmt.Sprintf("%s(%s) AS %s_%s",
 				aggFunc, quoteIdent(col.Name), strings.ToLower(aggFunc), col.Name))
 			used[key] = true
 		}

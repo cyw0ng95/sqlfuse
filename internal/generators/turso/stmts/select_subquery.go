@@ -85,11 +85,11 @@ func GenSelectSubquery(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 	// Use EXISTS subquery with correlation (LibSQL doesn't support IN with subquery)
 	// Build correlation condition
-	correlationWhere := fmt.Sprintf("%s = %s.%s", 
-		quoteIdent(innerCol.Name), 
-		quoteIdent(outerTbl.Name), 
+	correlationWhere := fmt.Sprintf("%s = %s.%s",
+		quoteIdent(innerCol.Name),
+		quoteIdent(outerTbl.Name),
 		quoteIdent(outerCol.Name))
-	
+
 	// Optionally add an AND condition to the subquery
 	if rnd(2) == 0 && len(innerTbl.Cols) > 1 {
 		// Add a simple additional condition to the subquery

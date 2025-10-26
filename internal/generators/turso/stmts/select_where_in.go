@@ -51,7 +51,7 @@ func GenSelectWhereIn(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 	// Pick a column for the IN clause
 	inCol := tbl.Cols[rnd(len(tbl.Cols))]
-	
+
 	// Generate 2-5 values for the IN list
 	numValues := 2 + rnd(4) // 2..5
 	values := []string{}
@@ -61,7 +61,7 @@ func GenSelectWhereIn(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 			values = append(values, val)
 		}
 	}
-	
+
 	// Fallback if no values generated
 	if len(values) == 0 {
 		values = append(values, "NULL")
@@ -69,7 +69,7 @@ func GenSelectWhereIn(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 	where := fmt.Sprintf(" WHERE %s IN (%s)", quoteIdent(inCol.Name), strings.Join(values, ", "))
 	limit := 1 + rnd(50)
-	
+
 	sql := fmt.Sprintf("SELECT %s FROM %s%s LIMIT %d;", joinCols(cols), quoteIdent(tbl.Name), where, limit)
 	return SelectStmt{sql: sql}, nil
 }

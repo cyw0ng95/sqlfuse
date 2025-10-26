@@ -19,31 +19,31 @@ type Generator struct {
 type StmtType string
 
 const (
-	StmtPragma               StmtType = "pragma"
-	StmtInsert               StmtType = "insert"
-	StmtInsertMultiple       StmtType = "insert_multiple"
-	StmtInsertBulk           StmtType = "insert_bulk"
-	StmtSelectBasic          StmtType = "select_basic"
-	StmtSelectWhere          StmtType = "select_where"
-	StmtSelectWhereComplex   StmtType = "select_where_complex"
-	StmtSelectWhereIn        StmtType = "select_where_in"
-	StmtSelectSubquery       StmtType = "select_subquery"
-	StmtSelectCase           StmtType = "select_case"
+	StmtPragma                 StmtType = "pragma"
+	StmtInsert                 StmtType = "insert"
+	StmtInsertMultiple         StmtType = "insert_multiple"
+	StmtInsertBulk             StmtType = "insert_bulk"
+	StmtSelectBasic            StmtType = "select_basic"
+	StmtSelectWhere            StmtType = "select_where"
+	StmtSelectWhereComplex     StmtType = "select_where_complex"
+	StmtSelectWhereIn          StmtType = "select_where_in"
+	StmtSelectSubquery         StmtType = "select_subquery"
+	StmtSelectCase             StmtType = "select_case"
 	StmtSelectAggregateComplex StmtType = "select_aggregate_complex"
-	StmtSelectLike           StmtType = "select_like"
-	StmtSelectLimit          StmtType = "select_limit"
-	StmtSelectOrder          StmtType = "select_order"
-	StmtSelectGroup          StmtType = "select_group"
-	StmtSelectHaving         StmtType = "select_having"
-	StmtSelectJoin           StmtType = "select_join"
-	StmtSelectCross          StmtType = "select_crossjoin"
-	StmtSelectInner          StmtType = "select_innerjoin"
-	StmtSelectOuter          StmtType = "select_outerjoin"
-	StmtSelectJoinUsing      StmtType = "select_joinusing"
-	StmtSelectNatural        StmtType = "select_naturaljoin"
-	StmtCreateTable          StmtType = "create_table"
-	StmtDropTable            StmtType = "drop_table"
-	StmtAlterTable           StmtType = "alter_table"
+	StmtSelectLike             StmtType = "select_like"
+	StmtSelectLimit            StmtType = "select_limit"
+	StmtSelectOrder            StmtType = "select_order"
+	StmtSelectGroup            StmtType = "select_group"
+	StmtSelectHaving           StmtType = "select_having"
+	StmtSelectJoin             StmtType = "select_join"
+	StmtSelectCross            StmtType = "select_crossjoin"
+	StmtSelectInner            StmtType = "select_innerjoin"
+	StmtSelectOuter            StmtType = "select_outerjoin"
+	StmtSelectJoinUsing        StmtType = "select_joinusing"
+	StmtSelectNatural          StmtType = "select_naturaljoin"
+	StmtCreateTable            StmtType = "create_table"
+	StmtDropTable              StmtType = "drop_table"
+	StmtAlterTable             StmtType = "alter_table"
 )
 
 // AllStmtTypes defines a deterministic ordering used when selecting by weights.
@@ -79,15 +79,15 @@ var AllStmtTypes = []StmtType{
 func DefaultStmtWeights() map[StmtType]uint64 {
 	w := map[StmtType]uint64{}
 	// scaled by 10 to allow token-like numbers; proportions reflect previous Intn(100) cutoffs
-	w[StmtInsert] = 300 // reduced from 400 to make room for new insert types
+	w[StmtInsert] = 300        // reduced from 400 to make room for new insert types
 	w[StmtInsertMultiple] = 80 // new: multiple row inserts
-	w[StmtInsertBulk] = 20 // new: bulk inserts for heavy testing
+	w[StmtInsertBulk] = 20     // new: bulk inserts for heavy testing
 	w[StmtSelectBasic] = 120
 	w[StmtSelectWhere] = 100
-	w[StmtSelectWhereComplex] = 60 // new: complex WHERE with AND/OR
-	w[StmtSelectWhereIn] = 50 // new: WHERE IN clause
-	w[StmtSelectSubquery] = 40 // new: subqueries
-	w[StmtSelectCase] = 40 // new: CASE expressions
+	w[StmtSelectWhereComplex] = 60     // new: complex WHERE with AND/OR
+	w[StmtSelectWhereIn] = 50          // new: WHERE IN clause
+	w[StmtSelectSubquery] = 40         // new: subqueries
+	w[StmtSelectCase] = 40             // new: CASE expressions
 	w[StmtSelectAggregateComplex] = 30 // new: complex aggregates
 	w[StmtSelectLike] = 80
 	w[StmtSelectLimit] = 60
