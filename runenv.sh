@@ -22,7 +22,25 @@ mkdir -p .cache/go
 #  SQLSMITH_GO_CACHE_REGISTRY (optional, used for --cache-from/--cache-to when pushing)
 #  DOCKER_IMAGE (override default image name)
 
-DOCKER_IMAGE="${DOCKER_IMAGE:-cyw0ng95/sqlsmith-go}"
+DOCKER_IMAGE="${DOCKER_IMAGE:-cyw0ng95/sqlsmith-go/dev}"
+
+# Use Containerfile content digest as a lightweight image version so changes to Containerfile
+# produce a new image tag and invalidate caches. We append a short sha to the image name.
+if [ -f Containerfile ]; then
+    if command -v sha256sum >/dev/null 2>&1; then
+        CF_DIGEST=$(sha256sum Containerfile | awk '{print $1}')
+    else
+        # fallback to shasum (macOS) if available
+        CF_DIGEST=$(shasum -a 256 Containerfile | awk '{print $1}')
+    fi
+    CF_SHORT=${CF_DIGEST:0:12}
+    # Append a stable suffix so existing DOCKER_IMAGE string is preserved and unique per Containerfile.
+    # Only append if the image doesn't already include the same suffix.
+    if [[ "$DOCKER_IMAGE" != *"-cf-$CF_SHORT"* ]]; then
+        DOCKER_IMAGE="${DOCKER_IMAGE}-cf-${CF_SHORT}"
+    fi
+    echo "Using image tag derived from Containerfile: $DOCKER_IMAGE"
+fi
 
 # Allow callers (CI) to skip building the image if it's already prepared in the environment.
 # Set SQLSMITH_GO_SKIP_BUILD=1 to skip the build step and use the existing image.
