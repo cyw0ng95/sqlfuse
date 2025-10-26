@@ -19,31 +19,45 @@ type Generator struct {
 type StmtType string
 
 const (
-	StmtPragma          StmtType = "pragma"
-	StmtInsert          StmtType = "insert"
-	StmtSelectBasic     StmtType = "select_basic"
-	StmtSelectWhere     StmtType = "select_where"
-	StmtSelectLike      StmtType = "select_like"
-	StmtSelectLimit     StmtType = "select_limit"
-	StmtSelectOrder     StmtType = "select_order"
-	StmtSelectGroup     StmtType = "select_group"
-	StmtSelectHaving    StmtType = "select_having"
-	StmtSelectJoin      StmtType = "select_join"
-	StmtSelectCross     StmtType = "select_crossjoin"
-	StmtSelectInner     StmtType = "select_innerjoin"
-	StmtSelectOuter     StmtType = "select_outerjoin"
-	StmtSelectJoinUsing StmtType = "select_joinusing"
-	StmtSelectNatural   StmtType = "select_naturaljoin"
-	StmtCreateTable     StmtType = "create_table"
-	StmtDropTable       StmtType = "drop_table"
-	StmtAlterTable      StmtType = "alter_table"
+	StmtPragma               StmtType = "pragma"
+	StmtInsert               StmtType = "insert"
+	StmtInsertMultiple       StmtType = "insert_multiple"
+	StmtInsertBulk           StmtType = "insert_bulk"
+	StmtSelectBasic          StmtType = "select_basic"
+	StmtSelectWhere          StmtType = "select_where"
+	StmtSelectWhereComplex   StmtType = "select_where_complex"
+	StmtSelectWhereIn        StmtType = "select_where_in"
+	StmtSelectSubquery       StmtType = "select_subquery"
+	StmtSelectCase           StmtType = "select_case"
+	StmtSelectAggregateComplex StmtType = "select_aggregate_complex"
+	StmtSelectLike           StmtType = "select_like"
+	StmtSelectLimit          StmtType = "select_limit"
+	StmtSelectOrder          StmtType = "select_order"
+	StmtSelectGroup          StmtType = "select_group"
+	StmtSelectHaving         StmtType = "select_having"
+	StmtSelectJoin           StmtType = "select_join"
+	StmtSelectCross          StmtType = "select_crossjoin"
+	StmtSelectInner          StmtType = "select_innerjoin"
+	StmtSelectOuter          StmtType = "select_outerjoin"
+	StmtSelectJoinUsing      StmtType = "select_joinusing"
+	StmtSelectNatural        StmtType = "select_naturaljoin"
+	StmtCreateTable          StmtType = "create_table"
+	StmtDropTable            StmtType = "drop_table"
+	StmtAlterTable           StmtType = "alter_table"
 )
 
 // AllStmtTypes defines a deterministic ordering used when selecting by weights.
 var AllStmtTypes = []StmtType{
 	StmtInsert,
+	StmtInsertMultiple,
+	StmtInsertBulk,
 	StmtSelectBasic,
 	StmtSelectWhere,
+	StmtSelectWhereComplex,
+	StmtSelectWhereIn,
+	StmtSelectSubquery,
+	StmtSelectCase,
+	StmtSelectAggregateComplex,
 	StmtSelectLike,
 	StmtSelectLimit,
 	StmtSelectOrder,
@@ -65,9 +79,16 @@ var AllStmtTypes = []StmtType{
 func DefaultStmtWeights() map[StmtType]uint64 {
 	w := map[StmtType]uint64{}
 	// scaled by 10 to allow token-like numbers; proportions reflect previous Intn(100) cutoffs
-	w[StmtInsert] = 400
+	w[StmtInsert] = 300 // reduced from 400 to make room for new insert types
+	w[StmtInsertMultiple] = 80 // new: multiple row inserts
+	w[StmtInsertBulk] = 20 // new: bulk inserts for heavy testing
 	w[StmtSelectBasic] = 120
 	w[StmtSelectWhere] = 100
+	w[StmtSelectWhereComplex] = 60 // new: complex WHERE with AND/OR
+	w[StmtSelectWhereIn] = 50 // new: WHERE IN clause
+	w[StmtSelectSubquery] = 40 // new: subqueries
+	w[StmtSelectCase] = 40 // new: CASE expressions
+	w[StmtSelectAggregateComplex] = 30 // new: complex aggregates
 	w[StmtSelectLike] = 80
 	w[StmtSelectLimit] = 60
 	w[StmtSelectOrder] = 40
@@ -207,6 +228,20 @@ func (g *Generator) GenerateWithDB(db *sql.DB) string {
 			return "INSERT INTO sqlite_master DEFAULT VALUES;" // fallback
 		}
 		return stmt.SQL()
+	case StmtInsertMultiple:
+		stmt, err := stmts.GenInsertMultiple(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating INSERT MULTIPLE:", err)
+			return "INSERT INTO sqlite_master DEFAULT VALUES;" // fallback
+		}
+		return stmt.SQL()
+	case StmtInsertBulk:
+		stmt, err := stmts.GenInsertBulk(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating INSERT BULK:", err)
+			return "INSERT INTO sqlite_master DEFAULT VALUES;" // fallback
+		}
+		return stmt.SQL()
 	case StmtSelectBasic:
 		stmt, err := stmts.GenSelect(db, g.lcg)
 		if err != nil {
@@ -221,6 +256,41 @@ func (g *Generator) GenerateWithDB(db *sql.DB) string {
 			return "SELECT 1"
 		}
 		return stmtW.SQL()
+	case StmtSelectWhereComplex:
+		stmt, err := stmts.GenSelectWhereComplex(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT WHERE COMPLEX:", err)
+			return "SELECT 1"
+		}
+		return stmt.SQL()
+	case StmtSelectWhereIn:
+		stmt, err := stmts.GenSelectWhereIn(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT WHERE IN:", err)
+			return "SELECT 1"
+		}
+		return stmt.SQL()
+	case StmtSelectSubquery:
+		stmt, err := stmts.GenSelectSubquery(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT SUBQUERY:", err)
+			return "SELECT 1"
+		}
+		return stmt.SQL()
+	case StmtSelectCase:
+		stmt, err := stmts.GenSelectCase(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT CASE:", err)
+			return "SELECT 1"
+		}
+		return stmt.SQL()
+	case StmtSelectAggregateComplex:
+		stmt, err := stmts.GenSelectAggregateComplex(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT AGGREGATE COMPLEX:", err)
+			return "SELECT 1"
+		}
+		return stmt.SQL()
 	case StmtSelectLike:
 		stmtL, err := stmts.GenSelectWhereLike(db, g.lcg)
 		if err != nil {
