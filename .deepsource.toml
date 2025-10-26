@@ -1,0 +1,8 @@
+version = 1
+
+[[analyzers]]
+name = "go"
+
+  [analyzers.meta]
+  import_root = "github.com/cyw0ng95/sqlsmith-go"
+  dependencies_vendored = true
