@@ -33,10 +33,14 @@ build_project() {
     go mod vendor
     echo "-- [INFO] Building turso_embedded_executor..."
     go build \
-        -asan -o output/turso_embedded_executor cmd/executors/turso_embedded.go
+        -asan -o output/turso_embedded_executor cmd/executors/turso_embedded/main.go
+    echo "-- [INFO] Building chai_embedded_executor..."
+    go build \
+        -asan -o output/chai_embedded_executor cmd/executors/chai_embedded/main.go
+    echo "-- [INFO] Building server..."
     go build \
         -asan -o output/server ./cmd/server
-    echo "-- [INFO] Build complete. Output: output/turso_embedded_executor, output/server"
+    echo "-- [INFO] Build complete. Output: output/turso_embedded_executor, output/chai_embedded_executor, output/server"
     
     # Build the frontend view
     build_view

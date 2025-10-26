@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"sqlsmith-go/internal/common"
 	"sqlsmith-go/internal/executors"
@@ -69,7 +70,7 @@ func main() {
 			if flags.Seed != 0 {
 				baseSeed = uint64(flags.Seed)
 			} else {
-				baseSeed = 0
+				baseSeed = uint64(time.Now().UnixNano())
 			}
 
 			var wg sync.WaitGroup
