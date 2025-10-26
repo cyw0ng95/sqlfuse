@@ -9,10 +9,10 @@ import (
 
 // Generator uses an LCG to drive generation directions and produce SQL snippets.
 type Generator struct {
-	lcg              *common.LCG
-	first            bool // first generation is forced into pragma
-	weights          map[StmtType]uint64
-	totalWeight      uint64
+	lcg               *common.LCG
+	first             bool // first generation is forced into pragma
+	weights           map[StmtType]uint64
+	totalWeight       uint64
 	maxRecursionDepth int // Maximum depth for recursive generation (default: 2)
 }
 
@@ -112,9 +112,9 @@ func DefaultStmtWeights() map[StmtType]uint64 {
 	w[StmtSelectNestedCase] = 25  // new: nested CASE expressions
 	w[StmtSelectComplexJoin] = 25 // new: joins with complex conditions/subqueries
 	// leave DDL low by default
-	w[StmtCreateTable] = 0
-	w[StmtDropTable] = 0
-	w[StmtAlterTable] = 0
+	w[StmtCreateTable] = 40
+	w[StmtDropTable] = 40
+	w[StmtAlterTable] = 40
 	return w
 }
 
