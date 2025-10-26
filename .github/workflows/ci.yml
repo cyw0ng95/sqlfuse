@@ -38,7 +38,6 @@ jobs:
           # compute Containerfile digest and derive tagged image name
           if command -v sha256sum >/dev/null 2>&1; then
             CF_DIGEST=$(sha256sum Containerfile | awk '{print $1}')
-          else
             CF_DIGEST=$(shasum -a 256 Containerfile | awk '{print $1}')
           fi
           CF_SHORT=${CF_DIGEST:0:12}
