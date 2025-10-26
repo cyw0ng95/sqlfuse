@@ -83,7 +83,8 @@ while true; do
 done
 
 if [[ $run_test -eq 1 ]]; then
-    run_tests && build_project
+    run_tests
+    build_project
 else
     build_project
 fi
