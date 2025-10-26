@@ -73,7 +73,7 @@ func GenInsertMultiple(db *sql.DB, lcgOrRand interface{}) (Stmt, error) {
 	n := 2
 	switch r := lcgOrRand.(type) {
 	case interface{ Intn(int) int }:
-		n = 2 + r.Intn(19) // 2..20
+		n = 2 + r.Intn(19) // r.Intn(19) generates 0..18, so 2 + r.Intn(19) gives 2..20 inclusive
 	}
 	return genInsertInternal(db, lcgOrRand, n)
 }
