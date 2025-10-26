@@ -496,16 +496,10 @@ func genUnhexFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 	if len(tbls) > 0 && lcg.Intn(3) == 0 {
 		col := findTextColumn(tbls, lcg)
 		if col != "" {
-			if lcg.Intn(2) == 0 {
-				return fmt.Sprintf("unhex(%s)", col)
-			}
-			return fmt.Sprintf("unhex(%s, ' ')", col)
+			return fmt.Sprintf("unhex(%s)", col)
 		}
 	}
-	if lcg.Intn(2) == 0 {
-		return "unhex('414243')"
-	}
-	return "unhex('414243', ' ')"
+	return "unhex('414243')"
 }
 
 func genUnicodeFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
