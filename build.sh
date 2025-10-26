@@ -38,14 +38,14 @@ build_project() {
     go mod vendor
     
     # Add -v flag when running in GitHub Actions for verbose output
-    local build_flags="-asan"
+    local build_flags=(-asan)
     if [ "${GITHUB_ACTIONS:-false}" = "true" ]; then
-        build_flags="-v -asan"
+        build_flags=(-v -asan)
     fi
     
     echo "-- [INFO] Building turso_embedded_executor..."
-    go build $build_flags -o output/turso_embedded_executor cmd/executors/turso_embedded.go
-    go build $build_flags -o output/server ./cmd/server
+    go build "${build_flags[@]}" -o output/turso_embedded_executor cmd/executors/turso_embedded.go
+    go build "${build_flags[@]}" -o output/server ./cmd/server
     echo "-- [INFO] Build complete. Output: output/turso_embedded_executor, output/server"
     
     # Build the frontend view
