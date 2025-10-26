@@ -3,6 +3,7 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"sqlsmith-go/internal/common"
 	"sqlsmith-go/internal/generators/turso/helper"
 	"sqlsmith-go/internal/generators/turso/types"
@@ -121,6 +122,13 @@ func genAbsFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 }
 
 func genCharFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	// Try to use integer columns for char codes if available
+	if len(tbls) > 0 && lcg.Intn(3) == 0 {
+		col := findNumericColumn(tbls, lcg)
+		if col != "" {
+			return fmt.Sprintf("char(%s)", col)
+		}
+	}
 	numChars := 1 + lcg.Intn(5)
 	chars := make([]string, numChars)
 	for i := 0; i < numChars; i++ {
@@ -165,6 +173,13 @@ func genConcatWsFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 	numArgs := 2 + lcg.Intn(3)
 	args := make([]string, numArgs)
 	for i := 0; i < numArgs; i++ {
+		if len(tbls) > 0 && lcg.Intn(2) == 0 {
+			col := findTextColumn(tbls, lcg)
+			if col != "" {
+				args[i] = col
+				continue
+			}
+		}
 		args[i] = fmt.Sprintf("'val%d'", i)
 	}
 	return fmt.Sprintf("concat_ws(%s, %s)", sep, joinStrings(args, ", "))
@@ -197,6 +212,15 @@ func genIfnullFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 func genIifFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 	conditions := []string{"1 > 0", "1 = 1", "0 < 1"}
 	cond := conditions[lcg.Intn(len(conditions))]
+	
+	// Try to use columns for the result values when available
+	if len(tbls) > 0 && lcg.Intn(2) == 0 {
+		col1 := findAnyColumn(tbls, lcg)
+		col2 := findAnyColumn(tbls, lcg)
+		if col1 != "" && col2 != "" {
+			return fmt.Sprintf("iif(%s, %s, %s)", cond, col1, col2)
+		}
+	}
 	return fmt.Sprintf("iif(%s, 'true', 'false')", cond)
 }
 
@@ -256,6 +280,15 @@ func genUpperFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 }
 
 func genLtrimFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	if len(tbls) > 0 && lcg.Intn(3) == 0 {
+		col := findTextColumn(tbls, lcg)
+		if col != "" {
+			if lcg.Intn(2) == 0 {
+				return fmt.Sprintf("ltrim(%s)", col)
+			}
+			return fmt.Sprintf("ltrim(%s, ' ')", col)
+		}
+	}
 	if lcg.Intn(2) == 0 {
 		return "ltrim('  spaces  ')"
 	}
@@ -263,6 +296,15 @@ func genLtrimFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 }
 
 func genRtrimFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	if len(tbls) > 0 && lcg.Intn(3) == 0 {
+		col := findTextColumn(tbls, lcg)
+		if col != "" {
+			if lcg.Intn(2) == 0 {
+				return fmt.Sprintf("rtrim(%s)", col)
+			}
+			return fmt.Sprintf("rtrim(%s, ' ')", col)
+		}
+	}
 	if lcg.Intn(2) == 0 {
 		return "rtrim('  spaces  ')"
 	}
@@ -270,6 +312,15 @@ func genRtrimFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 }
 
 func genTrimFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	if len(tbls) > 0 && lcg.Intn(3) == 0 {
+		col := findTextColumn(tbls, lcg)
+		if col != "" {
+			if lcg.Intn(2) == 0 {
+				return fmt.Sprintf("trim(%s)", col)
+			}
+			return fmt.Sprintf("trim(%s, ' ')", col)
+		}
+	}
 	if lcg.Intn(2) == 0 {
 		return "trim('  spaces  ')"
 	}
@@ -281,6 +332,24 @@ func genMaxMinFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 	if lcg.Intn(2) == 0 {
 		fn = "min"
 	}
+	
+	// Try to use numeric columns when available
+	if len(tbls) > 0 && lcg.Intn(2) == 0 {
+		numArgs := 2 + lcg.Intn(3)
+		args := make([]string, numArgs)
+		col := findNumericColumn(tbls, lcg)
+		if col != "" {
+			for i := 0; i < numArgs; i++ {
+				if lcg.Intn(2) == 0 {
+					args[i] = col
+				} else {
+					args[i] = fmt.Sprintf("%d", lcg.Intn(100))
+				}
+			}
+			return fmt.Sprintf("%s(%s)", fn, joinStrings(args, ", "))
+		}
+	}
+	
 	numArgs := 2 + lcg.Intn(3)
 	args := make([]string, numArgs)
 	for i := 0; i < numArgs; i++ {
@@ -290,12 +359,30 @@ func genMaxMinFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 }
 
 func genNullifFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	// Try to use actual columns when available
+	if len(tbls) > 0 && lcg.Intn(2) == 0 {
+		col := findAnyColumn(tbls, lcg)
+		if col != "" {
+			val2 := fmt.Sprintf("%d", lcg.Intn(100))
+			return fmt.Sprintf("nullif(%s, %s)", col, val2)
+		}
+	}
 	val1 := lcg.Intn(100)
 	val2 := lcg.Intn(100)
 	return fmt.Sprintf("nullif(%d, %d)", val1, val2)
 }
 
 func genOctetLengthFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	if len(tbls) > 0 && lcg.Intn(2) == 0 {
+		// Try text columns first, then blob columns
+		col := findTextColumn(tbls, lcg)
+		if col == "" {
+			col = findBlobColumn(tbls, lcg)
+		}
+		if col != "" {
+			return fmt.Sprintf("octet_length(%s)", col)
+		}
+	}
 	return "octet_length('ABC')"
 }
 
@@ -406,6 +493,15 @@ func genTypeofFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 }
 
 func genUnhexFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	if len(tbls) > 0 && lcg.Intn(3) == 0 {
+		col := findTextColumn(tbls, lcg)
+		if col != "" {
+			if lcg.Intn(2) == 0 {
+				return fmt.Sprintf("unhex(%s)", col)
+			}
+			return fmt.Sprintf("unhex(%s, ' ')", col)
+		}
+	}
 	if lcg.Intn(2) == 0 {
 		return "unhex('414243')"
 	}
@@ -413,6 +509,12 @@ func genUnhexFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 }
 
 func genUnicodeFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	if len(tbls) > 0 && lcg.Intn(3) == 0 {
+		col := findTextColumn(tbls, lcg)
+		if col != "" {
+			return fmt.Sprintf("unicode(%s)", col)
+		}
+	}
 	chars := []string{"'A'", "'B'", "'Z'", "'0'", "'9'"}
 	return fmt.Sprintf("unicode(%s)", chars[lcg.Intn(len(chars))])
 }
@@ -1053,4 +1155,40 @@ func findTextColumn(tbls []helper.TableInfo, lcg *common.LCG) string {
 		return ""
 	}
 	return textCols[lcg.Intn(len(textCols))]
+}
+
+func findBlobColumn(tbls []helper.TableInfo, lcg *common.LCG) string {
+	var blobCols []string
+	for _, tbl := range tbls {
+		for _, col := range tbl.Cols {
+			if isBlobType(col.Type) {
+				blobCols = append(blobCols, quoteIdent(col.Name))
+			}
+		}
+	}
+	if len(blobCols) == 0 {
+		return ""
+	}
+	return blobCols[lcg.Intn(len(blobCols))]
+}
+
+func findAnyColumn(tbls []helper.TableInfo, lcg *common.LCG) string {
+	var allCols []string
+	for _, tbl := range tbls {
+		for _, col := range tbl.Cols {
+			allCols = append(allCols, quoteIdent(col.Name))
+		}
+	}
+	if len(allCols) == 0 {
+		return ""
+	}
+	return allCols[lcg.Intn(len(allCols))]
+}
+
+func isBlobType(t string) bool {
+	if t == "" {
+		return false
+	}
+	up := strings.ToUpper(t)
+	return strings.Contains(up, "BLOB")
 }
