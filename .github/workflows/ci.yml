@@ -26,14 +26,12 @@ jobs:
           driver-opts: |
             network=host
 
-      - name: Prepare container image (pull or build with buildx)
+      - name: Prepare container image (pull or build single-arch with buildx)
         env:
-          IMAGE: ${{ secrets.IMAGE_NAME || 'sqlsmith-go/dev' }}
-          PLATFORMS: ${{ env.PLATFORMS || 'linux/amd64,linux/arm64' }}
+          IMAGE: ${{ secrets.IMAGE_NAME || 'cyw0ng95/sqlsmith-go' }}
           CACHE_REGISTRY: ${{ secrets.CACHE_REGISTRY || '' }}
           REGISTRY_USERNAME: ${{ secrets.DOCKERHUB_USERNAME || '' }}
           REGISTRY_PASSWORD: ${{ secrets.DOCKERHUB_TOKEN || '' }}
-          REGISTRY_HOST: ${{ secrets.REGISTRY_HOST || 'docker.io' }}
         run: |
           set -euo pipefail
           echo "Preparing container image: $IMAGE"
@@ -44,28 +42,27 @@ jobs:
           fi
 
           export DOCKER_BUILDKIT=1
-          # If registry credentials are available, buildx and push (and optionally use cache registry)
+          # Determine the runner's platform and use single-arch builds only
+          arch=$(uname -m || true)
+          case "$arch" in
+            x86_64|amd64) LOCAL_PLATFORM="linux/amd64" ;;
+            aarch64|arm64) LOCAL_PLATFORM="linux/arm64" ;;
+            *) LOCAL_PLATFORM="linux/amd64" ;;
+          esac
+
+          # If registry credentials are available, buildx and push single-arch image (optionally use cache)
           if [ -n "$REGISTRY_USERNAME" ] && [ -n "$REGISTRY_PASSWORD" ]; then
-            echo "Registry credentials found; building multi-platform image and pushing to registry"
+            echo "Registry credentials found; building single-arch image ($LOCAL_PLATFORM) and pushing to registry"
             if [ -n "$CACHE_REGISTRY" ]; then
-              docker buildx build --platform "$PLATFORMS" --tag "$IMAGE" \
+              docker buildx build --platform "$LOCAL_PLATFORM" --tag "$IMAGE" \
                 --cache-from=type=registry,ref="$CACHE_REGISTRY" \
                 --cache-to=type=registry,mode=max,ref="$CACHE_REGISTRY" \
                 --push -f Containerfile .
             else
-              docker buildx build --platform "$PLATFORMS" --tag "$IMAGE" --push -f Containerfile .
+              docker buildx build --platform "$LOCAL_PLATFORM" --tag "$IMAGE" --push -f Containerfile .
             fi
           else
-            echo "No registry credentials; building multi-platform image and loading locally"
-            # The docker exporter doesn't support exporting manifest lists with --load.
-            # Build only for the runner's platform when using --load.
-            arch=$(uname -m || true)
-            case "$arch" in
-              x86_64|amd64) LOCAL_PLATFORM="linux/amd64" ;;
-              aarch64|arm64) LOCAL_PLATFORM="linux/arm64" ;;
-              *) LOCAL_PLATFORM="${PLATFORMS%%,*}" ;;
-            esac
-            echo "Building for local platform: $LOCAL_PLATFORM (requested: $PLATFORMS)"
+            echo "No registry credentials; building single-arch image ($LOCAL_PLATFORM) and loading locally"
             docker buildx build --platform "$LOCAL_PLATFORM" --tag "$IMAGE" --load -f Containerfile .
           fi
 
