@@ -1272,15 +1272,15 @@ t.Error("GenSelectSubquery returned empty SQL")
 if stmt.Type() != "select" {
 t.Errorf("Expected type 'select', got '%s'", stmt.Type())
 }
-		
-		valid, errors := ValidateSQL(sql)
-		if !valid {
-			t.Errorf("Invalid SELECT SUBQUERY SQL on iteration %d: %s\nErrors: %v", i, sql, errors)
+			
+			valid, errors := ValidateSQL(sql)
+			if !valid {
+				t.Errorf("Invalid SELECT SUBQUERY SQL on iteration %d: %s\nErrors: %v", i, sql, errors)
+			}
+			
+			// Note: Execution skipped - LibSQL/Turso doesn't fully support EXISTS in WHERE clause
+			// The syntax is still valid SQL and useful for testing other databases
 		}
-		
-		// Note: Execution skipped - LibSQL/Turso doesn't fully support EXISTS in WHERE clause
-		// The syntax is still valid SQL and useful for testing other databases
-	}
 }
 
 // TestGenSelectCase tests SELECT with CASE expression
