@@ -422,6 +422,9 @@ func BenchmarkSQLValidation(b *testing.B) {
 func setupTestDB(t *testing.T) *sql.DB {
 	t.Helper()
 	
+	// Use cache=shared to allow multiple connections to the same in-memory database
+	// This is necessary for testing as the database would otherwise be destroyed
+	// when the connection is closed
 	db, err := sql.Open("turso", "file::memory:?cache=shared")
 	if err != nil {
 		t.Fatalf("Failed to open in-memory database: %v", err)
@@ -489,6 +492,7 @@ func TestGenSelect(t *testing.T) {
 	defer db.Close()
 	
 	lcg := common.NewLCG(100)
+	successCount := 0
 	
 	for i := 0; i < testIterations; i++ {
 		stmt, err := GenSelect(db, lcg)
@@ -512,11 +516,21 @@ func TestGenSelect(t *testing.T) {
 		
 		// Try to execute the SQL (may fail due to generated edge cases like -Inf)
 		rows, err := db.Query(sql)
-		if err == nil && rows != nil {
-			rows.Close()
+		if err == nil {
+			successCount++
+			if rows != nil {
+				rows.Close()
+			}
 		}
 		// Note: Some generated SQL may have execution issues (e.g., -Inf values)
 		// but still be syntactically valid, which is the main focus of this test
+	}
+	
+	// Log execution success rate
+	if successCount == 0 {
+		t.Logf("Warning: No successful SELECT executions in %d iterations", testIterations)
+	} else {
+		t.Logf("Successfully executed %d/%d SELECT statements", successCount, testIterations)
 	}
 }
 
@@ -1007,6 +1021,7 @@ func TestGenSelectCrossJoin(t *testing.T) {
 	defer db.Close()
 	
 	lcg := common.NewLCG(1500)
+	successCount := 0
 	
 	for i := 0; i < testIterations; i++ {
 		stmt, err := GenSelectCrossJoin(db, lcg)
@@ -1030,11 +1045,21 @@ func TestGenSelectCrossJoin(t *testing.T) {
 		
 		// Try to execute the SQL (may fail if CROSS JOIN is not supported)
 		rows, err := db.Query(sql)
-		if err == nil && rows != nil {
-			rows.Close()
+		if err == nil {
+			successCount++
+			if rows != nil {
+				rows.Close()
+			}
 		}
 		// Note: CROSS JOIN may not be supported in all SQLite/LibSQL versions
 		// but the syntax is still valid according to SQL standards
+	}
+	
+	// Log execution success rate
+	if successCount == 0 {
+		t.Logf("Warning: CROSS JOIN appears unsupported (0/%d successful executions)", testIterations)
+	} else {
+		t.Logf("Successfully executed %d/%d CROSS JOIN statements", successCount, testIterations)
 	}
 }
 
