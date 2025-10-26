@@ -10,7 +10,12 @@ fi
 run_tests() {
     echo "-- [INFO] Running tests with coverage..."
     mkdir -p .cache
-    go test -coverprofile=.cache/coverage.out ./...
+    # Add -v flag when running in GitHub Actions for verbose output
+    if [ "${GITHUB_ACTIONS:-false}" = "true" ]; then
+        go test -v -coverprofile=.cache/coverage.out ./...
+    else
+        go test -coverprofile=.cache/coverage.out ./...
+    fi
     go tool cover -html=.cache/coverage.out -o .cache/coverage.html
     echo "-- [INFO] Coverage report generated: .cache/coverage.html"
 }
@@ -31,11 +36,16 @@ build_project() {
     mkdir -p output
     echo "-- [INFO] Running go mod vendor..."
     go mod vendor
+    
+    # Add -v flag when running in GitHub Actions for verbose output
+    local build_flags=(-asan)
+    if [ "${GITHUB_ACTIONS:-false}" = "true" ]; then
+        build_flags=(-v -asan)
+    fi
+    
     echo "-- [INFO] Building turso_embedded_executor..."
-    go build \
-        -asan -o output/turso_embedded_executor cmd/executors/turso_embedded.go
-    go build \
-        -asan -o output/server ./cmd/server
+    go build "${build_flags[@]}" -o output/turso_embedded_executor cmd/executors/turso_embedded.go
+    go build "${build_flags[@]}" -o output/server ./cmd/server
     echo "-- [INFO] Build complete. Output: output/turso_embedded_executor, output/server"
     
     # Build the frontend view
