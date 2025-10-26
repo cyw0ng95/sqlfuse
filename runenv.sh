@@ -14,24 +14,23 @@ fi
 
 mkdir -p .cache/go
 
-podman build -f Containerfile -t sqlsmith-go/dev .
+docker build -f Containerfile -t sqlsmith-go/dev .
 
-# If a command is provided to this script, forward it to the container and run it non-interactively.
-# Otherwise, open an interactive bash shell inside the container.
+# Common Docker arguments used for both interactive and non-interactive runs.
+# We assemble them into a bash array to avoid duplicating the long list of options.
+DOCKER_IMAGE="sqlsmith-go/dev"
+DOCKER_COMMON_ARGS=(--rm 
+    -p 8080:8080
+    -p 3000:3000
+    -v "$(pwd)":/opt:Z
+    -v "$(pwd)/.cache/go":/root/go:Z
+)
+
+# If a command is provided to this script, forward it to the container and run it
+# non-interactively. Otherwise, open an interactive bash shell inside the container.
 if [ "$#" -gt 0 ]; then
-    podman run --rm \
-      -p 8080:8080 \
-      -p 3000:3000 \
-      -v "$(pwd)":/opt:Z \
-      -v "$(pwd)/.cache/go":/root/go:Z \
-      sqlsmith-go/dev \
-      "$@"
+    docker run "${DOCKER_COMMON_ARGS[@]}" "$DOCKER_IMAGE" "$@"
 else
-    podman run -it --rm \
-      -p 8080:8080 \
-      -p 3000:3000 \
-      -v "$(pwd)":/opt:Z \
-      -v "$(pwd)/.cache/go":/root/go:Z \
-      sqlsmith-go/dev \
-      bash
+    # Add -it for interactive shells.
+    docker run -it "${DOCKER_COMMON_ARGS[@]}" "$DOCKER_IMAGE" bash
 fi
