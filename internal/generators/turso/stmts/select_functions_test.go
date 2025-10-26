@@ -1,0 +1,667 @@
+package stmts
+
+import (
+	"database/sql"
+	"fmt"
+	"strings"
+	"testing"
+
+	_ "github.com/tursodatabase/turso-go"
+	"sqlsmith-go/internal/common"
+	"sqlsmith-go/internal/generators/turso/helper"
+)
+
+// TestGenSelectWithScalarFunction tests scalar function SQL generation
+func TestGenSelectWithScalarFunction(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	lcg := common.NewLCG(1000)
+
+	for i := 0; i < testIterations; i++ {
+		stmt, err := GenSelectWithScalarFunction(db, lcg)
+		if err != nil {
+			t.Fatalf("GenSelectWithScalarFunction failed on iteration %d: %v", i, err)
+		}
+
+		sql := stmt.SQL()
+		if sql == "" {
+			t.Error("GenSelectWithScalarFunction returned empty SQL")
+		}
+
+		if stmt.Type() != "select" {
+			t.Errorf("Expected type 'select', got '%s'", stmt.Type())
+		}
+
+		valid, errors := ValidateSQL(sql)
+		if !valid {
+			t.Errorf("Invalid scalar function SQL on iteration %d: %s\nErrors: %v", i, sql, errors)
+		}
+
+		// Try to execute the SQL
+		rows, err := db.Query(sql)
+		if err != nil {
+			// Some functions may not be supported, log but don't fail
+			t.Logf("Execution failed (may be expected) on iteration %d: %v\nSQL: %s", i, err, sql)
+		}
+		if rows != nil {
+			rows.Close()
+		}
+	}
+}
+
+// TestGenSelectWithMathFunction tests mathematical function SQL generation
+func TestGenSelectWithMathFunction(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	lcg := common.NewLCG(2000)
+
+	for i := 0; i < testIterations; i++ {
+		stmt, err := GenSelectWithMathFunction(db, lcg)
+		if err != nil {
+			t.Fatalf("GenSelectWithMathFunction failed on iteration %d: %v", i, err)
+		}
+
+		sql := stmt.SQL()
+		if sql == "" {
+			t.Error("GenSelectWithMathFunction returned empty SQL")
+		}
+
+		if stmt.Type() != "select" {
+			t.Errorf("Expected type 'select', got '%s'", stmt.Type())
+		}
+
+		valid, errors := ValidateSQL(sql)
+		if !valid {
+			t.Errorf("Invalid math function SQL on iteration %d: %s\nErrors: %v", i, sql, errors)
+		}
+
+		// Try to execute the SQL
+		rows, err := db.Query(sql)
+		if err != nil {
+			t.Logf("Execution failed (may be expected) on iteration %d: %v\nSQL: %s", i, err, sql)
+		}
+		if rows != nil {
+			rows.Close()
+		}
+	}
+}
+
+// TestGenSelectWithAggregateFunction tests aggregate function SQL generation
+func TestGenSelectWithAggregateFunction(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	lcg := common.NewLCG(3000)
+
+	for i := 0; i < testIterations; i++ {
+		stmt, err := GenSelectWithAggregateFunction(db, lcg)
+		if err != nil {
+			t.Fatalf("GenSelectWithAggregateFunction failed on iteration %d: %v", i, err)
+		}
+
+		sql := stmt.SQL()
+		if sql == "" {
+			t.Error("GenSelectWithAggregateFunction returned empty SQL")
+		}
+
+		if stmt.Type() != "select" {
+			t.Errorf("Expected type 'select', got '%s'", stmt.Type())
+		}
+
+		valid, errors := ValidateSQL(sql)
+		if !valid {
+			t.Errorf("Invalid aggregate function SQL on iteration %d: %s\nErrors: %v", i, sql, errors)
+		}
+
+		// Try to execute the SQL
+		rows, err := db.Query(sql)
+		if err != nil {
+			t.Logf("Execution failed (may be expected) on iteration %d: %v\nSQL: %s", i, err, sql)
+		}
+		if rows != nil {
+			rows.Close()
+		}
+	}
+}
+
+// TestGenSelectWithDateTimeFunction tests date/time function SQL generation
+func TestGenSelectWithDateTimeFunction(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	lcg := common.NewLCG(4000)
+
+	for i := 0; i < testIterations; i++ {
+		stmt, err := GenSelectWithDateTimeFunction(db, lcg)
+		if err != nil {
+			t.Fatalf("GenSelectWithDateTimeFunction failed on iteration %d: %v", i, err)
+		}
+
+		sql := stmt.SQL()
+		if sql == "" {
+			t.Error("GenSelectWithDateTimeFunction returned empty SQL")
+		}
+
+		if stmt.Type() != "select" {
+			t.Errorf("Expected type 'select', got '%s'", stmt.Type())
+		}
+
+		valid, errors := ValidateSQL(sql)
+		if !valid {
+			t.Errorf("Invalid date/time function SQL on iteration %d: %s\nErrors: %v", i, sql, errors)
+		}
+
+		// Try to execute the SQL
+		rows, err := db.Query(sql)
+		if err != nil {
+			t.Logf("Execution failed (may be expected) on iteration %d: %v\nSQL: %s", i, err, sql)
+		}
+		if rows != nil {
+			rows.Close()
+		}
+	}
+}
+
+// TestSpecificScalarFunctions tests specific scalar functions individually
+func TestSpecificScalarFunctions(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	lcg := common.NewLCG(5000)
+
+	tables, _ := helper.GetAllTablesAndCols(db)
+	if tables == nil {
+		tables = []helper.TableInfo{}
+	}
+
+	tests := []struct {
+		name string
+		gen  func(*common.LCG, []helper.TableInfo) string
+	}{
+		{"abs", genAbsFunction},
+		{"char", genCharFunction},
+		{"coalesce", genCoalesceFunction},
+		{"concat", genConcatFunction},
+		{"concat_ws", genConcatWsFunction},
+		{"hex", genHexFunction},
+		{"ifnull", genIfnullFunction},
+		{"iif", genIifFunction},
+		{"instr", genInstrFunction},
+		{"length", genLengthFunction},
+		{"like", genLikeFunction},
+		{"lower", genLowerFunction},
+		{"upper", genUpperFunction},
+		{"ltrim", genLtrimFunction},
+		{"rtrim", genRtrimFunction},
+		{"trim", genTrimFunction},
+		{"max_min", genMaxMinFunction},
+		{"nullif", genNullifFunction},
+		{"octet_length", genOctetLengthFunction},
+		{"quote", genQuoteFunction},
+		{"random", genRandomFunction},
+		{"randomblob", genRandomBlobFunction},
+		{"replace", genReplaceFunction},
+		{"round", genRoundFunction},
+		{"sign", genSignFunction},
+		{"soundex", genSoundexFunction},
+		{"substr", genSubstrFunction},
+		{"substring", genSubstringFunction},
+		{"typeof", genTypeofFunction},
+		{"unhex", genUnhexFunction},
+		{"unicode", genUnicodeFunction},
+		{"zeroblob", genZeroblobFunction},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			funcExpr := tt.gen(lcg, tables)
+			if funcExpr == "" {
+				t.Error("Function generator returned empty string")
+				return
+			}
+
+			sql := fmt.Sprintf("SELECT %s;", funcExpr)
+			valid, errors := ValidateSQL(sql)
+			if !valid {
+				t.Errorf("Invalid SQL for %s: %s\nErrors: %v", tt.name, sql, errors)
+			}
+
+			// Try to execute
+			rows, err := db.Query(sql)
+			if err != nil {
+				t.Logf("Execution of %s failed (may be expected): %v\nSQL: %s", tt.name, err, sql)
+			}
+			if rows != nil {
+				rows.Close()
+			}
+		})
+	}
+}
+
+// TestSpecificMathFunctions tests specific mathematical functions individually
+func TestSpecificMathFunctions(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	lcg := common.NewLCG(6000)
+
+	tables, _ := helper.GetAllTablesAndCols(db)
+	if tables == nil {
+		tables = []helper.TableInfo{}
+	}
+
+	tests := []struct {
+		name string
+		gen  func(*common.LCG, []helper.TableInfo) string
+	}{
+		{"acos", genAcosFunction},
+		{"acosh", genAcoshFunction},
+		{"asin", genAsinFunction},
+		{"asinh", genAsinhFunction},
+		{"atan", genAtanFunction},
+		{"atan2", genAtan2Function},
+		{"atanh", genAtanhFunction},
+		{"ceil", genCeilFunction},
+		{"ceiling", genCeilingFunction},
+		{"cos", genCosFunction},
+		{"cosh", genCoshFunction},
+		{"degrees", genDegreesFunction},
+		{"exp", genExpFunction},
+		{"floor", genFloorFunction},
+		{"ln", genLnFunction},
+		{"log", genLogFunction},
+		{"log10", genLog10Function},
+		{"log2", genLog2Function},
+		{"mod", genModFunction},
+		{"pi", genPiFunction},
+		{"pow", genPowFunction},
+		{"power", genPowerFunction},
+		{"radians", genRadiansFunction},
+		{"sin", genSinFunction},
+		{"sinh", genSinhFunction},
+		{"sqrt", genSqrtFunction},
+		{"tan", genTanFunction},
+		{"tanh", genTanhFunction},
+		{"trunc", genTruncFunction},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			funcExpr := tt.gen(lcg, tables)
+			if funcExpr == "" {
+				t.Error("Function generator returned empty string")
+				return
+			}
+
+			sql := fmt.Sprintf("SELECT %s;", funcExpr)
+			valid, errors := ValidateSQL(sql)
+			if !valid {
+				t.Errorf("Invalid SQL for %s: %s\nErrors: %v", tt.name, sql, errors)
+			}
+
+			// Try to execute
+			rows, err := db.Query(sql)
+			if err != nil {
+				t.Logf("Execution of %s failed (may be expected): %v\nSQL: %s", tt.name, err, sql)
+			}
+			if rows != nil {
+				rows.Close()
+			}
+		})
+	}
+}
+
+// TestSpecificAggregateFunctions tests specific aggregate functions individually
+func TestSpecificAggregateFunctions(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	lcg := common.NewLCG(7000)
+
+	tables, _ := helper.GetAllTablesAndCols(db)
+	if tables == nil {
+		tables = []helper.TableInfo{}
+	}
+
+	tests := []struct {
+		name string
+		gen  func(*common.LCG, []helper.TableInfo) string
+	}{
+		{"avg", genAvgFunction},
+		{"count", genCountFunction},
+		{"count_star", genCountStarFunction},
+		{"group_concat", genGroupConcatFunction},
+		{"string_agg", genStringAggFunction},
+		{"max", genMaxAggFunction},
+		{"min", genMinAggFunction},
+		{"sum", genSumFunction},
+		{"total", genTotalFunction},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			funcExpr := tt.gen(lcg, tables)
+			if funcExpr == "" {
+				t.Error("Function generator returned empty string")
+				return
+			}
+
+			// Aggregate functions need FROM clause with actual table
+			var sql string
+			if len(tables) > 0 && len(tables[0].Cols) > 0 {
+				sql = fmt.Sprintf("SELECT %s FROM %s;", funcExpr, quoteIdent(tables[0].Name))
+			} else {
+				sql = fmt.Sprintf("SELECT %s;", funcExpr)
+			}
+
+			valid, errors := ValidateSQL(sql)
+			if !valid {
+				t.Errorf("Invalid SQL for %s: %s\nErrors: %v", tt.name, sql, errors)
+			}
+
+			// Try to execute
+			rows, err := db.Query(sql)
+			if err != nil {
+				t.Logf("Execution of %s failed (may be expected): %v\nSQL: %s", tt.name, err, sql)
+			}
+			if rows != nil {
+				rows.Close()
+			}
+		})
+	}
+}
+
+// TestSpecificDateTimeFunctions tests specific date/time functions individually
+func TestSpecificDateTimeFunctions(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	lcg := common.NewLCG(8000)
+
+	tests := []struct {
+		name string
+		gen  func(*common.LCG) string
+	}{
+		{"date", genDateFunction},
+		{"time", genTimeFunction},
+		{"datetime", genDatetimeFunction},
+		{"julianday", genJuliandayFunction},
+		{"unixepoch", genUnixepochFunction},
+		{"strftime", genStrftimeFunction},
+		{"timediff", genTimediffFunction},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			funcExpr := tt.gen(lcg)
+			if funcExpr == "" {
+				t.Error("Function generator returned empty string")
+				return
+			}
+
+			sql := fmt.Sprintf("SELECT %s;", funcExpr)
+			valid, errors := ValidateSQL(sql)
+			if !valid {
+				t.Errorf("Invalid SQL for %s: %s\nErrors: %v", tt.name, sql, errors)
+			}
+
+			// Try to execute
+			rows, err := db.Query(sql)
+			if err != nil {
+				t.Logf("Execution of %s failed (may be expected): %v\nSQL: %s", tt.name, err, sql)
+			}
+			if rows != nil {
+				rows.Close()
+			}
+		})
+	}
+}
+
+// TestFunctionDeterminism tests that same seed produces same function SQL
+func TestFunctionDeterminism(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	tests := []struct {
+		name string
+		gen  func(*sql.DB, *common.LCG) (SelectStmt, error)
+	}{
+		{"ScalarFunction", GenSelectWithScalarFunction},
+		{"MathFunction", GenSelectWithMathFunction},
+		{"AggregateFunction", GenSelectWithAggregateFunction},
+		{"DateTimeFunction", GenSelectWithDateTimeFunction},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			lcg1 := common.NewLCG(99999)
+			stmt1, err1 := tt.gen(db, lcg1)
+			if err1 != nil {
+				t.Fatalf("First generation failed: %v", err1)
+			}
+
+			lcg2 := common.NewLCG(99999)
+			stmt2, err2 := tt.gen(db, lcg2)
+			if err2 != nil {
+				t.Fatalf("Second generation failed: %v", err2)
+			}
+
+			if stmt1.SQL() != stmt2.SQL() {
+				t.Errorf("Same seed produced different SQL:\n  First:  %s\n  Second: %s",
+					stmt1.SQL(), stmt2.SQL())
+			}
+		})
+	}
+}
+
+// TestFunctionCoverage ensures we generate different functions across iterations
+func TestFunctionCoverage(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	lcg := common.NewLCG(10000)
+
+	// Track which functions we've seen
+	seenFunctions := make(map[string]bool)
+
+	for i := 0; i < 100; i++ {
+		stmt, err := GenSelectWithScalarFunction(db, lcg)
+		if err != nil {
+			t.Fatalf("Generation failed on iteration %d: %v", i, err)
+		}
+
+		sql := stmt.SQL()
+		// Extract function name (rough heuristic)
+		if idx := strings.Index(sql, "("); idx > 0 {
+			funcName := sql[strings.LastIndex(sql[:idx], " ")+1 : idx]
+			seenFunctions[funcName] = true
+		}
+	}
+
+	// We should see multiple different functions
+	if len(seenFunctions) < 5 {
+		t.Errorf("Expected to see at least 5 different functions, got %d: %v",
+			len(seenFunctions), seenFunctions)
+	}
+}
+
+// TestExecuteScalarFunctionsWithRealData tests execution with actual database
+func TestExecuteScalarFunctionsWithRealData(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	// Test specific functions that should always work
+	testCases := []struct {
+		name string
+		sql  string
+	}{
+		{"abs", "SELECT abs(-42);"},
+		{"length", "SELECT length('Hello');"},
+		{"lower", "SELECT lower('UPPER');"},
+		{"upper", "SELECT upper('lower');"},
+		{"trim", "SELECT trim('  spaces  ');"},
+		{"round", "SELECT round(3.14159, 2);"},
+		{"typeof", "SELECT typeof(123);"},
+		{"quote", "SELECT quote('text');"},
+		{"hex", "SELECT hex('ABC');"},
+		{"substr", "SELECT substr('Hello', 1, 3);"},
+		{"replace", "SELECT replace('Hello', 'l', 'L');"},
+		{"coalesce", "SELECT coalesce(NULL, 'default');"},
+		{"ifnull", "SELECT ifnull(NULL, 'value');"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			rows, err := db.Query(tc.sql)
+			if err != nil {
+				t.Errorf("Failed to execute %s: %v\nSQL: %s", tc.name, err, tc.sql)
+				return
+			}
+			defer rows.Close()
+
+			if !rows.Next() {
+				t.Errorf("No rows returned for %s", tc.name)
+				return
+			}
+
+			var result interface{}
+			if err := rows.Scan(&result); err != nil {
+				t.Errorf("Failed to scan result for %s: %v", tc.name, err)
+			}
+
+			t.Logf("%s result: %v", tc.name, result)
+		})
+	}
+}
+
+// TestExecuteMathFunctionsWithRealData tests math function execution
+func TestExecuteMathFunctionsWithRealData(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	testCases := []struct {
+		name string
+		sql  string
+	}{
+		{"abs", "SELECT abs(-42);"},
+		{"ceil", "SELECT ceil(3.14);"},
+		{"floor", "SELECT floor(3.14);"},
+		{"round", "SELECT round(3.14159);"},
+		{"sqrt", "SELECT sqrt(16);"},
+		{"power", "SELECT power(2, 3);"},
+		{"mod", "SELECT mod(10, 3);"},
+		{"pi", "SELECT pi();"},
+		{"sin", "SELECT sin(0);"},
+		{"cos", "SELECT cos(0);"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			rows, err := db.Query(tc.sql)
+			if err != nil {
+				t.Logf("Math function %s not supported (expected): %v", tc.name, err)
+				return
+			}
+			defer rows.Close()
+
+			if !rows.Next() {
+				t.Errorf("No rows returned for %s", tc.name)
+				return
+			}
+
+			var result interface{}
+			if err := rows.Scan(&result); err != nil {
+				t.Errorf("Failed to scan result for %s: %v", tc.name, err)
+			}
+
+			t.Logf("%s result: %v", tc.name, result)
+		})
+	}
+}
+
+// TestExecuteAggregateFunctionsWithRealData tests aggregate function execution
+func TestExecuteAggregateFunctionsWithRealData(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	testCases := []struct {
+		name string
+		sql  string
+	}{
+		{"count_star", "SELECT count(*) FROM users;"},
+		{"count", "SELECT count(id) FROM users;"},
+		{"avg", "SELECT avg(age) FROM users;"},
+		{"sum", "SELECT sum(age) FROM users;"},
+		{"min", "SELECT min(age) FROM users;"},
+		{"max", "SELECT max(age) FROM users;"},
+		{"total", "SELECT total(age) FROM users;"},
+		{"group_concat", "SELECT group_concat(name) FROM users;"},
+		{"group_concat_sep", "SELECT group_concat(name, ',') FROM users;"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			rows, err := db.Query(tc.sql)
+			if err != nil {
+				t.Errorf("Failed to execute %s: %v\nSQL: %s", tc.name, err, tc.sql)
+				return
+			}
+			defer rows.Close()
+
+			if !rows.Next() {
+				t.Errorf("No rows returned for %s", tc.name)
+				return
+			}
+
+			var result interface{}
+			if err := rows.Scan(&result); err != nil {
+				t.Errorf("Failed to scan result for %s: %v", tc.name, err)
+			}
+
+			t.Logf("%s result: %v", tc.name, result)
+		})
+	}
+}
+
+// TestExecuteDateTimeFunctionsWithRealData tests date/time function execution
+func TestExecuteDateTimeFunctionsWithRealData(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	testCases := []struct {
+		name string
+		sql  string
+	}{
+		{"date_now", "SELECT date('now');"},
+		{"date_literal", "SELECT date('2024-01-01');"},
+		{"time_now", "SELECT time('now');"},
+		{"datetime_now", "SELECT datetime('now');"},
+		{"strftime", "SELECT strftime('%Y-%m-%d', 'now');"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			rows, err := db.Query(tc.sql)
+			if err != nil {
+				t.Logf("Date/time function %s not fully supported (may be expected): %v", tc.name, err)
+				return
+			}
+			defer rows.Close()
+
+			if !rows.Next() {
+				t.Errorf("No rows returned for %s", tc.name)
+				return
+			}
+
+			var result interface{}
+			if err := rows.Scan(&result); err != nil {
+				t.Errorf("Failed to scan result for %s: %v", tc.name, err)
+			}
+
+			t.Logf("%s result: %v", tc.name, result)
+		})
+	}
+}
+
