@@ -160,16 +160,9 @@ func GenSelectWithComplexJoin(db *sql.DB, lcg *common.LCG, maxDepth int) (Select
 		quoteIdent(tbl1.Name), quoteIdent(joinCol1),
 		quoteIdent(tbl2.Name), quoteIdent(joinCol2))
 
-	// Optionally add complex WHERE clause (no subqueries, LibSQL doesn't support them in WHERE)
+	// Don't add WHERE clause for joins to avoid column ambiguity
+	// (would need qualified column names which is complex)
 	whereClause := ""
-	if ctx.CanRecurse() && ctx.Intn(2) == 0 && len(tbl1.Cols) > 0 {
-		// Generate a complex WHERE with AND/OR conditions
-		exprGen := NewExprGenerator(ctx)
-		whereExpr := exprGen.GenWhereExpr([]helper.TableInfo{tbl1, tbl2})
-		if whereExpr != "" {
-			whereClause = fmt.Sprintf(" WHERE %s", whereExpr)
-		}
-	}
 
 	limit := 1 + ctx.Intn(50)
 	sql := fmt.Sprintf("SELECT %s FROM %s INNER JOIN %s ON %s%s LIMIT %d;",
@@ -182,3 +175,4 @@ func GenSelectWithComplexJoin(db *sql.DB, lcg *common.LCG, maxDepth int) (Select
 
 	return SelectStmt{sql: sql}, nil
 }
+
