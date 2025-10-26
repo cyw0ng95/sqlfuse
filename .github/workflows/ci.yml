@@ -31,12 +31,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-
 
-      - name: Cache Vite build cache and node_modules
+      - name: Cache node_modules for view
         uses: actions/cache@v4
         with:
-          path: |
-            view/node_modules
-            view/node_modules/.vite
+          path: view/node_modules
           key: ${{ runner.os }}-vite-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-vite-
