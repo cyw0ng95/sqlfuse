@@ -18,7 +18,8 @@ func TestRealLiteral(t *testing.T) {
 }
 
 func isValidReal(s string) bool {
-	if s == "0.0" || strings.Contains(s, "e") || strings.Contains(s, "inf") || strings.Contains(s, "nan") {
+	// SQLite/LibSQL doesn't support inf or nan, so we only generate finite values
+	if s == "0.0" || strings.Contains(s, "e") {
 		return true
 	}
 	_, err := strconv.ParseFloat(strings.Trim(s, "'"), 64)
