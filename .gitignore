@@ -66,6 +66,3 @@ output/
 
 # pnpm store
 .pnpm-store/
-
-# Server binary
-/server
