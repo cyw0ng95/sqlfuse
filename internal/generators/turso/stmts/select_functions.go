@@ -864,6 +864,165 @@ func genTimediffFunction(lcg *common.LCG) string {
 	return "timediff('2024-01-02', '2024-01-01')"
 }
 
+// GenSelectWithJSONFunction generates a SELECT statement with JSON SQL functions
+func GenSelectWithJSONFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
+	jsonFuncs := []func(*common.LCG) string{
+		genJSONFunction,
+		genJSONBFunction,
+		genJSONArrayFunction,
+		genJSONBArrayFunction,
+		genJSONArrayLengthFunction,
+		genJSONExtractFunction,
+		genJSONBExtractFunction,
+		genJSONInsertFunction,
+		genJSONObjectFunction,
+		genJSONBObjectFunction,
+		genJSONPatchFunction,
+		genJSONPrettyFunction,
+		genJSONRemoveFunction,
+		genJSONReplaceFunction,
+		genJSONSetFunction,
+		genJSONTypeFunction,
+		genJSONValidFunction,
+		genJSONQuoteFunction,
+	}
+
+	rnd := lcg.Intn
+	funcIdx := rnd(len(jsonFuncs))
+	funcExpr := jsonFuncs[funcIdx](lcg)
+
+	sql := fmt.Sprintf("SELECT %s;", funcExpr)
+	return SelectStmt{sql: sql}, nil
+}
+
+// JSON function generators
+
+func genJSONFunction(lcg *common.LCG) string {
+	jsonObjects := []string{
+		"'{\"name\":\"John\",\"age\":30}'",
+		"'{\"id\":1,\"value\":\"test\"}'",
+		"'[1,2,3]'",
+		"'{}'",
+	}
+	return fmt.Sprintf("json(%s)", jsonObjects[lcg.Intn(len(jsonObjects))])
+}
+
+func genJSONBFunction(lcg *common.LCG) string {
+	jsonObjects := []string{
+		"'{\"name\":\"John\",\"age\":30}'",
+		"'{\"id\":1,\"value\":\"test\"}'",
+		"'[1,2,3]'",
+	}
+	return fmt.Sprintf("jsonb(%s)", jsonObjects[lcg.Intn(len(jsonObjects))])
+}
+
+func genJSONArrayFunction(lcg *common.LCG) string {
+	numValues := 1 + lcg.Intn(4)
+	values := make([]string, numValues)
+	for i := 0; i < numValues; i++ {
+		if lcg.Intn(2) == 0 {
+			values[i] = fmt.Sprintf("%d", lcg.Intn(100))
+		} else {
+			values[i] = fmt.Sprintf("'value%d'", i)
+		}
+	}
+	return fmt.Sprintf("json_array(%s)", joinStrings(values, ", "))
+}
+
+func genJSONBArrayFunction(lcg *common.LCG) string {
+	numValues := 1 + lcg.Intn(4)
+	values := make([]string, numValues)
+	for i := 0; i < numValues; i++ {
+		if lcg.Intn(2) == 0 {
+			values[i] = fmt.Sprintf("%d", lcg.Intn(100))
+		} else {
+			values[i] = fmt.Sprintf("'value%d'", i)
+		}
+	}
+	return fmt.Sprintf("jsonb_array(%s)", joinStrings(values, ", "))
+}
+
+func genJSONArrayLengthFunction(lcg *common.LCG) string {
+	if lcg.Intn(2) == 0 {
+		return "json_array_length('[1,2,3,4,5]')"
+	}
+	return "json_array_length('{\"items\":[1,2,3]}', '$.items')"
+}
+
+func genJSONExtractFunction(lcg *common.LCG) string {
+	jsonObj := "'{\"name\":\"John\",\"age\":30,\"city\":\"NYC\"}'"
+	paths := []string{"'$.name'", "'$.age'", "'$.city'"}
+	path := paths[lcg.Intn(len(paths))]
+	return fmt.Sprintf("json_extract(%s, %s)", jsonObj, path)
+}
+
+func genJSONBExtractFunction(lcg *common.LCG) string {
+	jsonObj := "'{\"name\":\"John\",\"age\":30}'"
+	return fmt.Sprintf("jsonb_extract(%s, '$.name')", jsonObj)
+}
+
+func genJSONInsertFunction(lcg *common.LCG) string {
+	return "json_insert('{\"a\":1}', '$.b', 2)"
+}
+
+func genJSONObjectFunction(lcg *common.LCG) string {
+	numPairs := 1 + lcg.Intn(3)
+	args := make([]string, 0, numPairs*2)
+	for i := 0; i < numPairs; i++ {
+		args = append(args, fmt.Sprintf("'key%d'", i))
+		if lcg.Intn(2) == 0 {
+			args = append(args, fmt.Sprintf("%d", lcg.Intn(100)))
+		} else {
+			args = append(args, fmt.Sprintf("'value%d'", i))
+		}
+	}
+	return fmt.Sprintf("json_object(%s)", joinStrings(args, ", "))
+}
+
+func genJSONBObjectFunction(lcg *common.LCG) string {
+	return "jsonb_object('name', 'John', 'age', 30)"
+}
+
+func genJSONPatchFunction(lcg *common.LCG) string {
+	return "json_patch('{\"a\":1}', '{\"b\":2}')"
+}
+
+func genJSONPrettyFunction(lcg *common.LCG) string {
+	return "json_pretty('{\"name\":\"John\",\"age\":30}')"
+}
+
+func genJSONRemoveFunction(lcg *common.LCG) string {
+	return "json_remove('{\"a\":1,\"b\":2,\"c\":3}', '$.b')"
+}
+
+func genJSONReplaceFunction(lcg *common.LCG) string {
+	return "json_replace('{\"a\":1,\"b\":2}', '$.b', 3)"
+}
+
+func genJSONSetFunction(lcg *common.LCG) string {
+	return "json_set('{\"a\":1}', '$.b', 2)"
+}
+
+func genJSONTypeFunction(lcg *common.LCG) string {
+	if lcg.Intn(2) == 0 {
+		values := []string{"'null'", "'123'", "'\"text\"'", "'[1,2,3]'", "'{\"a\":1}'"}
+		return fmt.Sprintf("json_type(%s)", values[lcg.Intn(len(values))])
+	}
+	return "json_type('{\"a\":1,\"b\":[1,2]}', '$.b')"
+}
+
+func genJSONValidFunction(lcg *common.LCG) string {
+	if lcg.Intn(2) == 0 {
+		return "json_valid('{\"valid\":true}')"
+	}
+	return "json_valid('not valid json')"
+}
+
+func genJSONQuoteFunction(lcg *common.LCG) string {
+	values := []string{"'text'", "'123'", "'true'", "'null'"}
+	return fmt.Sprintf("json_quote(%s)", values[lcg.Intn(len(values))])
+}
+
 // Helper functions
 
 func findNumericColumn(tbls []helper.TableInfo, lcg *common.LCG) string {

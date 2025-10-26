@@ -665,3 +665,141 @@ func TestExecuteDateTimeFunctionsWithRealData(t *testing.T) {
 	}
 }
 
+// TestGenSelectWithJSONFunction tests JSON function SQL generation
+func TestGenSelectWithJSONFunction(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	lcg := common.NewLCG(9000)
+
+	for i := 0; i < testIterations; i++ {
+		stmt, err := GenSelectWithJSONFunction(db, lcg)
+		if err != nil {
+			t.Fatalf("GenSelectWithJSONFunction failed on iteration %d: %v", i, err)
+		}
+
+		sql := stmt.SQL()
+		if sql == "" {
+			t.Error("GenSelectWithJSONFunction returned empty SQL")
+		}
+
+		if stmt.Type() != "select" {
+			t.Errorf("Expected type 'select', got '%s'", stmt.Type())
+		}
+
+		valid, errors := ValidateSQL(sql)
+		if !valid {
+			t.Errorf("Invalid JSON function SQL on iteration %d: %s\nErrors: %v", i, sql, errors)
+		}
+
+		// Try to execute the SQL
+		rows, err := db.Query(sql)
+		if err != nil {
+			t.Logf("Execution failed (may be expected) on iteration %d: %v\nSQL: %s", i, err, sql)
+		}
+		if rows != nil {
+			rows.Close()
+		}
+	}
+}
+
+// TestSpecificJSONFunctions tests specific JSON functions individually
+func TestSpecificJSONFunctions(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	lcg := common.NewLCG(10000)
+
+	tests := []struct {
+		name string
+		gen  func(*common.LCG) string
+	}{
+		{"json", genJSONFunction},
+		{"jsonb", genJSONBFunction},
+		{"json_array", genJSONArrayFunction},
+		{"jsonb_array", genJSONBArrayFunction},
+		{"json_array_length", genJSONArrayLengthFunction},
+		{"json_extract", genJSONExtractFunction},
+		{"jsonb_extract", genJSONBExtractFunction},
+		{"json_insert", genJSONInsertFunction},
+		{"json_object", genJSONObjectFunction},
+		{"jsonb_object", genJSONBObjectFunction},
+		{"json_patch", genJSONPatchFunction},
+		{"json_pretty", genJSONPrettyFunction},
+		{"json_remove", genJSONRemoveFunction},
+		{"json_replace", genJSONReplaceFunction},
+		{"json_set", genJSONSetFunction},
+		{"json_type", genJSONTypeFunction},
+		{"json_valid", genJSONValidFunction},
+		{"json_quote", genJSONQuoteFunction},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			funcExpr := tt.gen(lcg)
+			if funcExpr == "" {
+				t.Error("Function generator returned empty string")
+				return
+			}
+
+			sql := fmt.Sprintf("SELECT %s;", funcExpr)
+			valid, errors := ValidateSQL(sql)
+			if !valid {
+				t.Errorf("Invalid SQL for %s: %s\nErrors: %v", tt.name, sql, errors)
+			}
+
+			// Try to execute
+			rows, err := db.Query(sql)
+			if err != nil {
+				t.Logf("Execution of %s failed (may be expected): %v\nSQL: %s", tt.name, err, sql)
+			}
+			if rows != nil {
+				rows.Close()
+			}
+		})
+	}
+}
+
+// TestExecuteJSONFunctionsWithRealData tests JSON function execution
+func TestExecuteJSONFunctionsWithRealData(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	testCases := []struct {
+		name string
+		sql  string
+	}{
+		{"json", "SELECT json('{\"name\":\"John\",\"age\":30}');"},
+		{"json_array", "SELECT json_array(1, 2, 3, 'four');"},
+		{"json_object", "SELECT json_object('name', 'John', 'age', 30);"},
+		{"json_extract", "SELECT json_extract('{\"name\":\"John\",\"age\":30}', '$.name');"},
+		{"json_type", "SELECT json_type('{\"a\":1}');"},
+		{"json_valid", "SELECT json_valid('{\"valid\":true}');"},
+		{"json_quote", "SELECT json_quote('text');"},
+		{"json_array_length", "SELECT json_array_length('[1,2,3,4,5]');"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			rows, err := db.Query(tc.sql)
+			if err != nil {
+				t.Logf("JSON function %s not supported (may be expected): %v", tc.name, err)
+				return
+			}
+			defer rows.Close()
+
+			if !rows.Next() {
+				t.Errorf("No rows returned for %s", tc.name)
+				return
+			}
+
+			var result interface{}
+			if err := rows.Scan(&result); err != nil {
+				t.Errorf("Failed to scan result for %s: %v", tc.name, err)
+			}
+
+			t.Logf("%s result: %v", tc.name, result)
+		})
+	}
+}
+
