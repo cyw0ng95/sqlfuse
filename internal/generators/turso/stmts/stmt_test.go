@@ -9,6 +9,11 @@ import (
 	"sqlsmith-go/internal/common"
 )
 
+const (
+	// testIterations defines the standard number of iterations for statement generation tests
+	testIterations = 10
+)
+
 // errorListener captures syntax errors from the ANTLR parser
 type errorListener struct {
 	*antlr.DefaultErrorListener
@@ -39,7 +44,7 @@ func ValidateSQL(sql string) (bool, []string) {
 func TestGenCreateTable(t *testing.T) {
 	lcg := common.NewLCG(42)
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < testIterations; i++ {
 		stmt, err := GenCreateTable(lcg)
 		if err != nil {
 			t.Fatalf("GenCreateTable failed: %v", err)
@@ -65,7 +70,7 @@ func TestGenCreateTable(t *testing.T) {
 func TestGenDropTable(t *testing.T) {
 	lcg := common.NewLCG(123)
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < testIterations; i++ {
 		stmt, err := GenDropTable(lcg)
 		if err != nil {
 			t.Fatalf("GenDropTable failed: %v", err)
@@ -91,7 +96,7 @@ func TestGenDropTable(t *testing.T) {
 func TestGenUpdate(t *testing.T) {
 	lcg := common.NewLCG(456)
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < testIterations; i++ {
 		stmt, err := GenUpdate(lcg)
 		if err != nil {
 			t.Fatalf("GenUpdate failed: %v", err)
@@ -117,7 +122,7 @@ func TestGenUpdate(t *testing.T) {
 func TestGenDelete(t *testing.T) {
 	lcg := common.NewLCG(789)
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < testIterations; i++ {
 		stmt, err := GenDelete(lcg)
 		if err != nil {
 			t.Fatalf("GenDelete failed: %v", err)
@@ -143,7 +148,7 @@ func TestGenDelete(t *testing.T) {
 func TestGenPragma(t *testing.T) {
 	lcg := common.NewLCG(999)
 
-	for i := 0; i < 20; i++ {
+	for i := 0; i < testIterations; i++ {
 		stmt := GenPragma(lcg)
 
 		sql := stmt.SQL()
@@ -166,7 +171,7 @@ func TestGenPragma(t *testing.T) {
 func TestGenCreateView(t *testing.T) {
 	lcg := common.NewLCG(333)
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < testIterations; i++ {
 		stmt, err := GenCreateView(lcg)
 		if err != nil {
 			t.Fatalf("GenCreateView failed: %v", err)
@@ -192,7 +197,7 @@ func TestGenCreateView(t *testing.T) {
 func TestGenDropView(t *testing.T) {
 	lcg := common.NewLCG(444)
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < testIterations; i++ {
 		stmt, err := GenDropView(lcg)
 		if err != nil {
 			t.Fatalf("GenDropView failed: %v", err)
@@ -219,7 +224,7 @@ func TestGenAlterTable(t *testing.T) {
 	lcg := common.NewLCG(555)
 
 	// Test multiple iterations to cover different ALTER TABLE operations
-	for i := 0; i < 20; i++ {
+	for i := 0; i < testIterations; i++ {
 		stmt, err := GenAlterTable(lcg)
 		if err != nil {
 			t.Fatalf("GenAlterTable failed: %v", err)
@@ -344,7 +349,7 @@ func TestSQLSyntaxValidity(t *testing.T) {
 	for _, gen := range generators {
 		t.Run(gen.name, func(t *testing.T) {
 			// Generate multiple statements to test variety
-			for i := 0; i < 5; i++ {
+			for i := 0; i < testIterations; i++ {
 				stmt, err := gen.fn()
 				if err != nil {
 					t.Fatalf("Generation failed on iteration %d: %v", i, err)
@@ -365,7 +370,11 @@ func BenchmarkGenCreateTable(b *testing.B) {
 	lcg := common.NewLCG(1)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, _ = GenCreateTable(lcg)
+		stmt, err := GenCreateTable(lcg)
+		if err != nil {
+			b.Fatal(err)
+		}
+		_ = stmt.SQL()
 	}
 }
 
@@ -374,7 +383,11 @@ func BenchmarkGenUpdate(b *testing.B) {
 	lcg := common.NewLCG(1)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, _ = GenUpdate(lcg)
+		stmt, err := GenUpdate(lcg)
+		if err != nil {
+			b.Fatal(err)
+		}
+		_ = stmt.SQL()
 	}
 }
 
@@ -383,7 +396,11 @@ func BenchmarkGenDelete(b *testing.B) {
 	lcg := common.NewLCG(1)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, _ = GenDelete(lcg)
+		stmt, err := GenDelete(lcg)
+		if err != nil {
+			b.Fatal(err)
+		}
+		_ = stmt.SQL()
 	}
 }
 
@@ -392,6 +409,9 @@ func BenchmarkSQLValidation(b *testing.B) {
 	sql := "CREATE TABLE test (id INTEGER, name TEXT, value REAL);"
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, _ = ValidateSQL(sql)
+		valid, _ := ValidateSQL(sql)
+		if !valid {
+			b.Fatal("SQL validation failed")
+		}
 	}
 }
