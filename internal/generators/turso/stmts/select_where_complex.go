@@ -66,8 +66,12 @@ func GenSelectWhereComplex(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 		// For LIKE operator, modify the value to include wildcards
 		if op == "LIKE" && val != "NULL" {
-			val = strings.TrimSuffix(strings.TrimPrefix(val, "'"), "'")
-			val = fmt.Sprintf("'%%%s%%'", escapeSingle(val))
+			// Only modify if val is a properly quoted string literal
+			if strings.HasPrefix(val, "'") && strings.HasSuffix(val, "'") && len(val) >= 2 {
+				unquoted := strings.TrimSuffix(strings.TrimPrefix(val, "'"), "'")
+				val = fmt.Sprintf("'%%%s%%'", escapeSingle(unquoted))
+			}
+			// else: leave val as-is (could be unquoted or invalid, but don't modify)
 		}
 
 		conditions = append(conditions, fmt.Sprintf("%s %s %s", quoteIdent(col.Name), op, val))
