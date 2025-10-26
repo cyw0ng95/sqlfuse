@@ -247,7 +247,7 @@ func TestGenGlobExpr(t *testing.T) {
 // doesn't recognize it, so we skip validation for now. This function is kept for documentation.
 func TestGenIsDistinctFromExpr(t *testing.T) {
 	t.Skip("IS DISTINCT FROM is not supported by SQLite ANTLR parser")
-	
+
 	db := setupTestDBForExpr(t)
 	defer db.Close()
 
@@ -314,8 +314,8 @@ func TestGenCollateExpr(t *testing.T) {
 		}
 
 		// Check for valid collations
-		hasValidCollation := strings.Contains(expr, "BINARY") || 
-			strings.Contains(expr, "NOCASE") || 
+		hasValidCollation := strings.Contains(expr, "BINARY") ||
+			strings.Contains(expr, "NOCASE") ||
 			strings.Contains(expr, "RTRIM")
 		if !hasValidCollation {
 			t.Errorf("Expected valid COLLATE expression, got: %s", expr)
@@ -360,9 +360,9 @@ func TestGenUnaryExpr(t *testing.T) {
 		}
 
 		// Check for unary operators
-		hasUnaryOp := strings.HasPrefix(expr, "+") || 
-			strings.HasPrefix(expr, "-") || 
-			strings.HasPrefix(expr, "~") || 
+		hasUnaryOp := strings.HasPrefix(expr, "+") ||
+			strings.HasPrefix(expr, "-") ||
+			strings.HasPrefix(expr, "~") ||
 			strings.HasPrefix(expr, "NOT")
 		if !hasUnaryOp {
 			t.Errorf("Expected unary operator expression, got: %s", expr)

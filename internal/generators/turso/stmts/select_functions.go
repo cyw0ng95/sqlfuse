@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+
 	"sqlsmith-go/internal/common"
 	"sqlsmith-go/internal/generators/turso/helper"
 	"sqlsmith-go/internal/generators/turso/types"
@@ -19,7 +20,7 @@ func GenSelectWithScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error
 
 	rnd := lcg.Intn
 	tbl := tables[rnd(len(tables))]
-	
+
 	// Select a scalar function to test
 	scalarFuncs := []func(*common.LCG, []helper.TableInfo) string{
 		genAbsFunction,
@@ -212,7 +213,7 @@ func genIfnullFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 func genIifFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 	conditions := []string{"1 > 0", "1 = 1", "0 < 1"}
 	cond := conditions[lcg.Intn(len(conditions))]
-	
+
 	// Try to use columns for the result values when available
 	if len(tbls) > 0 && lcg.Intn(2) == 0 {
 		col1 := findAnyColumn(tbls, lcg)
@@ -332,7 +333,7 @@ func genMaxMinFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 	if lcg.Intn(2) == 0 {
 		fn = "min"
 	}
-	
+
 	// Try to use numeric columns when available
 	if len(tbls) > 0 && lcg.Intn(2) == 0 {
 		numArgs := 2 + lcg.Intn(3)
@@ -349,7 +350,7 @@ func genMaxMinFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 			return fmt.Sprintf("%s(%s)", fn, joinStrings(args, ", "))
 		}
 	}
-	
+
 	numArgs := 2 + lcg.Intn(3)
 	args := make([]string, numArgs)
 	for i := 0; i < numArgs; i++ {
@@ -527,7 +528,7 @@ func GenSelectWithMathFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) 
 
 	rnd := lcg.Intn
 	tbl := tables[rnd(len(tables))]
-	
+
 	mathFuncs := []func(*common.LCG, []helper.TableInfo) string{
 		genAcosFunction,
 		genAcoshFunction,
@@ -769,7 +770,7 @@ func GenSelectWithAggregateFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, er
 
 	rnd := lcg.Intn
 	tbl := tables[rnd(len(tables))]
-	
+
 	aggFuncs := []func(*common.LCG, []helper.TableInfo) string{
 		genAvgFunction,
 		genCountFunction,
@@ -1286,7 +1287,7 @@ func genSelectRegexpFunctionLiteral(lcg *common.LCG) SelectStmt {
 func genRegexpFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 	patterns := []string{"'[0-9]+'", "'[a-z]+'", "'[A-Z]+'", "'\\w+'"}
 	pattern := patterns[lcg.Intn(len(patterns))]
-	
+
 	if len(tbls) > 0 && lcg.Intn(2) == 0 {
 		col := findTextColumn(tbls, lcg)
 		if col != "" {
@@ -1299,7 +1300,7 @@ func genRegexpFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 func genRegexpLikeFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 	patterns := []string{"'[0-9]+'", "'[a-z]+'", "'[A-Z]+'", "'\\w+'"}
 	pattern := patterns[lcg.Intn(len(patterns))]
-	
+
 	if len(tbls) > 0 && lcg.Intn(2) == 0 {
 		col := findTextColumn(tbls, lcg)
 		if col != "" {
@@ -1312,7 +1313,7 @@ func genRegexpLikeFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 func genRegexpSubstrFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 	patterns := []string{"'[0-9]+'", "'[a-z]+'", "'w[a-z]+'"}
 	pattern := patterns[lcg.Intn(len(patterns))]
-	
+
 	if len(tbls) > 0 && lcg.Intn(2) == 0 {
 		col := findTextColumn(tbls, lcg)
 		if col != "" {
@@ -1329,7 +1330,7 @@ func genRegexpCaptureFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 		"'(\\w+)\\s+(\\w+)'",
 	}
 	pattern := patterns[lcg.Intn(len(patterns))]
-	
+
 	if len(tbls) > 0 && lcg.Intn(2) == 0 {
 		col := findTextColumn(tbls, lcg)
 		if col != "" {
@@ -1347,11 +1348,11 @@ func genRegexpCaptureFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 func genRegexpReplaceFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 	patterns := []string{"'[0-9]+'", "'world'", "'test'"}
 	replacements := []string{"'NUM'", "'universe'", "'TEST'"}
-	
+
 	idx := lcg.Intn(len(patterns))
 	pattern := patterns[idx]
 	replacement := replacements[idx]
-	
+
 	if len(tbls) > 0 && lcg.Intn(2) == 0 {
 		col := findTextColumn(tbls, lcg)
 		if col != "" {
@@ -1492,7 +1493,7 @@ func genTimeDateFunction(lcg *common.LCG) string {
 	year := 2020 + lcg.Intn(5)
 	month := 1 + lcg.Intn(12)
 	day := 1 + lcg.Intn(28)
-	
+
 	if lcg.Intn(2) == 0 {
 		// Just date
 		return fmt.Sprintf("time_date(%d, %d, %d)", year, month, day)
@@ -1507,7 +1508,7 @@ func genTimeDateFunction(lcg *common.LCG) string {
 func genTimeGetFunction(lcg *common.LCG) string {
 	fields := []string{"'year'", "'month'", "'day'", "'hour'", "'minute'", "'second'", "'nano'", "'weekday'", "'yearday'"}
 	field := fields[lcg.Intn(len(fields))]
-	
+
 	getFuncs := []string{
 		"time_get_year(time_now())",
 		"time_get_month(time_now())",
@@ -1522,7 +1523,7 @@ func genTimeGetFunction(lcg *common.LCG) string {
 		"time_get_isoweek(time_now())",
 		fmt.Sprintf("time_get(time_now(), %s)", field),
 	}
-	
+
 	return getFuncs[lcg.Intn(len(getFuncs))]
 }
 

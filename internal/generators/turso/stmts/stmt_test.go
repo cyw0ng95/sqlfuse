@@ -3,6 +3,7 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/antlr4-go/antlr/v4"
@@ -165,6 +166,67 @@ func TestGenPragma(t *testing.T) {
 		valid, errors := ValidateSQL(sql)
 		if !valid {
 			t.Errorf("Invalid PRAGMA SQL: %s\nErrors: %v", sql, errors)
+		}
+	}
+}
+
+// TestGenPragmaTursoCompatibility tests that all generated PRAGMAs are Turso-compatible
+// This ensures we only generate PRAGMAs that are supported by Turso according to
+// https://github.com/tursodatabase/turso/blob/main/COMPAT.md#pragma
+func TestGenPragmaTursoCompatibility(t *testing.T) {
+	// List of PRAGMAs that should be generated (all have "Yes" or "Partial" support in Turso)
+	supportedPragmas := map[string]bool{
+		"application_id":     true,
+		"cache_size":         true,
+		"database_list":      true,
+		"encoding":           true,
+		"freelist_count":     true,
+		"integrity_check":    true,
+		"journal_mode":       true,
+		"legacy_file_format": true,
+		"max_page_count":     true,
+		"page_count":         true,
+		"page_size":          true,
+		"pragma_list":        true,
+		"query_only":         true,
+		"schema_version":     true,
+		"synchronous":        true,
+		"table_info":         true,
+		"user_version":       true,
+		"wal_checkpoint":     true,
+	}
+
+	// Track which PRAGMAs we've seen (to verify all are tested)
+	seenPragmas := make(map[string]bool)
+
+	lcg := common.NewLCG(42)
+
+	// Run enough iterations to hit all PRAGMAs
+	for i := 0; i < 200; i++ {
+		stmt := GenPragma(lcg)
+		sql := stmt.SQL()
+
+		// Extract the PRAGMA name from the SQL
+		// Expected formats: "PRAGMA name;" or "PRAGMA name = value;"
+		var pragmaName string
+		// Split by space and take the second element (after "PRAGMA")
+		parts := strings.Fields(sql)
+		if len(parts) >= 2 {
+			// Remove trailing semicolon if present
+			pragmaName = strings.TrimSuffix(parts[1], ";")
+			seenPragmas[pragmaName] = true
+
+			// Verify this PRAGMA is in our supported list
+			if !supportedPragmas[pragmaName] {
+				t.Errorf("Generated unsupported PRAGMA: %s (SQL: %s)", pragmaName, sql)
+			}
+		}
+	}
+
+	// Verify we've tested all supported PRAGMAs
+	for pragma := range supportedPragmas {
+		if !seenPragmas[pragma] {
+			t.Errorf("Supported PRAGMA %s was never generated in test", pragma)
 		}
 	}
 }
