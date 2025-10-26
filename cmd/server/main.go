@@ -22,8 +22,36 @@ type ExecutorConfig struct {
 	Path     string `json:"path"`
 }
 
+// ServerConfig holds server-wide configuration
+type ServerConfig struct {
+	Port                string    `json:"port"`
+	ExecutorsConfigPath string    `json:"executors_config_path"`
+	ServerName          string    `json:"server_name"`
+	ServerVersion       string    `json:"server_version"`
+	Job                 JobConfig `json:"job"`
+}
+
+// JobConfig holds job-related configuration
+type JobConfig struct {
+	MaxOutputBytes int    `json:"max_output_bytes"`
+	PersistPath    string `json:"persist_path"`
+}
+
+var serverConfig ServerConfig
 var executorsConfig []ExecutorConfig
 var executorsByName map[string]executors.Executor
+
+func loadServerConfig(path string) (ServerConfig, error) {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return ServerConfig{}, err
+	}
+	var cfg ServerConfig
+	if err := json.Unmarshal(b, &cfg); err != nil {
+		return ServerConfig{}, err
+	}
+	return cfg, nil
+}
 
 func loadExecutorsConfig(path string) ([]ExecutorConfig, error) {
 	b, err := os.ReadFile(path)
@@ -54,6 +82,33 @@ func buildExecutorsMap(cfg []ExecutorConfig) map[string]executors.Executor {
 func main() {
 	common.InitLogger()
 
+	// Load server configuration
+	serverCfgPath := os.Getenv("SERVER_CONFIG_PATH")
+	if serverCfgPath == "" {
+		serverCfgPath = "./config/server.json"
+	}
+	cfg, err := loadServerConfig(serverCfgPath)
+	if err != nil {
+		common.Logger.Warn().Err(err).Msgf("failed to load server config from %s, using defaults", serverCfgPath)
+		// Set default values
+		cfg = ServerConfig{
+			Port:                "8080",
+			ExecutorsConfigPath: "./config/executors.json",
+			ServerName:          "sqlsmith-go minimal server",
+			ServerVersion:       "0.1",
+			Job: JobConfig{
+				MaxOutputBytes: 64 * 1024,
+				PersistPath:    "./output/jobs.json",
+			},
+		}
+	}
+	serverConfig = cfg
+
+	// Allow PORT environment variable to override config
+	if envPort := os.Getenv("PORT"); envPort != "" {
+		serverConfig.Port = envPort
+	}
+
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
@@ -68,8 +123,8 @@ func main() {
 
 	e.GET("/info", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{
-			"name":    "sqlsmith-go minimal server",
-			"version": "0.1",
+			"name":    serverConfig.ServerName,
+			"version": serverConfig.ServerVersion,
 		})
 	})
 
@@ -85,13 +140,12 @@ func main() {
 	})
 
 	// Load executors configuration
-	cfgPath := "/opt/config/executors.json"
-	if cfg, err := loadExecutorsConfig(cfgPath); err != nil {
-		common.Logger.Warn().Err(err).Msgf("failed to load executors config from %s", cfgPath)
+	if execCfg, err := loadExecutorsConfig(serverConfig.ExecutorsConfigPath); err != nil {
+		common.Logger.Warn().Err(err).Msgf("failed to load executors config from %s", serverConfig.ExecutorsConfigPath)
 	} else {
-		executorsConfig = cfg
-		executorsByName = buildExecutorsMap(cfg)
-		common.Logger.Info().Msgf("Loaded %d executors from config", len(cfg))
+		executorsConfig = execCfg
+		executorsByName = buildExecutorsMap(execCfg)
+		common.Logger.Info().Msgf("Loaded %d executors from config", len(execCfg))
 	}
 
 	// Expose executors list via HTTP
@@ -102,13 +156,8 @@ func main() {
 	// Register job routes (moved to job_ctrl.go)
 	RegisterJobRoutes(e)
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	common.Logger.Info().Msgf("Starting minimal server on port %s", port)
-	if err := e.Start(":" + port); err != nil {
+	common.Logger.Info().Msgf("Starting minimal server on port %s", serverConfig.Port)
+	if err := e.Start(":" + serverConfig.Port); err != nil {
 		fmt.Fprintf(os.Stderr, "server failed to start: %v\n", err)
 		os.Exit(1)
 	}
