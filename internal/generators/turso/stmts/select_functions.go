@@ -3,10 +3,11 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
+	"strings"
+
 	"sqlsmith-go/internal/common"
 	"sqlsmith-go/internal/generators/turso/helper"
 	"sqlsmith-go/internal/generators/turso/types"
-	"strings"
 )
 
 // GenSelectWithScalarFunction generates a SELECT statement with scalar SQL functions

@@ -209,9 +209,11 @@ func TestGenPragmaTursoCompatibility(t *testing.T) {
 		// Extract the PRAGMA name from the SQL
 		// Expected formats: "PRAGMA name;" or "PRAGMA name = value;"
 		var pragmaName string
-		if _, err := fmt.Sscanf(sql, "PRAGMA %s", &pragmaName); err == nil {
-			// Remove trailing characters like '=' or ';'
-			pragmaName = strings.TrimRight(pragmaName, " =;")
+		// Split by space and take the second element (after "PRAGMA")
+		parts := strings.Fields(sql)
+		if len(parts) >= 2 {
+			// Remove trailing semicolon if present
+			pragmaName = strings.TrimSuffix(parts[1], ";")
 			seenPragmas[pragmaName] = true
 
 			// Verify this PRAGMA is in our supported list
