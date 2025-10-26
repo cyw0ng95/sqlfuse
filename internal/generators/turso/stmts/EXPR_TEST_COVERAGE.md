@@ -33,13 +33,13 @@ Tests cover:
 
 Tests cover:
 - Arithmetic: `+`, `-`, `*`, `/` ✅
-- Modulo: `%` (marked as unsupported, but may work) ⚠️
+- Modulo: `%` (documented as unsupported in COMPAT.md, but executes successfully in current Turso versions) ⚠️
 - Comparison: `=`, `!=`, `<>`, `<`, `>`, `<=`, `>=` ✅
 - Logical: `AND`, `OR` ✅
 - Bitwise: `&`, `|`, `<<`, `>>` ✅
 - String concatenation: `||` ✅
 
-**Note**: The modulo operator (`%`) is documented as unsupported but appears to work in current versions.
+**Note**: The modulo operator (`%`) is documented as unsupported in COMPAT.md but executes successfully in current Turso versions.
 
 ### 4. Parenthesized Expressions (5 test cases) ✅
 **Status in COMPAT.md**: Yes - `(expr)` fully supported
@@ -157,6 +157,7 @@ Tests cover real-world complex scenarios:
 - SELECT with arithmetic expressions
 - SELECT with CASE and CAST
 - Nested function calls
+- Subquery in SELECT (verified as unsupported per COMPAT.md)
 - ORDER BY with expressions
 - ORDER BY with CASE
 - Multiple operator combinations
@@ -220,7 +221,7 @@ Performance benchmarks for:
 | `REGEXP` | No | 1 test ❌ | Verified unsupported |
 | `MATCH` | No | 1 test ❌ | Verified unsupported |
 | `RAISE` | No | 1 test ❌ | Verified unsupported |
-| Subqueries | No | 1 test ❌ | Verified unsupported |
+| Subqueries in SELECT | No | 1 test ❌ | Verified unsupported |
 
 ## Test Execution
 
