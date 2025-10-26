@@ -71,8 +71,14 @@ The following expressions are marked as "No" or have limitations in Turso COMPAT
 4. **(NOT) REGEXP** - Status: No in COMPAT.md
 5. **(NOT) MATCH** - Status: No in COMPAT.md
 6. **RAISE** - Status: No in COMPAT.md
-7. **agg() FILTER (WHERE ...)** - Status: No (incorrectly ignored)
-8. **... OVER (...)** - Status: No (incorrectly ignored)
+7. **agg() FILTER (WHERE ...)** - Status: No
+   - Turso COMPAT.md states this is "incorrectly ignored" by Turso/LibSQL
+   - This means the syntax may be accepted but doesn't work as expected
+   - Not implemented to avoid generating non-functional SQL
+8. **... OVER (...)** (Window functions) - Status: No
+   - Turso COMPAT.md states this is "incorrectly ignored" by Turso/LibSQL
+   - This means the syntax may be accepted but doesn't work as expected
+   - Not implemented to avoid generating non-functional SQL
 
 ## Design Decisions
 
