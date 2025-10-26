@@ -9,41 +9,59 @@ import (
 
 // Generator uses an LCG to drive generation directions and produce SQL snippets.
 type Generator struct {
-	lcg         *common.LCG
-	first       bool // first generation is forced into pragma
-	weights     map[StmtType]uint64
-	totalWeight uint64
+	lcg               *common.LCG
+	first             bool // first generation is forced into pragma
+	weights           map[StmtType]uint64
+	totalWeight       uint64
+	maxRecursionDepth int // Maximum depth for recursive generation (default: 2)
 }
 
 // StmtType represents a generation direction / statement category.
 type StmtType string
 
 const (
-	StmtPragma          StmtType = "pragma"
-	StmtInsert          StmtType = "insert"
-	StmtSelectBasic     StmtType = "select_basic"
-	StmtSelectWhere     StmtType = "select_where"
-	StmtSelectLike      StmtType = "select_like"
-	StmtSelectLimit     StmtType = "select_limit"
-	StmtSelectOrder     StmtType = "select_order"
-	StmtSelectGroup     StmtType = "select_group"
-	StmtSelectHaving    StmtType = "select_having"
-	StmtSelectJoin      StmtType = "select_join"
-	StmtSelectCross     StmtType = "select_crossjoin"
-	StmtSelectInner     StmtType = "select_innerjoin"
-	StmtSelectOuter     StmtType = "select_outerjoin"
-	StmtSelectJoinUsing StmtType = "select_joinusing"
-	StmtSelectNatural   StmtType = "select_naturaljoin"
-	StmtCreateTable     StmtType = "create_table"
-	StmtDropTable       StmtType = "drop_table"
-	StmtAlterTable      StmtType = "alter_table"
+	StmtPragma                 StmtType = "pragma"
+	StmtInsert                 StmtType = "insert"
+	StmtInsertMultiple         StmtType = "insert_multiple"
+	StmtInsertBulk             StmtType = "insert_bulk"
+	StmtSelectBasic            StmtType = "select_basic"
+	StmtSelectWhere            StmtType = "select_where"
+	StmtSelectWhereComplex     StmtType = "select_where_complex"
+	StmtSelectWhereIn          StmtType = "select_where_in"
+	StmtSelectSubquery         StmtType = "select_subquery"
+	StmtSelectCase             StmtType = "select_case"
+	StmtSelectAggregateComplex StmtType = "select_aggregate_complex"
+	StmtSelectLike             StmtType = "select_like"
+	StmtSelectLimit            StmtType = "select_limit"
+	StmtSelectOrder            StmtType = "select_order"
+	StmtSelectGroup            StmtType = "select_group"
+	StmtSelectHaving           StmtType = "select_having"
+	StmtSelectJoin             StmtType = "select_join"
+	StmtSelectCross            StmtType = "select_crossjoin"
+	StmtSelectInner            StmtType = "select_innerjoin"
+	StmtSelectOuter            StmtType = "select_outerjoin"
+	StmtSelectJoinUsing        StmtType = "select_joinusing"
+	StmtSelectNatural          StmtType = "select_naturaljoin"
+	StmtSelectRecursive        StmtType = "select_recursive"
+	StmtSelectNestedCase       StmtType = "select_nested_case"
+	StmtSelectComplexJoin      StmtType = "select_complex_join"
+	StmtCreateTable            StmtType = "create_table"
+	StmtDropTable              StmtType = "drop_table"
+	StmtAlterTable             StmtType = "alter_table"
 )
 
 // AllStmtTypes defines a deterministic ordering used when selecting by weights.
 var AllStmtTypes = []StmtType{
 	StmtInsert,
+	StmtInsertMultiple,
+	StmtInsertBulk,
 	StmtSelectBasic,
 	StmtSelectWhere,
+	StmtSelectWhereComplex,
+	StmtSelectWhereIn,
+	StmtSelectSubquery,
+	StmtSelectCase,
+	StmtSelectAggregateComplex,
 	StmtSelectLike,
 	StmtSelectLimit,
 	StmtSelectOrder,
@@ -55,6 +73,9 @@ var AllStmtTypes = []StmtType{
 	StmtSelectOuter,
 	StmtSelectJoinUsing,
 	StmtSelectNatural,
+	StmtSelectRecursive,
+	StmtSelectNestedCase,
+	StmtSelectComplexJoin,
 	StmtCreateTable,
 	StmtDropTable,
 	StmtAlterTable,
@@ -65,9 +86,16 @@ var AllStmtTypes = []StmtType{
 func DefaultStmtWeights() map[StmtType]uint64 {
 	w := map[StmtType]uint64{}
 	// scaled by 10 to allow token-like numbers; proportions reflect previous Intn(100) cutoffs
-	w[StmtInsert] = 400
+	w[StmtInsert] = 300        // reduced from 400 to make room for new insert types
+	w[StmtInsertMultiple] = 80 // new: multiple row inserts
+	w[StmtInsertBulk] = 20     // new: bulk inserts for heavy testing
 	w[StmtSelectBasic] = 120
 	w[StmtSelectWhere] = 100
+	w[StmtSelectWhereComplex] = 60     // new: complex WHERE with AND/OR
+	w[StmtSelectWhereIn] = 50          // new: WHERE IN clause
+	w[StmtSelectSubquery] = 40         // new: subqueries
+	w[StmtSelectCase] = 40             // new: CASE expressions
+	w[StmtSelectAggregateComplex] = 30 // new: complex aggregates
 	w[StmtSelectLike] = 80
 	w[StmtSelectLimit] = 60
 	w[StmtSelectOrder] = 40
@@ -79,18 +107,23 @@ func DefaultStmtWeights() map[StmtType]uint64 {
 	w[StmtSelectOuter] = 20
 	w[StmtSelectJoinUsing] = 20
 	w[StmtSelectNatural] = 20
+	// new: recursive/complex generation
+	w[StmtSelectRecursive] = 30   // new: recursive SELECT with nested expressions
+	w[StmtSelectNestedCase] = 25  // new: nested CASE expressions
+	w[StmtSelectComplexJoin] = 25 // new: joins with complex conditions/subqueries
 	// leave DDL low by default
-	w[StmtCreateTable] = 0
-	w[StmtDropTable] = 0
-	w[StmtAlterTable] = 0
+	w[StmtCreateTable] = 40
+	w[StmtDropTable] = 40
+	w[StmtAlterTable] = 40
 	return w
 }
 
 // NewGenerator creates a generator seeded with the provided seed and default weights.
 func NewGenerator(seed uint64) *Generator {
 	g := &Generator{
-		lcg:   common.NewLCG(seed),
-		first: true,
+		lcg:               common.NewLCG(seed),
+		first:             true,
+		maxRecursionDepth: 2, // Default recursion depth
 	}
 	g.SetWeights(DefaultStmtWeights())
 	return g
@@ -125,6 +158,22 @@ func (g *Generator) GetWeights() map[StmtType]uint64 {
 	return out
 }
 
+// SetMaxRecursionDepth sets the maximum recursion depth for complex SQL generation.
+// A depth of 0 means no recursion (simple queries only).
+// A depth of 1 allows one level of nesting (e.g., subquery in WHERE).
+// A depth of 2 or more allows deeper nesting.
+func (g *Generator) SetMaxRecursionDepth(depth int) {
+	if depth < 0 {
+		depth = 0
+	}
+	g.maxRecursionDepth = depth
+}
+
+// GetMaxRecursionDepth returns the current maximum recursion depth.
+func (g *Generator) GetMaxRecursionDepth() int {
+	return g.maxRecursionDepth
+}
+
 func (g *Generator) recalcTotalWeight() {
 	var sum uint64
 	for _, t := range AllStmtTypes {
@@ -155,41 +204,8 @@ func (g *Generator) Direction() StmtType {
 		}
 		// fallback
 		return StmtPragma
-	}
-
-	// Fallback to legacy behavior when no weights configured
-	r := g.lcg.Intn(100)
-	switch {
-	case r < 40:
-		return StmtInsert
-	case r < 52:
-		return StmtSelectBasic
-	case r < 62:
-		return StmtSelectWhere
-	case r < 70:
-		return StmtSelectLike
-	case r < 76:
-		return StmtSelectLimit
-	case r < 80:
-		return StmtSelectOrder
-	case r < 84:
-		return StmtSelectGroup
-	case r < 88:
-		return StmtSelectHaving
-	case r < 90:
-		return StmtSelectJoin
-	case r < 92:
-		return StmtSelectCross
-	case r < 94:
-		return StmtSelectInner
-	case r < 96:
-		return StmtSelectOuter
-	case r < 98:
-		return StmtSelectJoinUsing
-	case r < 100:
-		return StmtSelectNatural
-	default:
-		return StmtPragma
+	} else {
+		panic("totalWeight < 0")
 	}
 }
 
@@ -207,6 +223,20 @@ func (g *Generator) GenerateWithDB(db *sql.DB) string {
 			return "INSERT INTO sqlite_master DEFAULT VALUES;" // fallback
 		}
 		return stmt.SQL()
+	case StmtInsertMultiple:
+		stmt, err := stmts.GenInsertMultiple(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating INSERT MULTIPLE:", err)
+			return "INSERT INTO sqlite_master DEFAULT VALUES;" // fallback
+		}
+		return stmt.SQL()
+	case StmtInsertBulk:
+		stmt, err := stmts.GenInsertBulk(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating INSERT BULK:", err)
+			return "INSERT INTO sqlite_master DEFAULT VALUES;" // fallback
+		}
+		return stmt.SQL()
 	case StmtSelectBasic:
 		stmt, err := stmts.GenSelect(db, g.lcg)
 		if err != nil {
@@ -221,6 +251,41 @@ func (g *Generator) GenerateWithDB(db *sql.DB) string {
 			return "SELECT 1"
 		}
 		return stmtW.SQL()
+	case StmtSelectWhereComplex:
+		stmt, err := stmts.GenSelectWhereComplex(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT WHERE COMPLEX:", err)
+			return "SELECT 1"
+		}
+		return stmt.SQL()
+	case StmtSelectWhereIn:
+		stmt, err := stmts.GenSelectWhereIn(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT WHERE IN:", err)
+			return "SELECT 1"
+		}
+		return stmt.SQL()
+	case StmtSelectSubquery:
+		stmt, err := stmts.GenSelectSubquery(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT SUBQUERY:", err)
+			return "SELECT 1"
+		}
+		return stmt.SQL()
+	case StmtSelectCase:
+		stmt, err := stmts.GenSelectCase(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT CASE:", err)
+			return "SELECT 1"
+		}
+		return stmt.SQL()
+	case StmtSelectAggregateComplex:
+		stmt, err := stmts.GenSelectAggregateComplex(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT AGGREGATE COMPLEX:", err)
+			return "SELECT 1"
+		}
+		return stmt.SQL()
 	case StmtSelectLike:
 		stmtL, err := stmts.GenSelectWhereLike(db, g.lcg)
 		if err != nil {
@@ -298,6 +363,27 @@ func (g *Generator) GenerateWithDB(db *sql.DB) string {
 			return "SELECT 1"
 		}
 		return stmtNJ.SQL()
+	case StmtSelectRecursive:
+		stmt, err := stmts.GenSelectRecursive(db, g.lcg, g.maxRecursionDepth)
+		if err != nil {
+			fmt.Println("Error generating SELECT RECURSIVE:", err)
+			return "SELECT 1"
+		}
+		return stmt.SQL()
+	case StmtSelectNestedCase:
+		stmt, err := stmts.GenSelectWithNestedCase(db, g.lcg, g.maxRecursionDepth)
+		if err != nil {
+			fmt.Println("Error generating SELECT NESTED CASE:", err)
+			return "SELECT 1"
+		}
+		return stmt.SQL()
+	case StmtSelectComplexJoin:
+		stmt, err := stmts.GenSelectWithComplexJoin(db, g.lcg, g.maxRecursionDepth)
+		if err != nil {
+			fmt.Println("Error generating SELECT COMPLEX JOIN:", err)
+			return "SELECT 1"
+		}
+		return stmt.SQL()
 	case StmtCreateTable:
 		stmt, err := stmts.GenCreateTable(g.lcg)
 		if err != nil {

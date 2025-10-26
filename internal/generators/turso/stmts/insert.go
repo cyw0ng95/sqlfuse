@@ -69,11 +69,22 @@ func quoteIdent(s string) string {
 
 // GenInsertMultiple generates an INSERT with multiple VALUES rows (2..N rows).
 func GenInsertMultiple(db *sql.DB, lcgOrRand interface{}) (Stmt, error) {
-	// pick number of rows 2..5
+	// pick number of rows 2..20 for heavier testing
 	n := 2
 	switch r := lcgOrRand.(type) {
 	case interface{ Intn(int) int }:
-		n = 2 + r.Intn(4) // 2..5
+		n = 2 + r.Intn(19) // r.Intn(19) generates 0..18, so 2 + r.Intn(19) gives 2..20 inclusive
+	}
+	return genInsertInternal(db, lcgOrRand, n)
+}
+
+// GenInsertBulk generates an INSERT with many VALUES rows (20..100 rows) for heavy stress testing.
+func GenInsertBulk(db *sql.DB, lcgOrRand interface{}) (Stmt, error) {
+	// pick number of rows 20..100 for very heavy testing
+	n := 20
+	switch r := lcgOrRand.(type) {
+	case interface{ Intn(int) int }:
+		n = 20 + r.Intn(81) // 20..100
 	}
 	return genInsertInternal(db, lcgOrRand, n)
 }

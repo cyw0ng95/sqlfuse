@@ -4,14 +4,9 @@ COPY debian.sources /etc/apt/sources.list.d/debian.sources
 
 RUN apt-get update
 
-RUN apt-get install golang ca-certificates clang libclang-rt-dev \
+RUN apt-get install golang ca-certificates clang libclang-rt-dev curl xz-utils ca-certificates llvm valgrind \
         -y --no-install-recommends && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# Install curl and xz-utils to fetch and extract Node.js tarball
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl xz-utils ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
 RUN go env -w GO111MODULE=on && \

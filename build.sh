@@ -10,9 +10,25 @@ fi
 run_tests() {
     echo "-- [INFO] Running tests with coverage..."
     mkdir -p .cache
-    go test -coverprofile=.cache/coverage.out ./...
+    # Add -v flag when running in GitHub Actions for verbose output
+    if [ "${GITHUB_ACTIONS:-false}" = "true" ]; then
+        go test -v -coverprofile=.cache/coverage.out ./...
+    else
+        go test -coverprofile=.cache/coverage.out ./...
+    fi
     go tool cover -html=.cache/coverage.out -o .cache/coverage.html
     echo "-- [INFO] Coverage report generated: .cache/coverage.html"
+}
+
+build_view() {
+    echo "-- [INFO] Building view (frontend)..."
+    if [[ -d view ]]; then
+        (cd view && pnpm install)
+        (cd view && pnpm run build)
+        echo "-- [INFO] View build complete. Output: view/dist"
+    else
+        echo "-- [WARN] view directory not found; skipping frontend build"
+    fi
 }
 
 build_project() {
@@ -20,12 +36,20 @@ build_project() {
     mkdir -p output
     echo "-- [INFO] Running go mod vendor..."
     go mod vendor
+    
+    # Add -v flag when running in GitHub Actions for verbose output
+    local build_flags=()
+    if [ "${GITHUB_ACTIONS:-false}" = "true" ]; then
+        build_flags=(-v)
+    fi
+    
     echo "-- [INFO] Building turso_embedded_executor..."
-    go build \
-        -asan -o output/turso_embedded_executor cmd/executors/turso_embedded.go
-    go build \
-        -asan -o output/server ./cmd/server
+    go build "${build_flags[@]}" -o output/turso_embedded_executor cmd/executors/turso_embedded/main.go
+    go build "${build_flags[@]}" -o output/server ./cmd/server
     echo "-- [INFO] Build complete. Output: output/turso_embedded_executor, output/server"
+    
+    # Build the frontend view
+    build_view
 }
 
 # Function to start frontend dev server and the Go server, with cleanup trap
@@ -83,7 +107,8 @@ while true; do
 done
 
 if [[ $run_test -eq 1 ]]; then
-    run_tests && build_project
+    run_tests
+    build_project
 else
     build_project
 fi

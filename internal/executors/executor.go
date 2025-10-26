@@ -2,6 +2,7 @@ package executors
 
 import (
 	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -13,7 +14,7 @@ import (
 type Executor interface {
 	Name() string
 	Path() string
-	BuildCmd(args []string) *exec.Cmd
+	BuildCmd(args []string, seed *int64) *exec.Cmd
 }
 
 // CmdExecutor implements Executor for a binary on disk.
@@ -28,7 +29,12 @@ func NewCmdExecutor(name, path string) *CmdExecutor {
 
 func (c *CmdExecutor) Name() string { return c.name }
 func (c *CmdExecutor) Path() string { return c.path }
-func (c *CmdExecutor) BuildCmd(args []string) *exec.Cmd {
+func (c *CmdExecutor) BuildCmd(args []string, seed *int64) *exec.Cmd {
+	// If seed is provided, add as a flag before other args.
+	if seed != nil {
+		seedArg := fmt.Sprintf("--seed=%d", *seed)
+		args = append([]string{seedArg}, args...)
+	}
 	return exec.Command(c.path, args...)
 }
 
