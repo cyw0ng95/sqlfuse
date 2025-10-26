@@ -12,7 +12,7 @@ import (
 	"sqlsmith-go/internal/executors"
 	"sqlsmith-go/internal/generators/turso"
 
-	_ "github.com/chaisql/chai"
+	// _ "github.com/chaisql/chai"
 	"github.com/spf13/cobra"
 )
 

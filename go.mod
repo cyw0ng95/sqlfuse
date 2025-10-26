@@ -1,6 +1,6 @@
 module sqlsmith-go
 
-go 1.25
+go 1.24.9
 
 require (
 	github.com/antlr4-go/antlr/v4 v4.13.0
@@ -16,7 +16,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/chaisql/chai v0.17.0 // indirect
+//	github.com/chaisql/chai v0.17.0 // indirect
 	github.com/cockroachdb/crlib v0.0.0-20250718215705-7ff5051265b9 // indirect
 	github.com/cockroachdb/errors v1.12.0 // indirect
 	github.com/cockroachdb/fifo v0.0.0-20240816210425-c5d0cb0b6fc0 // indirect
