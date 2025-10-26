@@ -38,9 +38,9 @@ build_project() {
     go mod vendor
     
     # Add -v flag when running in GitHub Actions for verbose output
-    local build_flags=(-asan)
+    local build_flags=()
     if [ "${GITHUB_ACTIONS:-false}" = "true" ]; then
-        build_flags=(-v -asan)
+        build_flags=(-v)
     fi
     
     echo "-- [INFO] Building turso_embedded_executor..."
