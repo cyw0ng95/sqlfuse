@@ -165,12 +165,30 @@ func genSelectMultipleCTELiteral(lcg *common.LCG) SelectStmt {
 }
 
 // GenSelectWithRecursiveCTE generates a SELECT with recursive CTE
+// Note: Turso LibSQL does NOT support RECURSIVE keyword in CTEs.
+// This function will generate non-recursive CTEs for Turso flavor.
 func GenSelectWithRecursiveCTE(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	rnd := lcg.Intn
+	// Create a default context to check flavor support
+	// This maintains backward compatibility while supporting flavor checks
+	ctx := NewGenContext(db, lcg, 0)
+	return genSelectWithRecursiveCTEInternal(ctx)
+}
 
-	// Recursive CTEs follow pattern: WITH RECURSIVE name AS (base UNION ALL recursive)
+// genSelectWithRecursiveCTEInternal is the internal implementation that uses GenContext
+func genSelectWithRecursiveCTEInternal(ctx *GenContext) (SelectStmt, error) {
+	rnd := ctx.Intn
 	cteName := fmt.Sprintf("recursive_cte_%d", rnd(1000))
 
+	// Check if RECURSIVE CTEs are supported by the current flavor
+	if !ctx.SupportsFeature("cte_recursive") {
+		// For flavors that don't support RECURSIVE (like Turso),
+		// generate a regular CTE with multiple SELECT UNION instead
+		sql := fmt.Sprintf("WITH %s AS (SELECT 1 AS n UNION ALL SELECT 2 UNION ALL SELECT 3) SELECT * FROM %s;",
+			quoteIdent(cteName), quoteIdent(cteName))
+		return SelectStmt{sql: sql}, nil
+	}
+
+	// Recursive CTEs follow pattern: WITH RECURSIVE name AS (base UNION ALL recursive)
 	// Simple recursive examples
 	recursivePatterns := []string{
 		// Count from 1 to N

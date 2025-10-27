@@ -9,17 +9,73 @@ import (
 )
 
 // GenSelectWithWindowFunction generates a SELECT statement with window functions (OVER clause)
+// Note: Turso LibSQL does NOT support window functions (OVER clause).
+// This function will generate alternative queries for unsupported flavors.
 func GenSelectWithWindowFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db)
+	// Create a context to check flavor support
+	ctx := NewGenContext(db, lcg, 0)
+	return genSelectWithWindowFunctionInternal(ctx)
+}
+
+// genSelectWithWindowFunctionInternal is the internal implementation that uses GenContext
+func genSelectWithWindowFunctionInternal(ctx *GenContext) (SelectStmt, error) {
+	// Check if window functions are supported
+	if !ctx.SupportsFeature("window_functions") {
+		// For flavors that don't support window functions (like Turso),
+		// generate a simple SELECT with row numbering via ROWID instead
+		if ctx.DB == nil {
+			return SelectStmt{sql: "SELECT 1 AS id, 1 AS row_num;"}, nil
+		}
+		
+		tables, err := helper.GetAllTablesAndCols(ctx.DB)
+		if err != nil || len(tables) == 0 {
+			return SelectStmt{sql: "SELECT 1 AS id, 1 AS row_num;"}, nil
+		}
+		
+		rnd := ctx.Intn
+		tbl := tables[rnd(len(tables))]
+		if len(tbl.Cols) == 0 {
+			return SelectStmt{sql: "SELECT 1 AS id, 1 AS row_num;"}, nil
+		}
+		
+		// Generate a simple SELECT with ROWID for row numbering
+		numCols := 1 + rnd(min(3, len(tbl.Cols)))
+		selectedCols := make([]string, 0, numCols+1)
+		selected := make(map[int]struct{})
+		
+		for len(selectedCols) < numCols {
+			idx := rnd(len(tbl.Cols))
+			if _, ok := selected[idx]; ok {
+				continue
+			}
+			selected[idx] = struct{}{}
+			selectedCols = append(selectedCols, quoteIdent(tbl.Cols[idx].Name))
+		}
+		
+		// Add ROWID as alternative to ROW_NUMBER()
+		selectedCols = append(selectedCols, "ROWID AS row_num")
+		
+		limit := 1 + rnd(50)
+		sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;", 
+			strings.Join(selectedCols, ", "), quoteIdent(tbl.Name), limit)
+		return SelectStmt{sql: sql}, nil
+	}
+	
+	// Original window function logic for flavors that support it
+	if ctx.DB == nil {
+		return genSelectWindowFunctionLiteral(ctx.LCG), nil
+	}
+	
+	tables, err := helper.GetAllTablesAndCols(ctx.DB)
 	if err != nil || len(tables) == 0 {
-		return genSelectWindowFunctionLiteral(lcg), nil
+		return genSelectWindowFunctionLiteral(ctx.LCG), nil
 	}
 
-	rnd := lcg.Intn
+	rnd := ctx.Intn
 	tbl := tables[rnd(len(tables))]
 	
 	if len(tbl.Cols) == 0 {
-		return genSelectWindowFunctionLiteral(lcg), nil
+		return genSelectWindowFunctionLiteral(ctx.LCG), nil
 	}
 
 	// Find numeric columns for window aggregation
@@ -189,17 +245,59 @@ func genSelectWindowFunctionLiteral(lcg *common.LCG) SelectStmt {
 }
 
 // GenSelectWithMultipleWindows generates a SELECT with multiple window functions
+// Note: Turso LibSQL does NOT support window functions.
+// This function will generate alternative queries for unsupported flavors.
 func GenSelectWithMultipleWindows(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db)
+	// Create a context to check flavor support
+	ctx := NewGenContext(db, lcg, 0)
+	return genSelectWithMultipleWindowsInternal(ctx)
+}
+
+// genSelectWithMultipleWindowsInternal is the internal implementation that uses GenContext
+func genSelectWithMultipleWindowsInternal(ctx *GenContext) (SelectStmt, error) {
+	// Check if window functions are supported
+	if !ctx.SupportsFeature("window_functions") {
+		// For flavors that don't support window functions,
+		// generate a simple SELECT with aggregates and GROUP BY instead
+		if ctx.DB == nil {
+			return SelectStmt{sql: "SELECT 1 AS id, COUNT(*) AS cnt;"}, nil
+		}
+		
+		tables, err := helper.GetAllTablesAndCols(ctx.DB)
+		if err != nil || len(tables) == 0 {
+			return SelectStmt{sql: "SELECT 1 AS id, COUNT(*) AS cnt;"}, nil
+		}
+		
+		rnd := ctx.Intn
+		tbl := tables[rnd(len(tables))]
+		if len(tbl.Cols) == 0 {
+			return SelectStmt{sql: "SELECT 1 AS id, COUNT(*) AS cnt;"}, nil
+		}
+		
+		// Generate GROUP BY with aggregates as alternative
+		if len(tbl.Cols) > 0 {
+			groupCol := tbl.Cols[rnd(len(tbl.Cols))]
+			sql := fmt.Sprintf("SELECT %s, COUNT(*) AS cnt FROM %s GROUP BY %s LIMIT %d;",
+				quoteIdent(groupCol.Name), quoteIdent(tbl.Name), quoteIdent(groupCol.Name), 1+rnd(30))
+			return SelectStmt{sql: sql}, nil
+		}
+	}
+	
+	// Original multiple windows logic for flavors that support it
+	if ctx.DB == nil {
+		return genSelectMultipleWindowsLiteral(ctx.LCG), nil
+	}
+	
+	tables, err := helper.GetAllTablesAndCols(ctx.DB)
 	if err != nil || len(tables) == 0 {
-		return genSelectMultipleWindowsLiteral(lcg), nil
+		return genSelectMultipleWindowsLiteral(ctx.LCG), nil
 	}
 
-	rnd := lcg.Intn
+	rnd := ctx.Intn
 	tbl := tables[rnd(len(tables))]
 	
 	if len(tbl.Cols) == 0 {
-		return genSelectMultipleWindowsLiteral(lcg), nil
+		return genSelectMultipleWindowsLiteral(ctx.LCG), nil
 	}
 
 	// Build 2-3 different window expressions
