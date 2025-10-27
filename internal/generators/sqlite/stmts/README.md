@@ -1,6 +1,6 @@
 # Statement Generation Structure
 
-This document describes the improved statement generation structure for SQLsmith-go's Turso/LibSQL generator.
+This document describes the improved statement generation structure for SQLsmith-go's SQLite-compatible generators (Turso, ChaiSQL, go-sqlite3, etc.).
 
 ## Overview
 
@@ -297,7 +297,7 @@ import (
     "database/sql"
     "fmt"
     "sqlsmith-go/internal/common"
-    "sqlsmith-go/internal/generators/turso/stmts"
+    "sqlsmith-go/internal/generators/sqlite/stmts"
     _ "github.com/tursodatabase/turso-go"
 )
 
@@ -408,5 +408,16 @@ The new structure includes comprehensive tests:
 
 Run all tests:
 ```bash
-go test ./internal/generators/turso/stmts/... -v
+go test ./internal/generators/sqlite/stmts/... -v
 ```
+
+## Package Location
+
+This package was moved from `internal/generators/turso/stmts` to `internal/generators/sqlite/stmts` to enable sharing statement generation logic across multiple SQLite-compatible database executors:
+
+- **Turso/LibSQL**: Uses this package via `internal/generators/turso`
+- **ChaiSQL**: Uses this package via the turso generator wrapper
+- **go-sqlite3**: Can use this package for fuzzing
+- **Other SQLite-compatible databases**: Can easily integrate
+
+This allows multiple executors to leverage the same SQL generation infrastructure without duplication.
