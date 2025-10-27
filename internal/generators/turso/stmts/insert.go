@@ -9,6 +9,19 @@ import (
 	"strings"
 )
 
+// InsertGenerator is a StmtGenerator for basic INSERT statements.
+type InsertGenerator struct{}
+
+// Generate implements StmtGenerator for INSERT statements.
+func (g *InsertGenerator) Generate(ctx *GenContext) (Stmt, error) {
+	return genInsertSingle(ctx.DB, ctx.LCG)
+}
+
+// CanGenerate implements StmtGenerator. INSERT requires tables to exist.
+func (g *InsertGenerator) CanGenerate(ctx *GenContext) bool {
+	return hasTables(ctx.DB)
+}
+
 // InsertStmt represents an INSERT statement.
 type InsertStmt struct {
 	sql string
@@ -18,8 +31,14 @@ func (s *InsertStmt) SQL() string  { return s.sql }
 func (s *InsertStmt) Type() string { return "insert" }
 
 // GenInsert generates a type-aware INSERT for a random user table.
+// This function is kept for backward compatibility with existing code.
 // lcg should be *common.LCG.
 func GenInsert(db *sql.DB, lcg *common.LCG) (Stmt, error) {
+	return genInsertSingle(db, lcg)
+}
+
+// genInsertSingle is the internal implementation for single-row inserts.
+func genInsertSingle(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	tables, err := helper.GetAllTablesAndCols(db)
 	if err != nil || len(tables) == 0 {
 		return nil, fmt.Errorf("no tables available for INSERT: %v", err)

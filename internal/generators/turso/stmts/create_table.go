@@ -6,6 +6,19 @@ import (
 	"strings"
 )
 
+// CreateTableGenerator is a StmtGenerator for CREATE TABLE statements.
+type CreateTableGenerator struct{}
+
+// Generate implements StmtGenerator for CREATE TABLE statements.
+func (g *CreateTableGenerator) Generate(ctx *GenContext) (Stmt, error) {
+	return genCreateTableInternal(ctx.LCG)
+}
+
+// CanGenerate implements StmtGenerator. CREATE TABLE can always be generated.
+func (g *CreateTableGenerator) CanGenerate(ctx *GenContext) bool {
+	return true
+}
+
 // CreateTableStmt represents a CREATE TABLE statement.
 type CreateTableStmt struct {
 	sql string
@@ -15,8 +28,14 @@ func (s *CreateTableStmt) SQL() string  { return s.sql }
 func (s *CreateTableStmt) Type() string { return "create_table" }
 
 // GenCreateTable generates a simple CREATE TABLE statement using the provided LCG.
+// This function is kept for backward compatibility with existing code.
 // It produces 1..4 columns with common SQLite-compatible types.
 func GenCreateTable(lcg *common.LCG) (Stmt, error) {
+	return genCreateTableInternal(lcg)
+}
+
+// genCreateTableInternal is the internal implementation used by both old and new interfaces.
+func genCreateTableInternal(lcg *common.LCG) (Stmt, error) {
 	if lcg == nil {
 		lcg = common.NewLCG(1)
 	}

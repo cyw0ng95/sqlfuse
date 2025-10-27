@@ -9,6 +9,19 @@ import (
 	"strings"
 )
 
+// DeleteGenerator is a StmtGenerator for DELETE statements.
+type DeleteGenerator struct{}
+
+// Generate implements StmtGenerator for DELETE statements.
+func (g *DeleteGenerator) Generate(ctx *GenContext) (Stmt, error) {
+	return genDeleteInternal(ctx.LCG)
+}
+
+// CanGenerate implements StmtGenerator. DELETE can always be generated (creates synthetic tables).
+func (g *DeleteGenerator) CanGenerate(ctx *GenContext) bool {
+	return true
+}
+
 // DeleteStmt represents a DELETE statement.
 type DeleteStmt struct {
 	sql string

@@ -8,6 +8,20 @@ import (
 	"sqlsmith-go/internal/generators/turso/types"
 )
 
+// SelectGenerator is a StmtGenerator for basic SELECT statements.
+type SelectGenerator struct{}
+
+// Generate implements StmtGenerator for SELECT statements.
+func (g *SelectGenerator) Generate(ctx *GenContext) (Stmt, error) {
+	stmt, err := genSelectInternal(ctx.DB, ctx.LCG)
+	return &stmt, err
+}
+
+// CanGenerate implements StmtGenerator. SELECT can be generated if tables exist or falls back to SELECT 1.
+func (g *SelectGenerator) CanGenerate(ctx *GenContext) bool {
+	return true // Can always generate SELECT 1 as fallback
+}
+
 type SelectStmt struct {
 	sql string
 }
@@ -16,8 +30,14 @@ func (s *SelectStmt) SQL() string  { return s.sql }
 func (s *SelectStmt) Type() string { return "select" }
 
 // GenSelect generates a simple SELECT statement using available tables/columns.
+// This function is kept for backward compatibility with existing code.
 // lcg should be *common.LCG.
 func GenSelect(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
+	return genSelectInternal(db, lcg)
+}
+
+// genSelectInternal is the internal implementation used by both old and new interfaces.
+func genSelectInternal(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	tables, err := helper.GetAllTablesAndCols(db)
 	if err != nil || len(tables) == 0 {
 		// No real user tables available — return a harmless no-op select

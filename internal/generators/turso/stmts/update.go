@@ -9,6 +9,19 @@ import (
 	"strings"
 )
 
+// UpdateGenerator is a StmtGenerator for UPDATE statements.
+type UpdateGenerator struct{}
+
+// Generate implements StmtGenerator for UPDATE statements.
+func (g *UpdateGenerator) Generate(ctx *GenContext) (Stmt, error) {
+	return genUpdateInternal(ctx.LCG)
+}
+
+// CanGenerate implements StmtGenerator. UPDATE can always be generated (creates synthetic tables).
+func (g *UpdateGenerator) CanGenerate(ctx *GenContext) bool {
+	return true
+}
+
 // UpdateStmt represents an UPDATE statement.
 type UpdateStmt struct {
 	sql string
