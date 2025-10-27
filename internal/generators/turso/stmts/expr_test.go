@@ -576,6 +576,255 @@ func TestGenRandomExpr(t *testing.T) {
 	}
 }
 
+// TestGenRegexpExpr tests REGEXP expression generation
+// Note: REGEXP is not supported by Turso according to COMPAT.md
+func TestGenRegexpExpr(t *testing.T) {
+	db := setupTestDBForExpr(t)
+	defer db.Close()
+
+	tbls, err := helper.GetAllTablesAndCols(db)
+	if err != nil {
+		t.Fatalf("Failed to get tables: %v", err)
+	}
+
+	lcg := common.NewLCG(52)
+	ctx := NewGenContext(db, lcg, 3)
+	eg := NewExprGenerator(ctx)
+
+	// Test REGEXP
+	for i := 0; i < testIterations; i++ {
+		expr := eg.GenRegexpExpr(tbls, false)
+		if expr == "" {
+			t.Error("GenRegexpExpr returned empty expression")
+		}
+
+		if !strings.Contains(expr, "REGEXP") {
+			t.Errorf("Expected REGEXP expression, got: %s", expr)
+		}
+
+		if strings.Contains(expr, "NOT REGEXP") {
+			t.Errorf("Expected REGEXP without NOT, got: %s", expr)
+		}
+	}
+
+	// Test NOT REGEXP
+	for i := 0; i < testIterations; i++ {
+		expr := eg.GenRegexpExpr(tbls, true)
+		if expr == "" {
+			t.Error("GenRegexpExpr returned empty expression")
+		}
+
+		if !strings.Contains(expr, "NOT REGEXP") {
+			t.Errorf("Expected NOT REGEXP expression, got: %s", expr)
+		}
+	}
+}
+
+// TestGenMatchExpr tests MATCH expression generation
+// Note: MATCH is not supported by Turso according to COMPAT.md
+func TestGenMatchExpr(t *testing.T) {
+	db := setupTestDBForExpr(t)
+	defer db.Close()
+
+	tbls, err := helper.GetAllTablesAndCols(db)
+	if err != nil {
+		t.Fatalf("Failed to get tables: %v", err)
+	}
+
+	lcg := common.NewLCG(53)
+	ctx := NewGenContext(db, lcg, 3)
+	eg := NewExprGenerator(ctx)
+
+	// Test MATCH
+	for i := 0; i < testIterations; i++ {
+		expr := eg.GenMatchExpr(tbls, false)
+		if expr == "" {
+			t.Error("GenMatchExpr returned empty expression")
+		}
+
+		if !strings.Contains(expr, "MATCH") {
+			t.Errorf("Expected MATCH expression, got: %s", expr)
+		}
+
+		if strings.Contains(expr, "NOT MATCH") {
+			t.Errorf("Expected MATCH without NOT, got: %s", expr)
+		}
+	}
+
+	// Test NOT MATCH
+	for i := 0; i < testIterations; i++ {
+		expr := eg.GenMatchExpr(tbls, true)
+		if expr == "" {
+			t.Error("GenMatchExpr returned empty expression")
+		}
+
+		if !strings.Contains(expr, "NOT MATCH") {
+			t.Errorf("Expected NOT MATCH expression, got: %s", expr)
+		}
+	}
+}
+
+// TestGenInSubqueryExpr tests IN (subquery) expression generation
+// Note: IN (subquery) is not supported by Turso according to COMPAT.md
+func TestGenInSubqueryExpr(t *testing.T) {
+	db := setupTestDBForExpr(t)
+	defer db.Close()
+
+	tbls, err := helper.GetAllTablesAndCols(db)
+	if err != nil {
+		t.Fatalf("Failed to get tables: %v", err)
+	}
+
+	lcg := common.NewLCG(54)
+	ctx := NewGenContext(db, lcg, 3)
+	eg := NewExprGenerator(ctx)
+
+	// Test IN (subquery)
+	for i := 0; i < testIterations; i++ {
+		expr := eg.GenInSubqueryExpr(tbls, false)
+		if expr == "" {
+			t.Error("GenInSubqueryExpr returned empty expression")
+		}
+
+		if !strings.Contains(expr, " IN (") || !strings.Contains(expr, "SELECT") {
+			t.Errorf("Expected IN (subquery) expression, got: %s", expr)
+		}
+
+		if strings.Contains(expr, "NOT IN") {
+			t.Errorf("Expected IN without NOT, got: %s", expr)
+		}
+	}
+
+	// Test NOT IN (subquery)
+	for i := 0; i < testIterations; i++ {
+		expr := eg.GenInSubqueryExpr(tbls, true)
+		if expr == "" {
+			t.Error("GenInSubqueryExpr returned empty expression")
+		}
+
+		if !strings.Contains(expr, "NOT IN (") || !strings.Contains(expr, "SELECT") {
+			t.Errorf("Expected NOT IN (subquery) expression, got: %s", expr)
+		}
+	}
+}
+
+// TestGenExistsSubqueryExpr tests EXISTS (subquery) expression generation
+// Note: EXISTS (subquery) is not supported by Turso according to COMPAT.md
+func TestGenExistsSubqueryExpr(t *testing.T) {
+	db := setupTestDBForExpr(t)
+	defer db.Close()
+
+	tbls, err := helper.GetAllTablesAndCols(db)
+	if err != nil {
+		t.Fatalf("Failed to get tables: %v", err)
+	}
+
+	lcg := common.NewLCG(55)
+	ctx := NewGenContext(db, lcg, 3)
+	eg := NewExprGenerator(ctx)
+
+	// Test EXISTS (subquery)
+	for i := 0; i < testIterations; i++ {
+		expr := eg.GenExistsSubqueryExpr(tbls, false)
+		if expr == "" {
+			t.Error("GenExistsSubqueryExpr returned empty expression")
+		}
+
+		if !strings.Contains(expr, "EXISTS (") || !strings.Contains(expr, "SELECT") {
+			t.Errorf("Expected EXISTS (subquery) expression, got: %s", expr)
+		}
+
+		if strings.Contains(expr, "NOT EXISTS") {
+			t.Errorf("Expected EXISTS without NOT, got: %s", expr)
+		}
+	}
+
+	// Test NOT EXISTS (subquery)
+	for i := 0; i < testIterations; i++ {
+		expr := eg.GenExistsSubqueryExpr(tbls, true)
+		if expr == "" {
+			t.Error("GenExistsSubqueryExpr returned empty expression")
+		}
+
+		if !strings.Contains(expr, "NOT EXISTS (") || !strings.Contains(expr, "SELECT") {
+			t.Errorf("Expected NOT EXISTS (subquery) expression, got: %s", expr)
+		}
+	}
+}
+
+// TestGenFilterExpr tests aggregate FILTER clause expression generation
+// Note: FILTER is not supported by Turso according to COMPAT.md (incorrectly ignored)
+func TestGenFilterExpr(t *testing.T) {
+	db := setupTestDBForExpr(t)
+	defer db.Close()
+
+	tbls, err := helper.GetAllTablesAndCols(db)
+	if err != nil {
+		t.Fatalf("Failed to get tables: %v", err)
+	}
+
+	lcg := common.NewLCG(56)
+	ctx := NewGenContext(db, lcg, 3)
+	eg := NewExprGenerator(ctx)
+
+	for i := 0; i < testIterations; i++ {
+		expr := eg.GenFilterExpr(tbls)
+		if expr == "" {
+			t.Error("GenFilterExpr returned empty expression")
+		}
+
+		if !strings.Contains(expr, "FILTER") || !strings.Contains(expr, "WHERE") {
+			t.Errorf("Expected FILTER clause expression, got: %s", expr)
+		}
+
+		// Check for valid aggregate functions
+		hasValidAgg := strings.Contains(expr, "COUNT") ||
+			strings.Contains(expr, "SUM") ||
+			strings.Contains(expr, "AVG") ||
+			strings.Contains(expr, "MIN") ||
+			strings.Contains(expr, "MAX")
+		if !hasValidAgg {
+			t.Errorf("Expected valid aggregate function in FILTER expression, got: %s", expr)
+		}
+	}
+}
+
+// TestGenOverExpr tests window function OVER clause expression generation
+// Note: OVER is not supported by Turso according to COMPAT.md (incorrectly ignored)
+func TestGenOverExpr(t *testing.T) {
+	db := setupTestDBForExpr(t)
+	defer db.Close()
+
+	tbls, err := helper.GetAllTablesAndCols(db)
+	if err != nil {
+		t.Fatalf("Failed to get tables: %v", err)
+	}
+
+	lcg := common.NewLCG(57)
+	ctx := NewGenContext(db, lcg, 3)
+	eg := NewExprGenerator(ctx)
+
+	for i := 0; i < testIterations; i++ {
+		expr := eg.GenOverExpr(tbls)
+		if expr == "" {
+			t.Error("GenOverExpr returned empty expression")
+		}
+
+		if !strings.Contains(expr, "OVER (") {
+			t.Errorf("Expected OVER clause expression, got: %s", expr)
+		}
+
+		// Check for valid window functions
+		hasValidFunc := strings.Contains(expr, "ROW_NUMBER") ||
+			strings.Contains(expr, "RANK") ||
+			strings.Contains(expr, "DENSE_RANK") ||
+			strings.Contains(expr, "NTILE")
+		if !hasValidFunc {
+			t.Errorf("Expected valid window function in OVER expression, got: %s", expr)
+		}
+	}
+}
+
 // TestExpressionDeterminism tests that same seed produces same expressions
 func TestExpressionDeterminism(t *testing.T) {
 	db := setupTestDBForExpr(t)
@@ -599,6 +848,12 @@ func TestExpressionDeterminism(t *testing.T) {
 		{"Binary", func(eg *ExprGenerator, tbls []helper.TableInfo) string { return eg.GenBinaryExpr(tbls) }},
 		{"Parenthesized", func(eg *ExprGenerator, tbls []helper.TableInfo) string { return eg.GenParenthesizedExpr(tbls) }},
 		{"IsNull", func(eg *ExprGenerator, tbls []helper.TableInfo) string { return eg.GenIsNullExpr(tbls, false) }},
+		{"Regexp", func(eg *ExprGenerator, tbls []helper.TableInfo) string { return eg.GenRegexpExpr(tbls, false) }},
+		{"Match", func(eg *ExprGenerator, tbls []helper.TableInfo) string { return eg.GenMatchExpr(tbls, false) }},
+		{"InSubquery", func(eg *ExprGenerator, tbls []helper.TableInfo) string { return eg.GenInSubqueryExpr(tbls, false) }},
+		{"ExistsSubquery", func(eg *ExprGenerator, tbls []helper.TableInfo) string { return eg.GenExistsSubqueryExpr(tbls, false) }},
+		{"Filter", func(eg *ExprGenerator, tbls []helper.TableInfo) string { return eg.GenFilterExpr(tbls) }},
+		{"Over", func(eg *ExprGenerator, tbls []helper.TableInfo) string { return eg.GenOverExpr(tbls) }},
 	}
 
 	for _, tt := range tests {

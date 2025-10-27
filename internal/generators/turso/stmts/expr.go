@@ -335,6 +335,241 @@ func (eg *ExprGenerator) GenIsNullExpr(tbls []helper.TableInfo, useNot bool) str
 	return fmt.Sprintf("%s IS NULL", quoteIdent(col.Name))
 }
 
+// GenRegexpExpr generates a REGEXP expression: expr (NOT) REGEXP pattern
+// Note: REGEXP is not supported by Turso according to COMPAT.md
+func (eg *ExprGenerator) GenRegexpExpr(tbls []helper.TableInfo, useNot bool) string {
+	if len(tbls) == 0 {
+		if useNot {
+			return "'test' NOT REGEXP '^t.*'"
+		}
+		return "'test' REGEXP '^t.*'"
+	}
+
+	tbl := tbls[eg.ctx.Intn(len(tbls))]
+	if len(tbl.Cols) == 0 {
+		if useNot {
+			return "'test' NOT REGEXP '^t.*'"
+		}
+		return "'test' REGEXP '^t.*'"
+	}
+
+	// Find text columns for REGEXP
+	var textCols []helper.ColumnInfo
+	for _, col := range tbl.Cols {
+		colTypeUpper := strings.ToUpper(col.Type)
+		if strings.Contains(colTypeUpper, "TEXT") || strings.Contains(colTypeUpper, "CHAR") {
+			textCols = append(textCols, col)
+		}
+	}
+
+	var col helper.ColumnInfo
+	if len(textCols) > 0 {
+		col = textCols[eg.ctx.Intn(len(textCols))]
+	} else {
+		col = tbl.Cols[eg.ctx.Intn(len(tbl.Cols))]
+	}
+
+	// Generate regex patterns
+	patterns := []string{"^[a-z]+$", ".*[0-9].*", "^test", "[A-Z]+", "\\d+"}
+	pattern := patterns[eg.ctx.Intn(len(patterns))]
+
+	notClause := ""
+	if useNot {
+		notClause = "NOT "
+	}
+
+	return fmt.Sprintf("%s %sREGEXP '%s'", quoteIdent(col.Name), notClause, pattern)
+}
+
+// GenMatchExpr generates a MATCH expression: expr (NOT) MATCH pattern
+// Note: MATCH is not supported by Turso according to COMPAT.md
+func (eg *ExprGenerator) GenMatchExpr(tbls []helper.TableInfo, useNot bool) string {
+	if len(tbls) == 0 {
+		if useNot {
+			return "'test' NOT MATCH 'pattern'"
+		}
+		return "'test' MATCH 'pattern'"
+	}
+
+	tbl := tbls[eg.ctx.Intn(len(tbls))]
+	if len(tbl.Cols) == 0 {
+		if useNot {
+			return "'test' NOT MATCH 'pattern'"
+		}
+		return "'test' MATCH 'pattern'"
+	}
+
+	// Find text columns for MATCH
+	var textCols []helper.ColumnInfo
+	for _, col := range tbl.Cols {
+		colTypeUpper := strings.ToUpper(col.Type)
+		if strings.Contains(colTypeUpper, "TEXT") || strings.Contains(colTypeUpper, "CHAR") {
+			textCols = append(textCols, col)
+		}
+	}
+
+	var col helper.ColumnInfo
+	if len(textCols) > 0 {
+		col = textCols[eg.ctx.Intn(len(textCols))]
+	} else {
+		col = tbl.Cols[eg.ctx.Intn(len(tbl.Cols))]
+	}
+
+	// Generate match patterns
+	patterns := []string{"pattern", "test", "value", "match"}
+	pattern := patterns[eg.ctx.Intn(len(patterns))]
+
+	notClause := ""
+	if useNot {
+		notClause = "NOT "
+	}
+
+	return fmt.Sprintf("%s %sMATCH '%s'", quoteIdent(col.Name), notClause, pattern)
+}
+
+// GenInSubqueryExpr generates an IN (subquery) expression: expr (NOT) IN (SELECT ...)
+// Note: IN (subquery) is not supported by Turso according to COMPAT.md
+func (eg *ExprGenerator) GenInSubqueryExpr(tbls []helper.TableInfo, useNot bool) string {
+	if len(tbls) == 0 {
+		if useNot {
+			return "1 NOT IN (SELECT 1)"
+		}
+		return "1 IN (SELECT 1)"
+	}
+
+	tbl := tbls[eg.ctx.Intn(len(tbls))]
+	if len(tbl.Cols) == 0 {
+		if useNot {
+			return "1 NOT IN (SELECT 1)"
+		}
+		return "1 IN (SELECT 1)"
+	}
+
+	col := tbl.Cols[eg.ctx.Intn(len(tbl.Cols))]
+
+	// Generate a simple subquery
+	subquery := fmt.Sprintf("SELECT %s FROM %s LIMIT 5", quoteIdent(col.Name), quoteIdent(tbl.Name))
+
+	notClause := ""
+	if useNot {
+		notClause = "NOT "
+	}
+
+	return fmt.Sprintf("%s %sIN (%s)", quoteIdent(col.Name), notClause, subquery)
+}
+
+// GenExistsSubqueryExpr generates an EXISTS (subquery) expression: (NOT) EXISTS (SELECT ...)
+// Note: EXISTS (subquery) is not supported by Turso according to COMPAT.md
+func (eg *ExprGenerator) GenExistsSubqueryExpr(tbls []helper.TableInfo, useNot bool) string {
+	if len(tbls) == 0 {
+		if useNot {
+			return "NOT EXISTS (SELECT 1)"
+		}
+		return "EXISTS (SELECT 1)"
+	}
+
+	tbl := tbls[eg.ctx.Intn(len(tbls))]
+
+	// Generate a simple subquery with WHERE clause if possible
+	var subquery string
+	if len(tbl.Cols) > 0 {
+		col := tbl.Cols[eg.ctx.Intn(len(tbl.Cols))]
+		val := types.ValueForType(col.Type, eg.ctx.LCG, col.Name)
+		subquery = fmt.Sprintf("SELECT 1 FROM %s WHERE %s = %s", quoteIdent(tbl.Name), quoteIdent(col.Name), val)
+	} else {
+		subquery = fmt.Sprintf("SELECT 1 FROM %s", quoteIdent(tbl.Name))
+	}
+
+	notClause := ""
+	if useNot {
+		notClause = "NOT "
+	}
+
+	return fmt.Sprintf("%sEXISTS (%s)", notClause, subquery)
+}
+
+// GenFilterExpr generates an aggregate function with FILTER clause: agg() FILTER (WHERE ...)
+// Note: FILTER is not supported by Turso according to COMPAT.md (incorrectly ignored)
+func (eg *ExprGenerator) GenFilterExpr(tbls []helper.TableInfo) string {
+	if len(tbls) == 0 {
+		return "COUNT(*) FILTER (WHERE 1 = 1)"
+	}
+
+	tbl := tbls[eg.ctx.Intn(len(tbls))]
+	if len(tbl.Cols) == 0 {
+		return "COUNT(*) FILTER (WHERE 1 = 1)"
+	}
+
+	// Choose an aggregate function
+	aggregates := []string{"COUNT", "SUM", "AVG", "MIN", "MAX"}
+	agg := aggregates[eg.ctx.Intn(len(aggregates))]
+
+	// Generate aggregate argument
+	var aggArg string
+	if agg == "COUNT" && eg.ctx.Intn(2) == 0 {
+		aggArg = "*"
+	} else {
+		// Use a numeric column for SUM/AVG or any column for others
+		var cols []helper.ColumnInfo
+		if agg == "SUM" || agg == "AVG" {
+			// Prefer numeric columns
+			for _, col := range tbl.Cols {
+				if isNumericType(col.Type) {
+					cols = append(cols, col)
+				}
+			}
+		}
+		if len(cols) == 0 {
+			cols = tbl.Cols
+		}
+		col := cols[eg.ctx.Intn(len(cols))]
+		aggArg = quoteIdent(col.Name)
+	}
+
+	// Generate WHERE condition for FILTER
+	filterCol := tbl.Cols[eg.ctx.Intn(len(tbl.Cols))]
+	filterVal := types.ValueForType(filterCol.Type, eg.ctx.LCG, filterCol.Name)
+
+	return fmt.Sprintf("%s(%s) FILTER (WHERE %s = %s)", agg, aggArg, quoteIdent(filterCol.Name), filterVal)
+}
+
+// GenOverExpr generates a window function with OVER clause: func() OVER (...)
+// Note: OVER is not supported by Turso according to COMPAT.md (incorrectly ignored)
+func (eg *ExprGenerator) GenOverExpr(tbls []helper.TableInfo) string {
+	if len(tbls) == 0 {
+		return "ROW_NUMBER() OVER (ORDER BY 1)"
+	}
+
+	tbl := tbls[eg.ctx.Intn(len(tbls))]
+	if len(tbl.Cols) == 0 {
+		return "ROW_NUMBER() OVER (ORDER BY 1)"
+	}
+
+	// Choose a window function
+	windowFuncs := []string{"ROW_NUMBER", "RANK", "DENSE_RANK", "NTILE"}
+	fn := windowFuncs[eg.ctx.Intn(len(windowFuncs))]
+
+	// Generate function argument (NTILE requires argument)
+	var fnArg string
+	if fn == "NTILE" {
+		fnArg = fmt.Sprintf("%d", 2+eg.ctx.Intn(10))
+	}
+
+	// Generate OVER clause
+	col := tbl.Cols[eg.ctx.Intn(len(tbl.Cols))]
+
+	// Optionally add PARTITION BY
+	var overClause string
+	if eg.ctx.Intn(2) == 0 && len(tbl.Cols) > 1 {
+		partCol := tbl.Cols[eg.ctx.Intn(len(tbl.Cols))]
+		overClause = fmt.Sprintf("PARTITION BY %s ORDER BY %s", quoteIdent(partCol.Name), quoteIdent(col.Name))
+	} else {
+		overClause = fmt.Sprintf("ORDER BY %s", quoteIdent(col.Name))
+	}
+
+	return fmt.Sprintf("%s(%s) OVER (%s)", fn, fnArg, overClause)
+}
+
 // GenRandomExpr generates a random expression from all available expression types
 func (eg *ExprGenerator) GenRandomExpr(tbls []helper.TableInfo) string {
 	if len(tbls) == 0 {
@@ -343,7 +578,8 @@ func (eg *ExprGenerator) GenRandomExpr(tbls []helper.TableInfo) string {
 
 	// Choose random expression type
 	// Note: IS DISTINCT FROM excluded as it's not supported by the SQLite ANTLR parser
-	exprTypes := []int{0, 1, 2, 3, 4, 5, 6, 7, 8}
+	// New expression types added: REGEXP, MATCH, IN (subquery), EXISTS, FILTER, OVER
+	exprTypes := []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14}
 	exprType := exprTypes[eg.ctx.Intn(len(exprTypes))]
 
 	switch exprType {
@@ -363,8 +599,26 @@ func (eg *ExprGenerator) GenRandomExpr(tbls []helper.TableInfo) string {
 		return eg.GenParenthesizedExpr(tbls)
 	case 7:
 		return eg.GenIsNullExpr(tbls, eg.ctx.Intn(2) == 0)
-	default:
+	case 8:
 		// Existing CASE expression
 		return eg.genCaseExpr(tbls)
+	case 9:
+		// REGEXP - unsupported by Turso
+		return eg.GenRegexpExpr(tbls, eg.ctx.Intn(2) == 0)
+	case 10:
+		// MATCH - unsupported by Turso
+		return eg.GenMatchExpr(tbls, eg.ctx.Intn(2) == 0)
+	case 11:
+		// IN (subquery) - unsupported by Turso
+		return eg.GenInSubqueryExpr(tbls, eg.ctx.Intn(2) == 0)
+	case 12:
+		// EXISTS (subquery) - unsupported by Turso
+		return eg.GenExistsSubqueryExpr(tbls, eg.ctx.Intn(2) == 0)
+	case 13:
+		// FILTER clause - unsupported by Turso (incorrectly ignored)
+		return eg.GenFilterExpr(tbls)
+	default:
+		// OVER clause - unsupported by Turso (incorrectly ignored)
+		return eg.GenOverExpr(tbls)
 	}
 }
