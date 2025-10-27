@@ -13,7 +13,8 @@ type Generator struct {
 	first             bool // first generation is forced into pragma
 	weights           map[StmtType]uint64
 	totalWeight       uint64
-	maxRecursionDepth int // Maximum depth for recursive generation (default: 2)
+	maxRecursionDepth int                // Maximum depth for recursive generation (default: 2)
+	flavorConfig      stmts.FlavorConfig // SQL flavor configuration for Turso LibSQL
 }
 
 // StmtType represents a generation direction / statement category.
@@ -181,7 +182,8 @@ func NewGenerator(seed uint64) *Generator {
 	g := &Generator{
 		lcg:               common.NewLCG(seed),
 		first:             true,
-		maxRecursionDepth: 2, // Default recursion depth
+		maxRecursionDepth: 2,                  // Default recursion depth
+		flavorConfig:      NewTursoFlavorConfig(), // Use Turso-specific flavor
 	}
 	g.SetWeights(DefaultStmtWeights())
 	return g
@@ -230,6 +232,11 @@ func (g *Generator) SetMaxRecursionDepth(depth int) {
 // GetMaxRecursionDepth returns the current maximum recursion depth.
 func (g *Generator) GetMaxRecursionDepth() int {
 	return g.maxRecursionDepth
+}
+
+// createGenContext creates a GenContext with Turso-specific flavor configuration.
+func (g *Generator) createGenContext(db *sql.DB) *stmts.GenContext {
+	return stmts.NewGenContextWithFlavor(db, g.lcg, g.maxRecursionDepth, g.flavorConfig)
 }
 
 func (g *Generator) recalcTotalWeight() {
