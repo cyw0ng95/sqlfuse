@@ -47,7 +47,7 @@ func genFTS5Table(tblName string, lcg *common.LCG) string {
 	// Generate 1-4 columns for FTS5
 	numCols := 1 + lcg.Intn(4)
 	cols := make([]string, numCols)
-	
+
 	for i := 0; i < numCols; i++ {
 		cols[i] = fmt.Sprintf("col%d", i+1)
 	}
@@ -62,7 +62,7 @@ func genFTS5TableComplex(tblName string, lcg *common.LCG) string {
 	// Generate 2-5 columns for FTS5
 	numCols := 2 + lcg.Intn(4)
 	cols := make([]string, numCols)
-	
+
 	for i := 0; i < numCols; i++ {
 		// Sometimes add UNINDEXED keyword to columns (FTS5 feature)
 		if i > 0 && lcg.Intn(3) == 0 {

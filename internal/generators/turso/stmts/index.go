@@ -40,7 +40,7 @@ func GenCreateIndex(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 
 	rnd := lcg.Intn
 	tbl := tables[rnd(len(tables))]
-	
+
 	if len(tbl.Cols) == 0 {
 		return genCreateIndexFallback(lcg), nil
 	}
@@ -67,12 +67,12 @@ func GenCreateIndex(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 			continue
 		}
 		selected[idx] = struct{}{}
-		
+
 		col := tbl.Cols[idx]
 		// Turso supports column references only, not arbitrary expressions
 		// Optionally add ASC/DESC and COLLATE
 		colSpec := quoteIdent(col.Name)
-		
+
 		// 30% chance to add sort order
 		if rnd(10) < 3 {
 			if rnd(2) == 0 {
@@ -81,7 +81,7 @@ func GenCreateIndex(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 				colSpec += " DESC"
 			}
 		}
-		
+
 		indexCols = append(indexCols, colSpec)
 	}
 

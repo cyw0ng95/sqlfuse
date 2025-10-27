@@ -32,7 +32,7 @@ func GenAttachDatabase(lcg *common.LCG) Stmt {
 	// Use temporary in-memory or file-based databases
 	dbChoice := lcg.Intn(3)
 	var dbPath string
-	
+
 	switch dbChoice {
 	case 0:
 		// In-memory database
