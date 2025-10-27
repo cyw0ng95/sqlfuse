@@ -1,7 +1,7 @@
 package turso
 
 import (
-	"sqlsmith-go/internal/generators/sqlite/stmts"
+	"sqlsmith-go/internal/stmts/stmts"
 	"testing"
 )
 
