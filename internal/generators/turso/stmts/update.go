@@ -6,6 +6,19 @@ import (
 	"sqlsmith-go/internal/common"
 )
 
+// UpdateGenerator is a StmtGenerator for UPDATE statements.
+type UpdateGenerator struct{}
+
+// Generate implements StmtGenerator for UPDATE statements.
+func (g *UpdateGenerator) Generate(ctx *GenContext) (Stmt, error) {
+	return genUpdateInternal(ctx.LCG)
+}
+
+// CanGenerate implements StmtGenerator. UPDATE can always be generated (creates synthetic tables).
+func (g *UpdateGenerator) CanGenerate(ctx *GenContext) bool {
+	return true
+}
+
 // UpdateStmt represents an UPDATE statement.
 type UpdateStmt struct {
 	sql string
@@ -16,7 +29,13 @@ func (s *UpdateStmt) Type() string { return "update" }
 
 // GenUpdate generates a simple UPDATE statement targeting a pseudo-random table
 // and random column names with simple literal values.
+// This function is kept for backward compatibility with existing code.
 func GenUpdate(lcg *common.LCG) (Stmt, error) {
+	return genUpdateInternal(lcg)
+}
+
+// genUpdateInternal is the internal implementation used by both old and new interfaces.
+func genUpdateInternal(lcg *common.LCG) (Stmt, error) {
 	if lcg == nil {
 		lcg = common.NewLCG(1)
 	}

@@ -5,8 +5,30 @@ import (
 	"sqlsmith-go/internal/common"
 )
 
+// PragmaGenerator is a StmtGenerator for PRAGMA statements.
+type PragmaGenerator struct{}
+
+// Generate implements StmtGenerator for PRAGMA statements.
+func (g *PragmaGenerator) Generate(ctx *GenContext) (Stmt, error) {
+	return genPragmaInternal(ctx.LCG), nil
+}
+
+// CanGenerate implements StmtGenerator. PRAGMA statements can always be generated.
+func (g *PragmaGenerator) CanGenerate(ctx *GenContext) bool {
+	return true
+}
+
 // GenPragma generates a PRAGMA statement; values are chosen via the LCG.
+// This function is kept for backward compatibility with existing code.
 func GenPragma(lcg *common.LCG) Stmt {
+	return genPragmaInternal(lcg)
+}
+
+// genPragmaInternal is the internal implementation used by both old and new interfaces.
+func genPragmaInternal(lcg *common.LCG) Stmt {
+	if lcg == nil {
+		lcg = common.NewLCG(1)
+	}
 	pragmas := []string{
 		"application_id",
 		"cache_size",
