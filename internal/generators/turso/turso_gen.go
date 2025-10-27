@@ -523,6 +523,9 @@ func (g *Generator) GenerateWithDB(db *sql.DB) string {
 		stmt, err := stmts.GenSelectWithRecursiveCTE(db, g.lcg)
 		if err != nil {
 			fmt.Println("Error generating SELECT RECURSIVE CTE:", err)
+			return "SELECT 1"
+		}
+		return stmt.SQL()
 	case StmtSelectUUID:
 		stmt, err := stmts.GenSelectWithUUIDFunction(db, g.lcg)
 		if err != nil {
