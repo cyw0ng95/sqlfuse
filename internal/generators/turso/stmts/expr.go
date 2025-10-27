@@ -154,7 +154,8 @@ func (eg *ExprGenerator) GenIsDistinctFromExpr(tbls []helper.TableInfo, useNot b
 }
 
 // GenCollateExpr generates a COLLATE expression: expr COLLATE collation_name
-// Only default collations are supported by Turso
+// IMPORTANT: Only default SQLite collations are supported by Turso (BINARY, NOCASE, RTRIM).
+// Custom collations are NOT supported per COMPAT.md.
 func (eg *ExprGenerator) GenCollateExpr(tbls []helper.TableInfo) string {
 	if len(tbls) == 0 {
 		return "'text' COLLATE NOCASE"
@@ -181,7 +182,7 @@ func (eg *ExprGenerator) GenCollateExpr(tbls []helper.TableInfo) string {
 		col = tbl.Cols[eg.ctx.Intn(len(tbl.Cols))]
 	}
 
-	// Default SQLite collations (Turso doesn't support custom collations)
+	// Default SQLite collations only (Turso doesn't support custom collations)
 	collations := []string{"BINARY", "NOCASE", "RTRIM"}
 	collation := collations[eg.ctx.Intn(len(collations))]
 
@@ -238,7 +239,10 @@ func (eg *ExprGenerator) GenUnaryExpr(tbls []helper.TableInfo) string {
 }
 
 // GenBinaryExpr generates a binary operator expression
-// Excludes unsupported operators: %, !<, !>
+// IMPORTANT: Excludes unsupported Turso operators per COMPAT.md:
+//   - % (modulo) - NOT SUPPORTED
+//   - !< (not less than) - NOT SUPPORTED  
+//   - !> (not greater than) - NOT SUPPORTED
 func (eg *ExprGenerator) GenBinaryExpr(tbls []helper.TableInfo) string {
 	if len(tbls) == 0 {
 		return "1 + 1"
@@ -257,7 +261,7 @@ func (eg *ExprGenerator) GenBinaryExpr(tbls []helper.TableInfo) string {
 		}
 	}
 
-	// Supported binary operators (excluding %, !<, !> which are unsupported)
+	// Supported binary operators (excluding %, !<, !> which are NOT supported by Turso)
 	numericOps := []string{"+", "-", "*", "/", "&", "|", "<<", ">>"}
 	comparisonOps := []string{"=", "!=", "<", "<=", ">", ">=", "<>"}
 	logicalOps := []string{"AND", "OR"}

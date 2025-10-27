@@ -6,14 +6,14 @@ import (
 	"sqlsmith-go/internal/common"
 	"sqlsmith-go/internal/generators/turso/helper"
 	"sqlsmith-go/internal/generators/turso/types"
-	"strings"
 )
 
-// GenSelectSubquery generates a SELECT with a subquery in WHERE clause.
+// GenSelectSubquery generates a SELECT with a subquery in the FROM clause (derived table).
+// NOTE: Turso does NOT support EXISTS (subquery) or IN (subquery) per COMPAT.md.
+// This generator uses subqueries in FROM clause as derived tables, which IS supported.
 func GenSelectSubquery(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	tbls, err := helper.GetAllTablesAndCols(db)
-	if err != nil || len(tbls) < 2 {
-		// Need at least 2 tables for a meaningful subquery
+	if err != nil || len(tbls) == 0 {
 		return SelectStmt{sql: "SELECT 1;"}, nil
 	}
 
@@ -24,86 +24,50 @@ func GenSelectSubquery(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 		rnd = func(n int) int { return 0 }
 	}
 
-	// Pick outer query table
-	outerTbl := tbls[rnd(len(tbls))]
-	if len(outerTbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(outerTbl.Name))}, nil
+	// Pick a table for the subquery
+	tbl := tbls[rnd(len(tbls))]
+	if len(tbl.Cols) == 0 {
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name))}, nil
 	}
 
-	// Pick inner query table (different from outer if possible)
-	innerTbl := tbls[rnd(len(tbls))]
-	if len(tbls) > 1 && innerTbl.Name == outerTbl.Name {
-		innerTbl = tbls[(rnd(len(tbls)-1)+1)%len(tbls)]
-	}
-	if len(innerTbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(outerTbl.Name))}, nil
-	}
-
-	// Select columns for outer query
-	maxCols := len(outerTbl.Cols)
+	// Select columns from subquery (pick 1-3 columns)
+	maxCols := len(tbl.Cols)
 	if maxCols > 3 {
 		maxCols = 3
 	}
 	nCols := 1 + rnd(maxCols)
-	if nCols > len(outerTbl.Cols) {
-		nCols = len(outerTbl.Cols)
+	if nCols > len(tbl.Cols) {
+		nCols = len(tbl.Cols)
 	}
 
 	selected := make(map[int]struct{}, nCols)
 	cols := make([]helper.ColumnInfo, 0, nCols)
 	for len(cols) < nCols {
-		idx := rnd(len(outerTbl.Cols))
+		idx := rnd(len(tbl.Cols))
 		if _, ok := selected[idx]; ok {
 			continue
 		}
 		selected[idx] = struct{}{}
-		cols = append(cols, outerTbl.Cols[idx])
+		cols = append(cols, tbl.Cols[idx])
 	}
 
-	// Try to find a common column between tables for correlation
-	var outerCol, innerCol helper.ColumnInfo
-	foundCommon := false
-	for _, oc := range outerTbl.Cols {
-		for _, ic := range innerTbl.Cols {
-			if strings.EqualFold(oc.Name, ic.Name) {
-				outerCol = oc
-				innerCol = ic
-				foundCommon = true
-				break
-			}
-		}
-		if foundCommon {
-			break
-		}
+	// Build a subquery in FROM clause (derived table)
+	// This is supported: SELECT * FROM (SELECT ... FROM table) AS subq
+	innerLimit := 1 + rnd(20)
+	subquery := fmt.Sprintf("(SELECT %s FROM %s LIMIT %d) AS subq",
+		joinCols(cols),
+		quoteIdent(tbl.Name),
+		innerLimit)
+
+	// Optionally add a WHERE clause to the outer query
+	var where string
+	if rnd(2) == 0 && len(cols) > 0 {
+		col := cols[rnd(len(cols))]
+		val := types.ValueForType(col.Type, lcg, col.Name)
+		where = fmt.Sprintf(" WHERE %s IS NOT NULL OR %s = %s", quoteIdent(col.Name), quoteIdent(col.Name), val)
 	}
-
-	// If no common column, just use first columns
-	if !foundCommon {
-		outerCol = outerTbl.Cols[0]
-		innerCol = innerTbl.Cols[0]
-	}
-
-	// Use EXISTS subquery with correlation (LibSQL doesn't support IN with subquery)
-	// Build correlation condition
-	correlationWhere := fmt.Sprintf("%s = %s.%s",
-		quoteIdent(innerCol.Name),
-		quoteIdent(outerTbl.Name),
-		quoteIdent(outerCol.Name))
-
-	// Optionally add an AND condition to the subquery
-	if rnd(2) == 0 && len(innerTbl.Cols) > 1 {
-		// Add a simple additional condition to the subquery
-		whereCol := innerTbl.Cols[rnd(len(innerTbl.Cols))]
-		val := types.ValueForType(whereCol.Type, lcg, whereCol.Name)
-		correlationWhere = fmt.Sprintf("%s AND %s > %s", correlationWhere, quoteIdent(whereCol.Name), val)
-	}
-
-	// Use EXISTS subquery with correlation
-	subquery := fmt.Sprintf("SELECT 1 FROM %s WHERE %s LIMIT 1",
-		quoteIdent(innerTbl.Name), correlationWhere)
-	where := fmt.Sprintf(" WHERE EXISTS (%s)", subquery)
 
 	limit := 1 + rnd(50)
-	sql := fmt.Sprintf("SELECT %s FROM %s%s LIMIT %d;", joinCols(cols), quoteIdent(outerTbl.Name), where, limit)
+	sql := fmt.Sprintf("SELECT * FROM %s%s LIMIT %d;", subquery, where, limit)
 	return SelectStmt{sql: sql}, nil
 }
