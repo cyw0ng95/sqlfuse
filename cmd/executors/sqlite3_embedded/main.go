@@ -10,7 +10,7 @@ import (
 	"sqlsmith-go/internal/common"
 	"sqlsmith-go/internal/executors"
 	"sqlsmith-go/internal/generators/turso"
-	"sqlsmith-go/internal/generators/turso/helper"
+	"sqlsmith-go/internal/generators/sqlite/helper"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/cobra"
