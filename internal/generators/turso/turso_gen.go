@@ -82,7 +82,7 @@ func NewGenerator(seed uint64) *Generator {
 		lcg:               common.NewLCG(seed),
 		first:             true,
 		maxRecursionDepth: 2, // Default recursion depth
-		flavorConfig:      nil,
+		flavorConfig:      NewTursoFlavorConfig(),
 	}
 	g.SetWeights(DefaultStmtWeights())
 	g.initGenMap()

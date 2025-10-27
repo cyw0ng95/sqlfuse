@@ -10,6 +10,7 @@ import (
 
 	"sqlsmith-go/internal/common"
 	"sqlsmith-go/internal/executors"
+	"sqlsmith-go/internal/generators"
 	"sqlsmith-go/internal/generators/turso"
 
 	// _ "github.com/chaisql/chai"
@@ -80,7 +81,7 @@ func main() {
 			for w := 0; w < workers; w++ {
 				go func(workerID int) {
 					defer wg.Done()
-					gen := turso.NewGenerator(baseSeed + uint64(workerID))
+					var gen generators.Generator = turso.NewGenerator(baseSeed + uint64(workerID))
 					for i := 0; i < queries; i++ {
 						query := gen.GenerateWithDB(db)
 						if _, execErr := db.Exec(query); execErr != nil {
