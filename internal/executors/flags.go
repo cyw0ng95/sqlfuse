@@ -11,6 +11,7 @@ type CommonFlags struct {
 	Workers     int
 	Queries     int
 	Seed        int64
+	Verbose     bool
 }
 
 // AddCommonFlags registers the standard executor flags onto the provided cobra command,
@@ -22,4 +23,5 @@ func AddCommonFlags(cmd *cobra.Command, f *CommonFlags, defaultInitSQL string) {
 	cmd.Flags().IntVarP(&f.Workers, "workers", "w", 1, "Number of concurrent workers")
 	cmd.Flags().IntVarP(&f.Queries, "queries", "q", 10, "Number of queries per worker")
 	cmd.Flags().Int64VarP(&f.Seed, "seed", "s", 0, "Seed for fuzzing (0 means random)")
+	cmd.Flags().BoolVarP(&f.Verbose, "verbose", "v", false, "Show SQL queries being executed")
 }

@@ -84,11 +84,15 @@ func main() {
 					for i := 0; i < queries; i++ {
 						query := gen.GenerateWithDB(db)
 						if _, execErr := db.Exec(query); execErr != nil {
-							common.Logger.Info().Msgf("Worker %d executing query %d: %s", workerID, i+1, query)
-							common.Logger.Info().Msgf("Execution error: %v", execErr)
+							if flags.Verbose {
+								common.Logger.Info().Msgf("Worker %d executing query %d: %s", workerID, i+1, query)
+								common.Logger.Info().Msgf("Execution error: %v", execErr)
+							}
 							continue
 						}
-						common.Logger.Info().Msgf("Worker %d executed query %d", workerID, i+1)
+						if flags.Verbose {
+							common.Logger.Info().Msgf("Worker %d executed query %d", workerID, i+1)
+						}
 					}
 					tokenCh <- gen.TokensUsed()
 				}(w)
