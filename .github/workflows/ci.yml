@@ -89,6 +89,7 @@ jobs:
         with:
           path: |
             .cache/go
+            .cache/go-build
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
@@ -111,5 +112,5 @@ jobs:
       - name: Build and test
         run: |
           # ensure cache dirs exist for runenv script to mount
-          mkdir -p .cache/go .cache/pnpm
+          mkdir -p .cache/go .cache/go-build .cache/pnpm
           ./runenv.sh ./build.sh -t

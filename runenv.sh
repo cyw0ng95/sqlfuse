@@ -12,7 +12,7 @@ if [ -n "${SQLSMITH_GO_CONTAINER_TYPE:-}" ]; then
     fi
 fi
 
-mkdir -p .cache/go
+mkdir -p .cache/go .cache/go-build
 
 # Build options: support plain docker build (default) or docker buildx
 # Enable buildx by setting SQLSMITH_GO_BUILDX=1
@@ -97,6 +97,7 @@ DOCKER_COMMON_ARGS=(--rm
     -p 3000:3000
     -v "$(pwd)":/opt:Z
     -v "$(pwd)/.cache/go":/root/go:Z
+    -v "$(pwd)/.cache/go-build":/root/.cache/go-build/
 )
 
 # If a command is provided to this script, forward it to the container and run it
