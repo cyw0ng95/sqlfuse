@@ -11,169 +11,68 @@ import (
 type Generator struct {
 	lcg               *common.LCG
 	first             bool // first generation is forced into pragma
-	weights           map[StmtType]uint64
+	weights           map[stmts.StmtType]uint64
 	totalWeight       uint64
 	maxRecursionDepth int                // Maximum depth for recursive generation (default: 2)
 	flavorConfig      stmts.FlavorConfig // SQL flavor configuration for Turso LibSQL
-}
-
-// StmtType represents a generation direction / statement category.
-type StmtType string
-
-const (
-	StmtPragma                 StmtType = "pragma"
-	StmtInsert                 StmtType = "insert"
-	StmtInsertMultiple         StmtType = "insert_multiple"
-	StmtInsertBulk             StmtType = "insert_bulk"
-	StmtInsertOrReplace        StmtType = "insert_or_replace"
-	StmtInsertOrIgnore         StmtType = "insert_or_ignore"
-	StmtInsertOrAbort          StmtType = "insert_or_abort"
-	StmtInsertOrRollback       StmtType = "insert_or_rollback"
-	StmtInsertOrFail           StmtType = "insert_or_fail"
-	StmtUpdate                 StmtType = "update"
-	StmtDelete                 StmtType = "delete"
-	StmtSelectBasic            StmtType = "select_basic"
-	StmtSelectWhere            StmtType = "select_where"
-	StmtSelectWhereComplex     StmtType = "select_where_complex"
-	StmtSelectWhereIn          StmtType = "select_where_in"
-	StmtSelectSubquery         StmtType = "select_subquery"
-	StmtSelectCase             StmtType = "select_case"
-	StmtSelectAggregateComplex StmtType = "select_aggregate_complex"
-	StmtSelectLike             StmtType = "select_like"
-	StmtSelectLimit            StmtType = "select_limit"
-	StmtSelectOrder            StmtType = "select_order"
-	StmtSelectGroup            StmtType = "select_group"
-	StmtSelectHaving           StmtType = "select_having"
-	StmtSelectJoin             StmtType = "select_join"
-	StmtSelectCross            StmtType = "select_crossjoin"
-	StmtSelectInner            StmtType = "select_innerjoin"
-	StmtSelectOuter            StmtType = "select_outerjoin"
-	StmtSelectJoinUsing        StmtType = "select_joinusing"
-	StmtSelectNatural          StmtType = "select_naturaljoin"
-	StmtSelectRecursive        StmtType = "select_recursive"
-	StmtSelectNestedCase       StmtType = "select_nested_case"
-	StmtSelectComplexJoin      StmtType = "select_complex_join"
-	StmtSelectWindow           StmtType = "select_window"
-	StmtSelectMultipleWindows  StmtType = "select_multiple_windows"
-	StmtSelectCTE              StmtType = "select_cte"
-	StmtSelectMultipleCTE      StmtType = "select_multiple_cte"
-	StmtSelectRecursiveCTE     StmtType = "select_recursive_cte"
-	StmtSelectUUID             StmtType = "select_uuid"
-	StmtSelectRegexp           StmtType = "select_regexp"
-	StmtSelectVector           StmtType = "select_vector"
-	StmtSelectTime             StmtType = "select_time"
-	StmtCreateTable            StmtType = "create_table"
-	StmtDropTable              StmtType = "drop_table"
-	StmtAlterTable             StmtType = "alter_table"
-)
-
-// AllStmtTypes defines a deterministic ordering used when selecting by weights.
-var AllStmtTypes = []StmtType{
-	StmtInsert,
-	StmtInsertMultiple,
-	StmtInsertBulk,
-	StmtInsertOrReplace,
-	StmtInsertOrIgnore,
-	StmtInsertOrAbort,
-	StmtInsertOrRollback,
-	StmtInsertOrFail,
-	StmtUpdate,
-	StmtDelete,
-	StmtSelectBasic,
-	StmtSelectWhere,
-	StmtSelectWhereComplex,
-	StmtSelectWhereIn,
-	StmtSelectSubquery,
-	StmtSelectCase,
-	StmtSelectAggregateComplex,
-	StmtSelectLike,
-	StmtSelectLimit,
-	StmtSelectOrder,
-	StmtSelectGroup,
-	StmtSelectHaving,
-	StmtSelectJoin,
-	StmtSelectCross,
-	StmtSelectInner,
-	StmtSelectOuter,
-	StmtSelectJoinUsing,
-	StmtSelectNatural,
-	StmtSelectRecursive,
-	StmtSelectNestedCase,
-	StmtSelectComplexJoin,
-	StmtSelectWindow,
-	StmtSelectMultipleWindows,
-	StmtSelectCTE,
-	StmtSelectMultipleCTE,
-	StmtSelectRecursiveCTE,
-	StmtSelectUUID,
-	StmtSelectRegexp,
-	StmtSelectVector,
-	StmtSelectTime,
-	StmtCreateTable,
-	StmtDropTable,
-	StmtAlterTable,
+	genMap            map[stmts.StmtType]func(db *sql.DB) (string, error)
 }
 
 // DefaultStmtWeights returns a sensible default weight distribution.
 // Values are token-like weights; probabilities are weight / sum(weights).
-func DefaultStmtWeights() map[StmtType]uint64 {
-	w := map[StmtType]uint64{}
+func DefaultStmtWeights() map[stmts.StmtType]uint64 {
+	w := map[stmts.StmtType]uint64{}
 	// INSERT variants
-	w[StmtInsert] = 250        // reduced to make room for new insert types
-	w[StmtInsertMultiple] = 70 // multiple row inserts
-	w[StmtInsertBulk] = 15     // bulk inserts for heavy testing
-	w[StmtInsertOrReplace] = 25
-	w[StmtInsertOrIgnore] = 25
-	w[StmtInsertOrAbort] = 15
-	w[StmtInsertOrRollback] = 10
-	w[StmtInsertOrFail] = 10
+	w[stmts.StmtInsert] = 250
+	w[stmts.StmtInsertMultiple] = 70
+	w[stmts.StmtInsertBulk] = 15
+	w[stmts.StmtInsertOrReplace] = 25
+	w[stmts.StmtInsertOrIgnore] = 25
+	w[stmts.StmtInsertOrAbort] = 15
+	w[stmts.StmtInsertOrRollback] = 10
+	w[stmts.StmtInsertOrFail] = 10
 	// UPDATE and DELETE
-	w[StmtUpdate] = 80 // enhanced UPDATE with schema
-	w[StmtDelete] = 60 // enhanced DELETE with schema
+	w[stmts.StmtUpdate] = 80
+	w[stmts.StmtDelete] = 60
 	// Basic SELECT variants
-	w[StmtSelectBasic] = 120
-	w[StmtSelectWhere] = 100
-	w[StmtSelectWhereComplex] = 60
-	w[StmtSelectWhereIn] = 50
-	w[StmtSelectSubquery] = 40
-	w[StmtSelectCase] = 40
-	w[StmtSelectAggregateComplex] = 30
-	w[StmtSelectLike] = 80
-	w[StmtSelectLimit] = 60
-	w[StmtSelectOrder] = 40
-	w[StmtSelectGroup] = 40
-	w[StmtSelectHaving] = 40
+	w[stmts.StmtSelectBasic] = 120
+	w[stmts.StmtSelectWhere] = 100
+	w[stmts.StmtSelectWhereComplex] = 60
+	w[stmts.StmtSelectWhereIn] = 50
+	w[stmts.StmtSelectSubquery] = 40
+	w[stmts.StmtSelectCase] = 40
+	w[stmts.StmtSelectAggregateComplex] = 30
+	w[stmts.StmtSelectLike] = 80
+	w[stmts.StmtSelectLimit] = 60
+	w[stmts.StmtSelectOrder] = 40
+	w[stmts.StmtSelectGroup] = 40
+	w[stmts.StmtSelectHaving] = 40
 	// JOIN variants
-	w[StmtSelectJoin] = 20
-	w[StmtSelectCross] = 20
-	w[StmtSelectInner] = 20
-	w[StmtSelectOuter] = 20
-	w[StmtSelectJoinUsing] = 20
-	w[StmtSelectNatural] = 20
+	w[stmts.StmtSelectJoin] = 20
+	w[stmts.StmtSelectCross] = 20
+	w[stmts.StmtSelectInner] = 20
+	w[stmts.StmtSelectOuter] = 20
+	w[stmts.StmtSelectJoinUsing] = 20
+	w[stmts.StmtSelectNatural] = 20
 	// Advanced SELECT with recursion/nesting
-	w[StmtSelectRecursive] = 30
-	w[StmtSelectNestedCase] = 25
-	w[StmtSelectComplexJoin] = 25
+	w[stmts.StmtSelectRecursive] = 30
+	w[stmts.StmtSelectNestedCase] = 25
+	w[stmts.StmtSelectComplexJoin] = 25
 	// Window functions and CTEs (new)
-	w[StmtSelectWindow] = 35
-	w[StmtSelectMultipleWindows] = 20
-	w[StmtSelectCTE] = 30
-	w[StmtSelectMultipleCTE] = 20
-	w[StmtSelectRecursiveCTE] = 15
-	// DDL (keep low by default)
-	// new: recursive/complex generation
-	w[StmtSelectRecursive] = 30   // new: recursive SELECT with nested expressions
-	w[StmtSelectNestedCase] = 25  // new: nested CASE expressions
-	w[StmtSelectComplexJoin] = 25 // new: joins with complex conditions/subqueries
+	w[stmts.StmtSelectWindow] = 35
+	w[stmts.StmtSelectMultipleWindows] = 20
+	w[stmts.StmtSelectCTE] = 30
+	w[stmts.StmtSelectMultipleCTE] = 20
+	w[stmts.StmtSelectRecursiveCTE] = 15
 	// new: Turso extension functions
-	w[StmtSelectUUID] = 30   // new: UUID extension functions
-	w[StmtSelectRegexp] = 30 // new: regexp extension functions
-	w[StmtSelectVector] = 20 // new: vector extension functions
-	w[StmtSelectTime] = 35   // new: time extension functions
-	// leave DDL low by default
-	w[StmtCreateTable] = 40
-	w[StmtDropTable] = 40
-	w[StmtAlterTable] = 40
+	w[stmts.StmtSelectUUID] = 30
+	w[stmts.StmtSelectRegexp] = 30
+	w[stmts.StmtSelectVector] = 20
+	w[stmts.StmtSelectTime] = 35
+	// DDL
+	w[stmts.StmtCreateTable] = 40
+	w[stmts.StmtDropTable] = 40
+	w[stmts.StmtAlterTable] = 40
 	return w
 }
 
@@ -182,17 +81,18 @@ func NewGenerator(seed uint64) *Generator {
 	g := &Generator{
 		lcg:               common.NewLCG(seed),
 		first:             true,
-		maxRecursionDepth: 2,                      // Default recursion depth
-		flavorConfig:      NewTursoFlavorConfig(), // Use Turso-specific flavor
+		maxRecursionDepth: 2, // Default recursion depth
+		flavorConfig:      nil,
 	}
 	g.SetWeights(DefaultStmtWeights())
+	g.initGenMap()
 	return g
 }
 
 // SetWeights replaces the current weights and recalculates totals.
-func (g *Generator) SetWeights(weights map[StmtType]uint64) {
+func (g *Generator) SetWeights(weights map[stmts.StmtType]uint64) {
 	if g.weights == nil {
-		g.weights = make(map[StmtType]uint64, len(weights))
+		g.weights = make(map[stmts.StmtType]uint64, len(weights))
 	}
 	for k, v := range weights {
 		g.weights[k] = v
@@ -201,7 +101,7 @@ func (g *Generator) SetWeights(weights map[StmtType]uint64) {
 }
 
 // SetWeight sets a single statement type weight and updates totals.
-func (g *Generator) SetWeight(t StmtType, weight uint64) {
+func (g *Generator) SetWeight(t stmts.StmtType, weight uint64) {
 	if g.weights == nil {
 		g.weights = DefaultStmtWeights()
 	}
@@ -210,8 +110,8 @@ func (g *Generator) SetWeight(t StmtType, weight uint64) {
 }
 
 // GetWeights returns a copy of the current weights map.
-func (g *Generator) GetWeights() map[StmtType]uint64 {
-	out := make(map[StmtType]uint64, len(g.weights))
+func (g *Generator) GetWeights() map[stmts.StmtType]uint64 {
+	out := make(map[stmts.StmtType]uint64, len(g.weights))
 	for k, v := range g.weights {
 		out[k] = v
 	}
@@ -241,26 +141,38 @@ func (g *Generator) createGenContext(db *sql.DB) *stmts.GenContext {
 
 func (g *Generator) recalcTotalWeight() {
 	var sum uint64
-	for _, t := range AllStmtTypes {
+	for _, t := range stmts.AllStmtTypes {
 		sum += g.weights[t]
 	}
 	g.totalWeight = sum
+}
+
+// initGenMap delegates generator registration to the stmts package, which
+// centralizes all statement generators and keeps database-independent logic
+// inside the stmts package.
+func (g *Generator) initGenMap() {
+	built := stmts.BuildGeneratorFuncs(g.lcg, g.maxRecursionDepth, g.flavorConfig)
+	m := make(map[stmts.StmtType]func(db *sql.DB) (string, error), len(built))
+	for k, fn := range built {
+		m[stmts.StmtType(k)] = fn
+	}
+	g.genMap = m
 }
 
 // Direction picks a direction to drive generation.
 // On the very first call this is 100% StmtPragma. Afterwards it uses the LCG
 // to pick between pragma, ddl, and dml. If weights are set (totalWeight>0)
 // selection is proportional to weights.
-func (g *Generator) Direction() StmtType {
+func (g *Generator) Direction() stmts.StmtType {
 	if g.first {
 		g.first = false
-		return StmtPragma
+		return stmts.StmtPragma
 	}
 	// If weights are configured, pick proportionally.
 	if g.totalWeight > 0 {
 		r := g.lcg.Uint64() % g.totalWeight
 		var cum uint64
-		for _, t := range AllStmtTypes {
+		for _, t := range stmts.AllStmtTypes {
 			w := g.weights[t]
 			cum += w
 			if r < cum {
@@ -268,7 +180,7 @@ func (g *Generator) Direction() StmtType {
 			}
 		}
 		// fallback
-		return StmtPragma
+		return stmts.StmtPragma
 	} else {
 		panic("totalWeight < 0")
 	}
@@ -278,313 +190,14 @@ func (g *Generator) Direction() StmtType {
 // If db is provided, can generate SELECTs using schema.
 func (g *Generator) GenerateWithDB(db *sql.DB) string {
 	dir := g.Direction()
-	switch dir {
-	case StmtPragma:
-		return stmts.GenPragma(g.lcg).SQL()
-	case StmtInsert:
-		stmt, err := stmts.GenInsert(db, g.lcg)
+	if fn, ok := g.genMap[dir]; ok {
+		sqlStr, err := fn(db)
 		if err != nil {
-			fmt.Println("Error generating INSERT:", err)
-			return "INSERT INTO sqlite_master DEFAULT VALUES;" // fallback
+			fmt.Println("Error generating", string(dir)+":", err)
 		}
-		return stmt.SQL()
-	case StmtInsertMultiple:
-		stmt, err := stmts.GenInsertMultiple(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating INSERT MULTIPLE:", err)
-			return "INSERT INTO sqlite_master DEFAULT VALUES;" // fallback
-		}
-		return stmt.SQL()
-	case StmtInsertBulk:
-		stmt, err := stmts.GenInsertBulk(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating INSERT BULK:", err)
-			return "INSERT INTO sqlite_master DEFAULT VALUES;" // fallback
-		}
-		return stmt.SQL()
-	case StmtInsertOrReplace:
-		stmt, err := stmts.GenInsertOrReplace(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating INSERT OR REPLACE:", err)
-			return "INSERT INTO sqlite_master DEFAULT VALUES;" // fallback
-		}
-		return stmt.SQL()
-	case StmtInsertOrIgnore:
-		stmt, err := stmts.GenInsertOrIgnore(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating INSERT OR IGNORE:", err)
-			return "INSERT INTO sqlite_master DEFAULT VALUES;" // fallback
-		}
-		return stmt.SQL()
-	case StmtInsertOrAbort:
-		stmt, err := stmts.GenInsertOrAbort(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating INSERT OR ABORT:", err)
-			return "INSERT INTO sqlite_master DEFAULT VALUES;" // fallback
-		}
-		return stmt.SQL()
-	case StmtInsertOrRollback:
-		stmt, err := stmts.GenInsertOrRollback(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating INSERT OR ROLLBACK:", err)
-			return "INSERT INTO sqlite_master DEFAULT VALUES;" // fallback
-		}
-		return stmt.SQL()
-	case StmtInsertOrFail:
-		stmt, err := stmts.GenInsertOrFail(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating INSERT OR FAIL:", err)
-			return "INSERT INTO sqlite_master DEFAULT VALUES;" // fallback
-		}
-		return stmt.SQL()
-	case StmtUpdate:
-		stmt, err := stmts.GenUpdate(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating UPDATE:", err)
-			return "UPDATE sqlite_master SET name = 'fallback';" // fallback
-		}
-		return stmt.SQL()
-	case StmtDelete:
-		stmt, err := stmts.GenDelete(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating DELETE:", err)
-			return "DELETE FROM sqlite_master WHERE 0;" // fallback
-		}
-		return stmt.SQL()
-	case StmtSelectBasic:
-		stmt, err := stmts.GenSelect(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating SELECT:", err)
-			return "SELECT 1" // fallback
-		}
-		return stmt.SQL()
-	case StmtSelectWhere:
-		stmtW, err := stmts.GenSelectWhere(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating SELECT WHERE:", err)
-			return "SELECT 1"
-		}
-		return stmtW.SQL()
-	case StmtSelectWhereComplex:
-		stmt, err := stmts.GenSelectWhereComplex(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating SELECT WHERE COMPLEX:", err)
-			return "SELECT 1"
-		}
-		return stmt.SQL()
-	case StmtSelectWhereIn:
-		stmt, err := stmts.GenSelectWhereIn(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating SELECT WHERE IN:", err)
-			return "SELECT 1"
-		}
-		return stmt.SQL()
-	case StmtSelectSubquery:
-		stmt, err := stmts.GenSelectSubquery(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating SELECT SUBQUERY:", err)
-			return "SELECT 1"
-		}
-		return stmt.SQL()
-	case StmtSelectCase:
-		stmt, err := stmts.GenSelectCase(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating SELECT CASE:", err)
-			return "SELECT 1"
-		}
-		return stmt.SQL()
-	case StmtSelectAggregateComplex:
-		stmt, err := stmts.GenSelectAggregateComplex(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating SELECT AGGREGATE COMPLEX:", err)
-			return "SELECT 1"
-		}
-		return stmt.SQL()
-	case StmtSelectLike:
-		stmtL, err := stmts.GenSelectWhereLike(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating SELECT LIKE:", err)
-			return "SELECT 1"
-		}
-		return stmtL.SQL()
-	case StmtSelectLimit:
-		stmtLim, err := stmts.GenSelectLimit(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating SELECT LIMIT:", err)
-			return "SELECT 1"
-		}
-		return stmtLim.SQL()
-	case StmtSelectOrder:
-		stmtOrd, err := stmts.GenSelectOrderBy(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating SELECT ORDER BY:", err)
-			return "SELECT 1"
-		}
-		return stmtOrd.SQL()
-	case StmtSelectGroup:
-		stmtG, err := stmts.GenSelectGroupBy(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating SELECT GROUP BY:", err)
-			return "SELECT 1"
-		}
-		return stmtG.SQL()
-	case StmtSelectHaving:
-		stmtH, err := stmts.GenSelectHaving(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating SELECT HAVING:", err)
-			return "SELECT 1"
-		}
-		return stmtH.SQL()
-	case StmtSelectJoin:
-		stmtJ, err := stmts.GenSelectJoin(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating SELECT JOIN:", err)
-			return "SELECT 1"
-		}
-		return stmtJ.SQL()
-	case StmtSelectCross:
-		stmtCJ, err := stmts.GenSelectCrossJoin(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating SELECT CROSS JOIN:", err)
-			return "SELECT 1"
-		}
-		return stmtCJ.SQL()
-	case StmtSelectInner:
-		stmtIJ, err := stmts.GenSelectInnerJoin(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating SELECT INNER JOIN:", err)
-			return "SELECT 1"
-		}
-		return stmtIJ.SQL()
-	case StmtSelectOuter:
-		stmtOJ, err := stmts.GenSelectOuterJoin(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating SELECT OUTER JOIN:", err)
-			return "SELECT 1"
-		}
-		return stmtOJ.SQL()
-	case StmtSelectJoinUsing:
-		stmtJU, err := stmts.GenSelectJoinUsing(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating SELECT JOIN USING:", err)
-			return "SELECT 1"
-		}
-		return stmtJU.SQL()
-	case StmtSelectNatural:
-		stmtNJ, err := stmts.GenSelectNaturalJoin(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating SELECT NATURAL JOIN:", err)
-			return "SELECT 1"
-		}
-		return stmtNJ.SQL()
-	case StmtSelectRecursive:
-		stmt, err := stmts.GenSelectRecursive(db, g.lcg, g.maxRecursionDepth)
-		if err != nil {
-			fmt.Println("Error generating SELECT RECURSIVE:", err)
-			return "SELECT 1"
-		}
-		return stmt.SQL()
-	case StmtSelectNestedCase:
-		stmt, err := stmts.GenSelectWithNestedCase(db, g.lcg, g.maxRecursionDepth)
-		if err != nil {
-			fmt.Println("Error generating SELECT NESTED CASE:", err)
-			return "SELECT 1"
-		}
-		return stmt.SQL()
-	case StmtSelectComplexJoin:
-		stmt, err := stmts.GenSelectWithComplexJoin(db, g.lcg, g.maxRecursionDepth)
-		if err != nil {
-			fmt.Println("Error generating SELECT COMPLEX JOIN:", err)
-			return "SELECT 1"
-		}
-		return stmt.SQL()
-	case StmtSelectWindow:
-		stmt, err := stmts.GenSelectWithWindowFunction(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating SELECT WINDOW:", err)
-			return "SELECT 1"
-		}
-		return stmt.SQL()
-	case StmtSelectMultipleWindows:
-		stmt, err := stmts.GenSelectWithMultipleWindows(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating SELECT MULTIPLE WINDOWS:", err)
-			return "SELECT 1"
-		}
-		return stmt.SQL()
-	case StmtSelectCTE:
-		stmt, err := stmts.GenSelectWithCTE(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating SELECT CTE:", err)
-			return "SELECT 1"
-		}
-		return stmt.SQL()
-	case StmtSelectMultipleCTE:
-		stmt, err := stmts.GenSelectWithMultipleCTE(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating SELECT MULTIPLE CTE:", err)
-			return "SELECT 1"
-		}
-		return stmt.SQL()
-	case StmtSelectRecursiveCTE:
-		stmt, err := stmts.GenSelectWithRecursiveCTE(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating SELECT RECURSIVE CTE:", err)
-			return "SELECT 1"
-		}
-		return stmt.SQL()
-	case StmtSelectUUID:
-		stmt, err := stmts.GenSelectWithUUIDFunction(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating SELECT UUID:", err)
-			return "SELECT 1"
-		}
-		return stmt.SQL()
-	case StmtSelectRegexp:
-		stmt, err := stmts.GenSelectWithRegexpFunction(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating SELECT REGEXP:", err)
-			return "SELECT 1"
-		}
-		return stmt.SQL()
-	case StmtSelectVector:
-		stmt, err := stmts.GenSelectWithVectorFunction(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating SELECT VECTOR:", err)
-			return "SELECT 1"
-		}
-		return stmt.SQL()
-	case StmtSelectTime:
-		stmt, err := stmts.GenSelectWithTimeFunction(db, g.lcg)
-		if err != nil {
-			fmt.Println("Error generating SELECT TIME:", err)
-			return "SELECT 1"
-		}
-		return stmt.SQL()
-	case StmtCreateTable:
-		stmt, err := stmts.GenCreateTable(g.lcg)
-		if err != nil {
-			fmt.Println("Error generating CREATE TABLE:", err)
-			return "CREATE TABLE IF NOT EXISTS fallback (id INTEGER);" // fallback
-		}
-		return stmt.SQL()
-	case StmtDropTable:
-		stmt, err := stmts.GenDropTable(g.lcg)
-		if err != nil {
-			fmt.Println("Error generating DROP TABLE:", err)
-			return "DROP TABLE IF EXISTS fallback;"
-		}
-		return stmt.SQL()
-	case StmtAlterTable:
-		stmt, err := stmts.GenAlterTable(g.lcg)
-		if err != nil {
-			fmt.Println("Error generating ALTER TABLE:", err)
-			return "ALTER TABLE fallback RENAME TO fallback2;"
-		}
-		return stmt.SQL()
+		return sqlStr
 	}
-
-	return "SELECT 1" // placeholder for other directions
+	return "SELECT 1" // fallback for unknown directions
 }
 
 // TokensUsed returns the number of tokens used by the underlying LCG.
