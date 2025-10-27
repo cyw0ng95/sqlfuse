@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -163,13 +162,12 @@ func main() {
 
 	// Set up signal handling for graceful shutdown
 	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 	// Start server in a goroutine
 	go func() {
 		if err := e.Start(":" + serverConfig.Port); err != nil && err != http.ErrServerClosed {
 			common.Logger.Error().Err(err).Msg("Server startup failed")
-			fmt.Fprintf(os.Stderr, "server failed to start: %v\n", err)
 			os.Exit(1)
 		}
 	}()
@@ -185,7 +183,6 @@ func main() {
 	// Attempt graceful shutdown
 	if err := e.Shutdown(ctx); err != nil {
 		common.Logger.Error().Err(err).Msg("Server forced to shutdown")
-		fmt.Fprintf(os.Stderr, "server shutdown error: %v\n", err)
 		os.Exit(1)
 	}
 
