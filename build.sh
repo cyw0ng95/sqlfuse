@@ -31,25 +31,36 @@ build_view() {
     fi
 }
 
+# Unified go build helper: go_build <output> <package>
+# Respects GITHUB_ACTIONS to add -v when running in CI.
+go_build() {
+    local out="$1"
+    local pkg="$2"
+    local flags=()
+    if [ "${GITHUB_ACTIONS:-false}" = "true" ]; then
+        flags=(-v)
+    fi
+    echo "-- [INFO] Building ${pkg} -> ${out}"
+    go build "${flags[@]}" -o "$out" "$pkg"
+}
+
 build_project() {
     echo "-- [INFO] Starting build..."
     mkdir -p output
     echo "-- [INFO] Running go mod vendor..."
     go mod vendor
-    
-    # Add -v flag when running in GitHub Actions for verbose output
-    local build_flags=()
-    if [ "${GITHUB_ACTIONS:-false}" = "true" ]; then
-        build_flags=(-v)
-    fi
-    
+
     echo "-- [INFO] Building turso_embedded_executor..."
-    go build "${build_flags[@]}" -o output/turso_embedded_executor cmd/executors/turso_embedded/main.go
+    go_build output/turso_embedded_executor cmd/executors/turso_embedded/main.go
+
     echo "-- [INFO] Building go_sqlite3_embedded_executor..."
-    go build "${build_flags[@]}" -o output/go_sqlite3_embedded_executor cmd/executors/go_sqlite3_embedded/main.go
-    go build "${build_flags[@]}" -o output/server ./cmd/server
+    go_build output/go_sqlite3_embedded_executor cmd/executors/go_sqlite3_embedded/main.go
+
+    echo "-- [INFO] Building server..."
+    go_build output/server ./cmd/server
+
     echo "-- [INFO] Build complete. Output: output/turso_embedded_executor, output/go_sqlite3_embedded_executor, output/server"
-    
+
     # Build the frontend view
     build_view
 }
