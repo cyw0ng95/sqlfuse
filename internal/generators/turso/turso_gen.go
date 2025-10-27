@@ -24,6 +24,13 @@ const (
 	StmtInsert                 StmtType = "insert"
 	StmtInsertMultiple         StmtType = "insert_multiple"
 	StmtInsertBulk             StmtType = "insert_bulk"
+	StmtInsertOrReplace        StmtType = "insert_or_replace"
+	StmtInsertOrIgnore         StmtType = "insert_or_ignore"
+	StmtInsertOrAbort          StmtType = "insert_or_abort"
+	StmtInsertOrRollback       StmtType = "insert_or_rollback"
+	StmtInsertOrFail           StmtType = "insert_or_fail"
+	StmtUpdate                 StmtType = "update"
+	StmtDelete                 StmtType = "delete"
 	StmtSelectBasic            StmtType = "select_basic"
 	StmtSelectWhere            StmtType = "select_where"
 	StmtSelectWhereComplex     StmtType = "select_where_complex"
@@ -45,6 +52,11 @@ const (
 	StmtSelectRecursive        StmtType = "select_recursive"
 	StmtSelectNestedCase       StmtType = "select_nested_case"
 	StmtSelectComplexJoin      StmtType = "select_complex_join"
+	StmtSelectWindow           StmtType = "select_window"
+	StmtSelectMultipleWindows  StmtType = "select_multiple_windows"
+	StmtSelectCTE              StmtType = "select_cte"
+	StmtSelectMultipleCTE      StmtType = "select_multiple_cte"
+	StmtSelectRecursiveCTE     StmtType = "select_recursive_cte"
 	StmtSelectUUID             StmtType = "select_uuid"
 	StmtSelectRegexp           StmtType = "select_regexp"
 	StmtSelectVector           StmtType = "select_vector"
@@ -59,6 +71,13 @@ var AllStmtTypes = []StmtType{
 	StmtInsert,
 	StmtInsertMultiple,
 	StmtInsertBulk,
+	StmtInsertOrReplace,
+	StmtInsertOrIgnore,
+	StmtInsertOrAbort,
+	StmtInsertOrRollback,
+	StmtInsertOrFail,
+	StmtUpdate,
+	StmtDelete,
 	StmtSelectBasic,
 	StmtSelectWhere,
 	StmtSelectWhereComplex,
@@ -80,6 +99,11 @@ var AllStmtTypes = []StmtType{
 	StmtSelectRecursive,
 	StmtSelectNestedCase,
 	StmtSelectComplexJoin,
+	StmtSelectWindow,
+	StmtSelectMultipleWindows,
+	StmtSelectCTE,
+	StmtSelectMultipleCTE,
+	StmtSelectRecursiveCTE,
 	StmtSelectUUID,
 	StmtSelectRegexp,
 	StmtSelectVector,
@@ -93,28 +117,49 @@ var AllStmtTypes = []StmtType{
 // Values are token-like weights; probabilities are weight / sum(weights).
 func DefaultStmtWeights() map[StmtType]uint64 {
 	w := map[StmtType]uint64{}
-	// scaled by 10 to allow token-like numbers; proportions reflect previous Intn(100) cutoffs
-	w[StmtInsert] = 300        // reduced from 400 to make room for new insert types
-	w[StmtInsertMultiple] = 80 // new: multiple row inserts
-	w[StmtInsertBulk] = 20     // new: bulk inserts for heavy testing
+	// INSERT variants
+	w[StmtInsert] = 250        // reduced to make room for new insert types
+	w[StmtInsertMultiple] = 70 // multiple row inserts
+	w[StmtInsertBulk] = 15     // bulk inserts for heavy testing
+	w[StmtInsertOrReplace] = 25
+	w[StmtInsertOrIgnore] = 25
+	w[StmtInsertOrAbort] = 15
+	w[StmtInsertOrRollback] = 10
+	w[StmtInsertOrFail] = 10
+	// UPDATE and DELETE
+	w[StmtUpdate] = 80 // enhanced UPDATE with schema
+	w[StmtDelete] = 60 // enhanced DELETE with schema
+	// Basic SELECT variants
 	w[StmtSelectBasic] = 120
 	w[StmtSelectWhere] = 100
-	w[StmtSelectWhereComplex] = 60     // new: complex WHERE with AND/OR
-	w[StmtSelectWhereIn] = 50          // new: WHERE IN clause
-	w[StmtSelectSubquery] = 40         // new: subqueries
-	w[StmtSelectCase] = 40             // new: CASE expressions
-	w[StmtSelectAggregateComplex] = 30 // new: complex aggregates
+	w[StmtSelectWhereComplex] = 60
+	w[StmtSelectWhereIn] = 50
+	w[StmtSelectSubquery] = 40
+	w[StmtSelectCase] = 40
+	w[StmtSelectAggregateComplex] = 30
 	w[StmtSelectLike] = 80
 	w[StmtSelectLimit] = 60
 	w[StmtSelectOrder] = 40
 	w[StmtSelectGroup] = 40
 	w[StmtSelectHaving] = 40
+	// JOIN variants
 	w[StmtSelectJoin] = 20
 	w[StmtSelectCross] = 20
 	w[StmtSelectInner] = 20
 	w[StmtSelectOuter] = 20
 	w[StmtSelectJoinUsing] = 20
 	w[StmtSelectNatural] = 20
+	// Advanced SELECT with recursion/nesting
+	w[StmtSelectRecursive] = 30
+	w[StmtSelectNestedCase] = 25
+	w[StmtSelectComplexJoin] = 25
+	// Window functions and CTEs (new)
+	w[StmtSelectWindow] = 35
+	w[StmtSelectMultipleWindows] = 20
+	w[StmtSelectCTE] = 30
+	w[StmtSelectMultipleCTE] = 20
+	w[StmtSelectRecursiveCTE] = 15
+	// DDL (keep low by default)
 	// new: recursive/complex generation
 	w[StmtSelectRecursive] = 30   // new: recursive SELECT with nested expressions
 	w[StmtSelectNestedCase] = 25  // new: nested CASE expressions
@@ -248,6 +293,55 @@ func (g *Generator) GenerateWithDB(db *sql.DB) string {
 		if err != nil {
 			fmt.Println("Error generating INSERT BULK:", err)
 			return "INSERT INTO sqlite_master DEFAULT VALUES;" // fallback
+		}
+		return stmt.SQL()
+	case StmtInsertOrReplace:
+		stmt, err := stmts.GenInsertOrReplace(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating INSERT OR REPLACE:", err)
+			return "INSERT INTO sqlite_master DEFAULT VALUES;" // fallback
+		}
+		return stmt.SQL()
+	case StmtInsertOrIgnore:
+		stmt, err := stmts.GenInsertOrIgnore(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating INSERT OR IGNORE:", err)
+			return "INSERT INTO sqlite_master DEFAULT VALUES;" // fallback
+		}
+		return stmt.SQL()
+	case StmtInsertOrAbort:
+		stmt, err := stmts.GenInsertOrAbort(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating INSERT OR ABORT:", err)
+			return "INSERT INTO sqlite_master DEFAULT VALUES;" // fallback
+		}
+		return stmt.SQL()
+	case StmtInsertOrRollback:
+		stmt, err := stmts.GenInsertOrRollback(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating INSERT OR ROLLBACK:", err)
+			return "INSERT INTO sqlite_master DEFAULT VALUES;" // fallback
+		}
+		return stmt.SQL()
+	case StmtInsertOrFail:
+		stmt, err := stmts.GenInsertOrFail(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating INSERT OR FAIL:", err)
+			return "INSERT INTO sqlite_master DEFAULT VALUES;" // fallback
+		}
+		return stmt.SQL()
+	case StmtUpdate:
+		stmt, err := stmts.GenUpdate(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating UPDATE:", err)
+			return "UPDATE sqlite_master SET name = 'fallback';" // fallback
+		}
+		return stmt.SQL()
+	case StmtDelete:
+		stmt, err := stmts.GenDelete(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating DELETE:", err)
+			return "DELETE FROM sqlite_master WHERE 0;" // fallback
 		}
 		return stmt.SQL()
 	case StmtSelectBasic:
@@ -397,6 +491,38 @@ func (g *Generator) GenerateWithDB(db *sql.DB) string {
 			return "SELECT 1"
 		}
 		return stmt.SQL()
+	case StmtSelectWindow:
+		stmt, err := stmts.GenSelectWithWindowFunction(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT WINDOW:", err)
+			return "SELECT 1"
+		}
+		return stmt.SQL()
+	case StmtSelectMultipleWindows:
+		stmt, err := stmts.GenSelectWithMultipleWindows(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT MULTIPLE WINDOWS:", err)
+			return "SELECT 1"
+		}
+		return stmt.SQL()
+	case StmtSelectCTE:
+		stmt, err := stmts.GenSelectWithCTE(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT CTE:", err)
+			return "SELECT 1"
+		}
+		return stmt.SQL()
+	case StmtSelectMultipleCTE:
+		stmt, err := stmts.GenSelectWithMultipleCTE(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT MULTIPLE CTE:", err)
+			return "SELECT 1"
+		}
+		return stmt.SQL()
+	case StmtSelectRecursiveCTE:
+		stmt, err := stmts.GenSelectWithRecursiveCTE(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT RECURSIVE CTE:", err)
 	case StmtSelectUUID:
 		stmt, err := stmts.GenSelectWithUUIDFunction(db, g.lcg)
 		if err != nil {
