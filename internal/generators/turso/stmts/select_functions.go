@@ -28,12 +28,16 @@ func GenSelectWithScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error
 		genCoalesceFunction,
 		genConcatFunction,
 		genConcatWsFunction,
+		genGlobFunction,
 		genHexFunction,
 		genIfnullFunction,
 		genIifFunction,
 		genInstrFunction,
+		genLastInsertRowidFunction,
 		genLengthFunction,
 		genLikeFunction,
+		genLikelihoodFunction,
+		genLikelyFunction,
 		genLowerFunction,
 		genUpperFunction,
 		genLtrimFunction,
@@ -42,6 +46,7 @@ func GenSelectWithScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error
 		genMaxMinFunction,
 		genNullifFunction,
 		genOctetLengthFunction,
+		genPrintfFunction,
 		genQuoteFunction,
 		genRandomFunction,
 		genRandomBlobFunction,
@@ -49,11 +54,14 @@ func GenSelectWithScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error
 		genRoundFunction,
 		genSignFunction,
 		genSoundexFunction,
+		genSqliteSourceIdFunction,
+		genSqliteVersionFunction,
 		genSubstrFunction,
 		genSubstringFunction,
 		genTypeofFunction,
 		genUnhexFunction,
 		genUnicodeFunction,
+		genUnlikelyFunction,
 		genZeroblobFunction,
 	}
 
@@ -72,11 +80,15 @@ func genSelectScalarFunctionLiteral(lcg *common.LCG) SelectStmt {
 		"coalesce(NULL, 'default')",
 		"concat('Hello', ' ', 'World')",
 		"concat_ws(',', 'a', 'b', 'c')",
+		"glob('*.txt', 'test.txt')",
 		"hex('ABC')",
 		"ifnull(NULL, 'value')",
 		"iif(1 > 0, 'yes', 'no')",
 		"instr('Hello World', 'World')",
+		"last_insert_rowid()",
 		"length('Hello')",
+		"likelihood(1, 0.5)",
+		"likely(1)",
 		"lower('UPPER')",
 		"upper('lower')",
 		"ltrim('  spaces  ')",
@@ -86,6 +98,7 @@ func genSelectScalarFunctionLiteral(lcg *common.LCG) SelectStmt {
 		"min(1, 2, 3)",
 		"nullif(1, 2)",
 		"octet_length('ABC')",
+		"printf('Hello %s', 'World')",
 		"quote('text')",
 		"random()",
 		"randomblob(10)",
@@ -93,15 +106,15 @@ func genSelectScalarFunctionLiteral(lcg *common.LCG) SelectStmt {
 		"round(3.14159, 2)",
 		"sign(-42)",
 		"soundex('Hello')",
+		"sqlite_source_id()",
+		"sqlite_version()",
 		"substr('Hello', 1, 3)",
 		"substring('Hello', 2, 2)",
 		"typeof(123)",
 		"unhex('414243')",
 		"unicode('A')",
+		"unlikely(0)",
 		"zeroblob(10)",
-		"sqlite_version()",
-		"sqlite_source_id()",
-		"last_insert_rowid()",
 	}
 
 	funcIdx := lcg.Intn(len(scalarFuncs))
@@ -517,6 +530,109 @@ func genUnicodeFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 func genZeroblobFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 	size := 1 + lcg.Intn(100)
 	return fmt.Sprintf("zeroblob(%d)", size)
+}
+
+func genGlobFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	patterns := []string{"'*.txt'", "'test*'", "'[0-9]*'", "'?.db'"}
+	pattern := patterns[lcg.Intn(len(patterns))]
+
+	if len(tbls) > 0 && lcg.Intn(2) == 0 {
+		col := findTextColumn(tbls, lcg)
+		if col != "" {
+			return fmt.Sprintf("glob(%s, %s)", pattern, col)
+		}
+	}
+	testStrings := []string{"'test.txt'", "'data.db'", "'123.log'", "'file.dat'"}
+	testStr := testStrings[lcg.Intn(len(testStrings))]
+	return fmt.Sprintf("glob(%s, %s)", pattern, testStr)
+}
+
+func genLastInsertRowidFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	return "last_insert_rowid()"
+}
+
+func genLikelihoodFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	// likelihood(X, Y) - Y is a probability between 0.0 and 1.0
+	probabilities := []string{"0.1", "0.5", "0.9", "0.25", "0.75"}
+	prob := probabilities[lcg.Intn(len(probabilities))]
+
+	if len(tbls) > 0 && lcg.Intn(2) == 0 {
+		tbl := tbls[lcg.Intn(len(tbls))]
+		if len(tbl.Cols) > 0 {
+			col := tbl.Cols[lcg.Intn(len(tbl.Cols))]
+			return fmt.Sprintf("likelihood(%s, %s)", quoteIdent(col.Name), prob)
+		}
+	}
+	return fmt.Sprintf("likelihood(1, %s)", prob)
+}
+
+func genLikelyFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	if len(tbls) > 0 && lcg.Intn(2) == 0 {
+		tbl := tbls[lcg.Intn(len(tbls))]
+		if len(tbl.Cols) > 0 {
+			col := tbl.Cols[lcg.Intn(len(tbl.Cols))]
+			return fmt.Sprintf("likely(%s)", quoteIdent(col.Name))
+		}
+	}
+	return "likely(1)"
+}
+
+func genUnlikelyFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	if len(tbls) > 0 && lcg.Intn(2) == 0 {
+		tbl := tbls[lcg.Intn(len(tbls))]
+		if len(tbl.Cols) > 0 {
+			col := tbl.Cols[lcg.Intn(len(tbl.Cols))]
+			return fmt.Sprintf("unlikely(%s)", quoteIdent(col.Name))
+		}
+	}
+	return "unlikely(0)"
+}
+
+func genPrintfFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	formats := []string{
+		"'Hello %s'",
+		"'Value: %d'",
+		"'%.2f'",
+		"'%s = %d'",
+	}
+	format := formats[lcg.Intn(len(formats))]
+
+	// Generate appropriate arguments based on format
+	if format == "'Hello %s'" {
+		if len(tbls) > 0 && lcg.Intn(2) == 0 {
+			col := findTextColumn(tbls, lcg)
+			if col != "" {
+				return fmt.Sprintf("printf(%s, %s)", format, col)
+			}
+		}
+		return "printf('Hello %s', 'World')"
+	} else if format == "'Value: %d'" {
+		if len(tbls) > 0 && lcg.Intn(2) == 0 {
+			col := findNumericColumn(tbls, lcg)
+			if col != "" {
+				return fmt.Sprintf("printf(%s, %s)", format, col)
+			}
+		}
+		return "printf('Value: %d', 42)"
+	} else if format == "'%.2f'" {
+		if len(tbls) > 0 && lcg.Intn(2) == 0 {
+			col := findNumericColumn(tbls, lcg)
+			if col != "" {
+				return fmt.Sprintf("printf(%s, %s)", format, col)
+			}
+		}
+		return "printf('%.2f', 3.14159)"
+	} else {
+		return "printf('%s = %d', 'answer', 42)"
+	}
+}
+
+func genSqliteVersionFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	return "sqlite_version()"
+}
+
+func genSqliteSourceIdFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	return "sqlite_source_id()"
 }
 
 // GenSelectWithMathFunction generates a SELECT statement with mathematical SQL functions
