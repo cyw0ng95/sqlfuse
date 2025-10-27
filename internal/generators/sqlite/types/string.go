@@ -24,7 +24,7 @@ func StringLiteral(lcg *common.LCG, hint string) string {
 		strings.HasSuffix(hintLower, "_username")
 
 	choice := lcg.Intn(15)
-	
+
 	// If this is likely a UNIQUE column, avoid cases that can easily produce duplicates:
 	// - case 1: empty string (only 1 possible value)
 	// - case 2: single character (only 62 possible values)
@@ -35,7 +35,7 @@ func StringLiteral(lcg *common.LCG, hint string) string {
 			choice += 2 // 0 stays 0, [1-12] becomes [3-14]
 		}
 	}
-	
+
 	switch choice {
 	case 0:
 		// Simple alphanumeric - includes random components for uniqueness

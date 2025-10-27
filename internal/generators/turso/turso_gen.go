@@ -182,7 +182,7 @@ func NewGenerator(seed uint64) *Generator {
 	g := &Generator{
 		lcg:               common.NewLCG(seed),
 		first:             true,
-		maxRecursionDepth: 2,                  // Default recursion depth
+		maxRecursionDepth: 2,                      // Default recursion depth
 		flavorConfig:      NewTursoFlavorConfig(), // Use Turso-specific flavor
 	}
 	g.SetWeights(DefaultStmtWeights())

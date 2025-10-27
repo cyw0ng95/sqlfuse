@@ -263,7 +263,7 @@ func (eg *ExprGenerator) GenUnaryExpr(tbls []helper.TableInfo) string {
 // GenBinaryExpr generates a binary operator expression
 // IMPORTANT: Excludes unsupported Turso operators per COMPAT.md:
 //   - % (modulo) - NOT SUPPORTED
-//   - !< (not less than) - NOT SUPPORTED  
+//   - !< (not less than) - NOT SUPPORTED
 //   - !> (not greater than) - NOT SUPPORTED
 func (eg *ExprGenerator) GenBinaryExpr(tbls []helper.TableInfo) string {
 	if len(tbls) == 0 {

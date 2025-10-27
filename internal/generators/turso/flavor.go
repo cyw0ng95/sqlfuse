@@ -15,10 +15,10 @@ func (t *TursoFlavorConfig) Name() string {
 }
 
 // SupportsFeature checks if a specific SQL feature is supported by Turso LibSQL.
-// 
+//
 // Unsupported features (based on TURSO_COMPAT.md):
 // - "exists_subquery": NOT EXISTS (subquery) expressions
-// - "in_subquery": IN (subquery) expressions  
+// - "in_subquery": IN (subquery) expressions
 // - "modulo_operator": % modulo operator
 // - "not_less_than": !< operator
 // - "not_greater_than": !> operator
@@ -32,34 +32,34 @@ func (t *TursoFlavorConfig) Name() string {
 // - "cte_materialized": MATERIALIZED keyword in WITH clause
 // - "schema_qualified": schema.table.column syntax
 // - "named_transactions": named BEGIN/COMMIT transactions
-// 
+//
 // Partially supported features:
 // - "collate_custom": custom collations (only BINARY, NOCASE, RTRIM supported)
 func (t *TursoFlavorConfig) SupportsFeature(feature string) bool {
 	unsupported := map[string]bool{
-		"exists_subquery":     false,
-		"in_subquery":         false,
-		"modulo_operator":     false,
-		"not_less_than":       false,
-		"not_greater_than":    false,
-		"regexp":              false,
-		"match":               false,
-		"filter_clause":       false,
-		"window_functions":    false,
-		"raise_function":      false,
-		"format_function":     false,
-		"cte_recursive":       false,
-		"cte_materialized":    false,
-		"schema_qualified":    false,
-		"named_transactions":  false,
-		"collate_custom":      false, // Only default collations supported
+		"exists_subquery":    false,
+		"in_subquery":        false,
+		"modulo_operator":    false,
+		"not_less_than":      false,
+		"not_greater_than":   false,
+		"regexp":             false,
+		"match":              false,
+		"filter_clause":      false,
+		"window_functions":   false,
+		"raise_function":     false,
+		"format_function":    false,
+		"cte_recursive":      false,
+		"cte_materialized":   false,
+		"schema_qualified":   false,
+		"named_transactions": false,
+		"collate_custom":     false, // Only default collations supported
 	}
-	
+
 	// If explicitly marked as unsupported, return false
 	if supported, exists := unsupported[feature]; exists {
 		return supported
 	}
-	
+
 	// Otherwise, assume it's supported (permissive default for SQLite features)
 	return true
 }

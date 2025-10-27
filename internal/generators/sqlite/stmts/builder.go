@@ -10,17 +10,17 @@ import (
 // SelectBuilder provides a fluent interface for building SELECT statements.
 // This enables composable and flexible SELECT generation.
 type SelectBuilder struct {
-	ctx         *GenContext
-	tables      []helper.TableInfo
-	selectExprs []string
-	fromClause  string
+	ctx          *GenContext
+	tables       []helper.TableInfo
+	selectExprs  []string
+	fromClause   string
 	whereClauses []string
-	groupBy     []string
-	having      string
-	orderBy     []string
-	limit       int
-	offset      int
-	err         error
+	groupBy      []string
+	having       string
+	orderBy      []string
+	limit        int
+	offset       int
+	err          error
 }
 
 // NewSelectBuilder creates a new SELECT statement builder.
@@ -62,13 +62,13 @@ func (b *SelectBuilder) SelectColumns(table helper.TableInfo, count int) *Select
 	if count <= 0 || len(table.Cols) == 0 {
 		return b
 	}
-	
+
 	// Select up to 'count' random columns
 	maxCols := count
 	if maxCols > len(table.Cols) {
 		maxCols = len(table.Cols)
 	}
-	
+
 	selected := make(map[int]bool)
 	for len(selected) < maxCols {
 		idx := b.ctx.Intn(len(table.Cols))
@@ -77,7 +77,7 @@ func (b *SelectBuilder) SelectColumns(table helper.TableInfo, count int) *Select
 			b.selectExprs = append(b.selectExprs, quoteIdent(table.Cols[idx].Name))
 		}
 	}
-	
+
 	return b
 }
 
@@ -165,53 +165,53 @@ func (b *SelectBuilder) Build() (*SelectStmt, error) {
 	if b.err != nil {
 		return nil, b.err
 	}
-	
+
 	// Build SELECT clause
 	selectClause := "*"
 	if len(b.selectExprs) > 0 {
 		selectClause = strings.Join(b.selectExprs, ", ")
 	}
-	
+
 	// Build FROM clause
 	if b.fromClause == "" {
 		return nil, fmt.Errorf("FROM clause is required")
 	}
-	
+
 	// Start building SQL
 	sql := fmt.Sprintf("SELECT %s FROM %s", selectClause, b.fromClause)
-	
+
 	// Add WHERE clause
 	if len(b.whereClauses) > 0 {
 		sql += " WHERE " + strings.Join(b.whereClauses, " AND ")
 	}
-	
+
 	// Add GROUP BY clause
 	if len(b.groupBy) > 0 {
 		sql += " GROUP BY " + strings.Join(b.groupBy, ", ")
 	}
-	
+
 	// Add HAVING clause
 	if b.having != "" {
 		sql += " HAVING " + b.having
 	}
-	
+
 	// Add ORDER BY clause
 	if len(b.orderBy) > 0 {
 		sql += " ORDER BY " + strings.Join(b.orderBy, ", ")
 	}
-	
+
 	// Add LIMIT clause
 	if b.limit >= 0 {
 		sql += fmt.Sprintf(" LIMIT %d", b.limit)
 	}
-	
+
 	// Add OFFSET clause
 	if b.offset >= 0 {
 		sql += fmt.Sprintf(" OFFSET %d", b.offset)
 	}
-	
+
 	sql += ";"
-	
+
 	return &SelectStmt{sql: sql}, nil
 }
 
@@ -283,41 +283,41 @@ func (b *InsertBuilder) Build() (*InsertStmt, error) {
 	if b.err != nil {
 		return nil, b.err
 	}
-	
+
 	if b.table == "" {
 		return nil, fmt.Errorf("table name is required")
 	}
-	
+
 	// Handle DEFAULT VALUES case
 	if len(b.columns) == 0 || len(b.values) == 0 {
 		sql := fmt.Sprintf("INSERT INTO %s DEFAULT VALUES;", quoteIdent(b.table))
 		return &InsertStmt{sql: sql}, nil
 	}
-	
+
 	// Build column list
 	quotedCols := make([]string, len(b.columns))
 	for i, col := range b.columns {
 		quotedCols[i] = quoteIdent(col)
 	}
 	colList := strings.Join(quotedCols, ", ")
-	
+
 	// Build values list
 	valueRows := make([]string, len(b.values))
 	for i, row := range b.values {
 		valueRows[i] = fmt.Sprintf("(%s)", strings.Join(row, ", "))
 	}
 	valuesList := strings.Join(valueRows, ", ")
-	
+
 	// Build SQL
 	sql := fmt.Sprintf("INSERT INTO %s (%s) VALUES %s", quoteIdent(b.table), colList, valuesList)
-	
+
 	// Add ON CONFLICT clause if present
 	if b.onConflict != "" {
 		sql += " " + b.onConflict
 	}
-	
+
 	sql += ";"
-	
+
 	return &InsertStmt{sql: sql}, nil
 }
 
@@ -350,14 +350,14 @@ func (r *RandomSelectBuilder) Build() (*SelectStmt, error) {
 	if err != nil || len(tables) == 0 {
 		return &SelectStmt{sql: "SELECT 1;"}, nil
 	}
-	
+
 	// Pick a random table
 	table := tables[r.ctx.Intn(len(tables))]
-	
+
 	builder := NewSelectBuilder(r.ctx).
 		FromTable(table).
 		Limit(1 + r.ctx.Intn(50))
-	
+
 	// Add 1-3 random columns
 	if len(table.Cols) > 0 {
 		numCols := 1 + r.ctx.Intn(3)
@@ -365,7 +365,7 @@ func (r *RandomSelectBuilder) Build() (*SelectStmt, error) {
 	} else {
 		builder.Select("*")
 	}
-	
+
 	// Maybe add WHERE clause
 	if r.ctx.Intn(2) == 0 && len(table.Cols) > 0 {
 		exprGen := NewExprGenerator(r.ctx)
@@ -374,7 +374,7 @@ func (r *RandomSelectBuilder) Build() (*SelectStmt, error) {
 			builder.Where(whereExpr)
 		}
 	}
-	
+
 	// Maybe add ORDER BY
 	if r.ctx.Intn(3) == 0 && len(table.Cols) > 0 {
 		col := table.Cols[r.ctx.Intn(len(table.Cols))]
@@ -384,6 +384,6 @@ func (r *RandomSelectBuilder) Build() (*SelectStmt, error) {
 		}
 		builder.OrderBy(fmt.Sprintf("%s %s", quoteIdent(col.Name), order))
 	}
-	
+
 	return builder.Build()
 }

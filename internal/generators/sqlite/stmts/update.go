@@ -81,7 +81,7 @@ func GenUpdate(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 		}
 		selected[idx] = struct{}{}
 		col := setCols[idx]
-		
+
 		// Generate different types of SET expressions
 		choice := rnd(10)
 		var expr string
@@ -105,7 +105,7 @@ func GenUpdate(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 			// CASE expression
 			val1 := types.ValueForType(col.Type, lcg, col.Name)
 			val2 := types.ValueForType(col.Type, lcg, col.Name)
-			expr = fmt.Sprintf("%s = CASE WHEN %s IS NULL THEN %s ELSE %s END", 
+			expr = fmt.Sprintf("%s = CASE WHEN %s IS NULL THEN %s ELSE %s END",
 				quoteIdent(col.Name), quoteIdent(col.Name), val1, val2)
 		case 3:
 			// COALESCE expression
@@ -166,12 +166,12 @@ func GenUpdate(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	if rnd(4) > 0 { // 75% chance of WHERE clause
 		whereClauses := make([]string, 0, 3)
 		numConditions := 1 + rnd(3)
-		
+
 		for i := 0; i < numConditions && i < len(tbl.Cols); i++ {
 			col := tbl.Cols[rnd(len(tbl.Cols))]
 			condChoice := rnd(8)
 			var cond string
-			
+
 			switch condChoice {
 			case 0:
 				// Simple equality
@@ -233,7 +233,7 @@ func GenUpdate(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 			}
 			whereClauses = append(whereClauses, cond)
 		}
-		
+
 		// Combine conditions with AND/OR
 		if len(whereClauses) > 0 {
 			if len(whereClauses) == 1 {

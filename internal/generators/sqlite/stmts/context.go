@@ -11,12 +11,12 @@ import (
 type FlavorConfig interface {
 	// Name returns the SQL flavor name (e.g., "turso", "sqlite3", "postgres")
 	Name() string
-	
+
 	// SupportsFeature checks if a specific SQL feature is supported by this flavor.
 	// Feature names are standardized strings like "window_functions", "cte_recursive",
 	// "exists_subquery", "regexp", etc.
 	SupportsFeature(feature string) bool
-	
+
 	// ValidateSQL optionally validates SQL syntax for this flavor.
 	// Returns nil if SQL is valid or validation is not implemented.
 	ValidateSQL(sql string) error
@@ -45,8 +45,8 @@ func (d *DefaultFlavorConfig) ValidateSQL(sql string) error {
 type GenContext struct {
 	DB       *sql.DB
 	LCG      *common.LCG
-	Depth    int // Current recursion depth
-	MaxDepth int // Maximum allowed recursion depth
+	Depth    int          // Current recursion depth
+	MaxDepth int          // Maximum allowed recursion depth
 	Flavor   FlavorConfig // SQL dialect configuration
 }
 

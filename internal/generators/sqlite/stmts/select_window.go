@@ -26,23 +26,23 @@ func genSelectWithWindowFunctionInternal(ctx *GenContext) (SelectStmt, error) {
 		if ctx.DB == nil {
 			return SelectStmt{sql: "SELECT 1 AS id, 1 AS row_num;"}, nil
 		}
-		
+
 		tables, err := helper.GetAllTablesAndCols(ctx.DB)
 		if err != nil || len(tables) == 0 {
 			return SelectStmt{sql: "SELECT 1 AS id, 1 AS row_num;"}, nil
 		}
-		
+
 		rnd := ctx.Intn
 		tbl := tables[rnd(len(tables))]
 		if len(tbl.Cols) == 0 {
 			return SelectStmt{sql: "SELECT 1 AS id, 1 AS row_num;"}, nil
 		}
-		
+
 		// Generate a simple SELECT with ROWID for row numbering
 		numCols := 1 + rnd(min(3, len(tbl.Cols)))
 		selectedCols := make([]string, 0, numCols+1)
 		selected := make(map[int]struct{})
-		
+
 		for len(selectedCols) < numCols {
 			idx := rnd(len(tbl.Cols))
 			if _, ok := selected[idx]; ok {
@@ -51,21 +51,21 @@ func genSelectWithWindowFunctionInternal(ctx *GenContext) (SelectStmt, error) {
 			selected[idx] = struct{}{}
 			selectedCols = append(selectedCols, quoteIdent(tbl.Cols[idx].Name))
 		}
-		
+
 		// Add ROWID as alternative to ROW_NUMBER()
 		selectedCols = append(selectedCols, "ROWID AS row_num")
-		
+
 		limit := 1 + rnd(50)
-		sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;", 
+		sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;",
 			strings.Join(selectedCols, ", "), quoteIdent(tbl.Name), limit)
 		return SelectStmt{sql: sql}, nil
 	}
-	
+
 	// Original window function logic for flavors that support it
 	if ctx.DB == nil {
 		return genSelectWindowFunctionLiteral(ctx.LCG), nil
 	}
-	
+
 	tables, err := helper.GetAllTablesAndCols(ctx.DB)
 	if err != nil || len(tables) == 0 {
 		return genSelectWindowFunctionLiteral(ctx.LCG), nil
@@ -73,7 +73,7 @@ func genSelectWithWindowFunctionInternal(ctx *GenContext) (SelectStmt, error) {
 
 	rnd := ctx.Intn
 	tbl := tables[rnd(len(tables))]
-	
+
 	if len(tbl.Cols) == 0 {
 		return genSelectWindowFunctionLiteral(ctx.LCG), nil
 	}
@@ -146,7 +146,7 @@ func genSelectWithWindowFunctionInternal(ctx *GenContext) (SelectStmt, error) {
 	// Build the OVER clause with PARTITION BY and/or ORDER BY
 	var overClause string
 	clauseType := rnd(4)
-	
+
 	switch clauseType {
 	case 0:
 		// Just OVER()
@@ -180,7 +180,7 @@ func genSelectWithWindowFunctionInternal(ctx *GenContext) (SelectStmt, error) {
 			if rnd(2) == 0 {
 				orderDir = "DESC"
 			}
-			overClause = fmt.Sprintf("OVER (PARTITION BY %s ORDER BY %s %s)", 
+			overClause = fmt.Sprintf("OVER (PARTITION BY %s ORDER BY %s %s)",
 				quoteIdent(partCol.Name), quoteIdent(orderCol.Name), orderDir)
 		} else {
 			overClause = "OVER ()"
@@ -206,7 +206,7 @@ func genSelectWithWindowFunctionInternal(ctx *GenContext) (SelectStmt, error) {
 	numRegularCols := 1 + rnd(min(3, len(tbl.Cols)))
 	selectedCols := make([]string, 0, numRegularCols+1)
 	selected := make(map[int]struct{})
-	
+
 	for len(selectedCols) < numRegularCols {
 		idx := rnd(len(tbl.Cols))
 		if _, ok := selected[idx]; ok {
@@ -221,7 +221,7 @@ func genSelectWithWindowFunctionInternal(ctx *GenContext) (SelectStmt, error) {
 	selectedCols = append(selectedCols, fmt.Sprintf("%s %s AS %s", windowExpr, overClause, quoteIdent(windowAlias)))
 
 	limit := 1 + rnd(50)
-	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;", 
+	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;",
 		strings.Join(selectedCols, ", "), quoteIdent(tbl.Name), limit)
 	return SelectStmt{sql: sql}, nil
 }
@@ -262,18 +262,18 @@ func genSelectWithMultipleWindowsInternal(ctx *GenContext) (SelectStmt, error) {
 		if ctx.DB == nil {
 			return SelectStmt{sql: "SELECT 1 AS id, COUNT(*) AS cnt;"}, nil
 		}
-		
+
 		tables, err := helper.GetAllTablesAndCols(ctx.DB)
 		if err != nil || len(tables) == 0 {
 			return SelectStmt{sql: "SELECT 1 AS id, COUNT(*) AS cnt;"}, nil
 		}
-		
+
 		rnd := ctx.Intn
 		tbl := tables[rnd(len(tables))]
 		if len(tbl.Cols) == 0 {
 			return SelectStmt{sql: "SELECT 1 AS id, COUNT(*) AS cnt;"}, nil
 		}
-		
+
 		// Generate GROUP BY with aggregates as alternative
 		if len(tbl.Cols) > 0 {
 			groupCol := tbl.Cols[rnd(len(tbl.Cols))]
@@ -282,12 +282,12 @@ func genSelectWithMultipleWindowsInternal(ctx *GenContext) (SelectStmt, error) {
 			return SelectStmt{sql: sql}, nil
 		}
 	}
-	
+
 	// Original multiple windows logic for flavors that support it
 	if ctx.DB == nil {
 		return genSelectMultipleWindowsLiteral(ctx.LCG), nil
 	}
-	
+
 	tables, err := helper.GetAllTablesAndCols(ctx.DB)
 	if err != nil || len(tables) == 0 {
 		return genSelectMultipleWindowsLiteral(ctx.LCG), nil
@@ -295,7 +295,7 @@ func genSelectWithMultipleWindowsInternal(ctx *GenContext) (SelectStmt, error) {
 
 	rnd := ctx.Intn
 	tbl := tables[rnd(len(tables))]
-	
+
 	if len(tbl.Cols) == 0 {
 		return genSelectMultipleWindowsLiteral(ctx.LCG), nil
 	}
@@ -308,7 +308,7 @@ func genSelectWithMultipleWindowsInternal(ctx *GenContext) (SelectStmt, error) {
 	numRegularCols := 1 + rnd(min(2, len(tbl.Cols)))
 	selectedCols := make([]string, 0, numRegularCols)
 	selected := make(map[int]struct{})
-	
+
 	for len(selectedCols) < numRegularCols {
 		idx := rnd(len(tbl.Cols))
 		if _, ok := selected[idx]; ok {
@@ -323,7 +323,7 @@ func genSelectWithMultipleWindowsInternal(ctx *GenContext) (SelectStmt, error) {
 	for i := 0; i < numWindows; i++ {
 		funcType := windowFuncTypes[rnd(len(windowFuncTypes))]
 		var funcExpr string
-		
+
 		if funcType == "ROW_NUMBER" || funcType == "RANK" {
 			funcExpr = fmt.Sprintf("%s()", funcType)
 		} else if funcType == "COUNT" {
@@ -360,7 +360,7 @@ func genSelectWithMultipleWindowsInternal(ctx *GenContext) (SelectStmt, error) {
 			// Third: both
 			partCol := tbl.Cols[rnd(len(tbl.Cols))]
 			orderCol := tbl.Cols[rnd(len(tbl.Cols))]
-			overClause = fmt.Sprintf("OVER (PARTITION BY %s ORDER BY %s DESC)", 
+			overClause = fmt.Sprintf("OVER (PARTITION BY %s ORDER BY %s DESC)",
 				quoteIdent(partCol.Name), quoteIdent(orderCol.Name))
 		} else {
 			overClause = "OVER ()"
@@ -372,7 +372,7 @@ func genSelectWithMultipleWindowsInternal(ctx *GenContext) (SelectStmt, error) {
 
 	allCols := append(selectedCols, windowExprs...)
 	limit := 1 + rnd(30)
-	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;", 
+	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;",
 		strings.Join(allCols, ", "), quoteIdent(tbl.Name), limit)
 	return SelectStmt{sql: sql}, nil
 }

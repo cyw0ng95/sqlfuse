@@ -10,11 +10,11 @@ import (
 
 	"sqlsmith-go/internal/common"
 	"sqlsmith-go/internal/executors"
-	"sqlsmith-go/internal/generators/turso"
 	"sqlsmith-go/internal/generators/sqlite/helper"
+	"sqlsmith-go/internal/generators/turso"
 
-	"github.com/spf13/cobra"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/spf13/cobra"
 )
 
 func main() {

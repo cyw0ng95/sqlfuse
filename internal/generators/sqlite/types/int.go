@@ -25,7 +25,7 @@ func IntLiteral(lcg *common.LCG, hint string) string {
 			return fmt.Sprintf("%d", 1+lcg.Intn(10000))
 		}
 	}
-	
+
 	// Generate various integer patterns including edge cases
 	choice := lcg.Intn(15)
 	switch choice {

@@ -18,7 +18,7 @@ func GenSelectWithCTE(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 	rnd := lcg.Intn
 	tbl := tables[rnd(len(tables))]
-	
+
 	if len(tbl.Cols) == 0 {
 		return genSelectCTELiteral(lcg), nil
 	}
@@ -30,7 +30,7 @@ func GenSelectWithCTE(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	cteSelectCols := make([]string, 0, min(3, len(tbl.Cols)))
 	numCteCols := 1 + rnd(min(3, len(tbl.Cols)))
 	selected := make(map[int]struct{})
-	
+
 	for len(cteSelectCols) < numCteCols {
 		idx := rnd(len(tbl.Cols))
 		if _, ok := selected[idx]; ok {
@@ -48,7 +48,7 @@ func GenSelectWithCTE(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 		cteWhere = fmt.Sprintf(" WHERE %s > %s", quoteIdent(col.Name), val)
 	}
 
-	cteQuery := fmt.Sprintf("SELECT %s FROM %s%s", 
+	cteQuery := fmt.Sprintf("SELECT %s FROM %s%s",
 		strings.Join(cteSelectCols, ", "), quoteIdent(tbl.Name), cteWhere)
 
 	// Main query that uses the CTE
@@ -67,9 +67,9 @@ func GenSelectWithCTE(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	}
 
 	limit := 1 + rnd(50)
-	sql := fmt.Sprintf("WITH %s AS (%s) SELECT %s FROM %s%s LIMIT %d;", 
+	sql := fmt.Sprintf("WITH %s AS (%s) SELECT %s FROM %s%s LIMIT %d;",
 		quoteIdent(cteName), cteQuery, mainSelectCols, quoteIdent(cteName), mainWhere, limit)
-	
+
 	return SelectStmt{sql: sql}, nil
 }
 
@@ -112,7 +112,7 @@ func GenSelectWithMultipleCTE(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 		cols1 = append(cols1, quoteIdent(tbl1.Cols[i].Name))
 	}
 
-	cte1Query := fmt.Sprintf("SELECT %s FROM %s LIMIT %d", 
+	cte1Query := fmt.Sprintf("SELECT %s FROM %s LIMIT %d",
 		strings.Join(cols1, ", "), quoteIdent(tbl1.Name), 10+rnd(40))
 
 	// Second CTE - can reference first CTE or another table
@@ -129,7 +129,7 @@ func GenSelectWithMultipleCTE(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 			for i := 0; i < numCols2 && i < len(tbl2.Cols); i++ {
 				cols2 = append(cols2, quoteIdent(tbl2.Cols[i].Name))
 			}
-			cte2Query = fmt.Sprintf("SELECT %s FROM %s LIMIT %d", 
+			cte2Query = fmt.Sprintf("SELECT %s FROM %s LIMIT %d",
 				strings.Join(cols2, ", "), quoteIdent(tbl2.Name), 5+rnd(20))
 		} else {
 			cte2Query = "SELECT 1 AS id, 'test' AS value"
@@ -148,14 +148,14 @@ func GenSelectWithMultipleCTE(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 		mainQuery = fmt.Sprintf("SELECT * FROM %s", quoteIdent(cte2Name))
 	default:
 		// UNION both CTEs
-		mainQuery = fmt.Sprintf("SELECT * FROM %s UNION SELECT * FROM %s", 
+		mainQuery = fmt.Sprintf("SELECT * FROM %s UNION SELECT * FROM %s",
 			quoteIdent(cte1Name), quoteIdent(cte2Name))
 	}
 
 	limit := 1 + rnd(50)
-	sql := fmt.Sprintf("WITH %s AS (%s), %s AS (%s) %s LIMIT %d;", 
+	sql := fmt.Sprintf("WITH %s AS (%s), %s AS (%s) %s LIMIT %d;",
 		quoteIdent(cte1Name), cte1Query, quoteIdent(cte2Name), cte2Query, mainQuery, limit)
-	
+
 	return SelectStmt{sql: sql}, nil
 }
 
@@ -194,11 +194,11 @@ func genSelectWithRecursiveCTEInternal(ctx *GenContext) (SelectStmt, error) {
 		// Count from 1 to N
 		fmt.Sprintf("WITH RECURSIVE %s(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM %s WHERE n < %d) SELECT * FROM %s;",
 			quoteIdent(cteName), quoteIdent(cteName), 5+rnd(15), quoteIdent(cteName)),
-		
+
 		// Fibonacci-like sequence
 		fmt.Sprintf("WITH RECURSIVE %s(a, b) AS (SELECT 0, 1 UNION ALL SELECT b, a+b FROM %s WHERE b < %d) SELECT * FROM %s;",
 			quoteIdent(cteName), quoteIdent(cteName), 100+rnd(900), quoteIdent(cteName)),
-		
+
 		// Powers of 2
 		fmt.Sprintf("WITH RECURSIVE %s(n, val) AS (SELECT 1, 1 UNION ALL SELECT n+1, val*2 FROM %s WHERE n < %d) SELECT * FROM %s;",
 			quoteIdent(cteName), quoteIdent(cteName), 5+rnd(10), quoteIdent(cteName)),

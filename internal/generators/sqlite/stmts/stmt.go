@@ -41,7 +41,7 @@ func (f GeneratorFunc) CanGenerate(ctx *GenContext) bool {
 
 // StmtGeneratorWithCheck is a StmtGenerator that includes a custom CanGenerate check.
 type StmtGeneratorWithCheck struct {
-	GenerateFn   func(ctx *GenContext) (Stmt, error)
+	GenerateFn    func(ctx *GenContext) (Stmt, error)
 	CanGenerateFn func(ctx *GenContext) bool
 }
 
@@ -108,7 +108,7 @@ func (r *GeneratorRegistry) Names() []string {
 // DefaultRegistry returns a registry pre-populated with all standard generators.
 func DefaultRegistry() *GeneratorRegistry {
 	reg := NewGeneratorRegistry()
-	
+
 	// Register all standard generators
 	reg.Register("pragma", &PragmaGenerator{})
 	reg.Register("insert", &InsertGenerator{})
@@ -120,7 +120,7 @@ func DefaultRegistry() *GeneratorRegistry {
 	reg.Register("alter_table", &AlterTableGenerator{})
 	reg.Register("create_view", &CreateViewGenerator{})
 	reg.Register("drop_view", &DropViewGenerator{})
-	
+
 	return reg
 }
 

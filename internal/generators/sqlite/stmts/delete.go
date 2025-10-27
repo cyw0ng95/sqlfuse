@@ -46,18 +46,18 @@ func GenDelete(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 
 	rnd := lcg.Intn
 	tbl := tables[rnd(len(tables))]
-	
+
 	// Build WHERE clause with complex conditions
 	where := ""
 	if len(tbl.Cols) > 0 && rnd(5) > 0 { // 80% chance of WHERE clause
 		whereClauses := make([]string, 0, 4)
 		numConditions := 1 + rnd(4) // 1-4 conditions
-		
+
 		for i := 0; i < numConditions && i < len(tbl.Cols); i++ {
 			col := tbl.Cols[rnd(len(tbl.Cols))]
 			condChoice := rnd(12)
 			var cond string
-			
+
 			switch condChoice {
 			case 0:
 				// Simple equality
@@ -147,7 +147,7 @@ func GenDelete(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 			}
 			whereClauses = append(whereClauses, cond)
 		}
-		
+
 		// Combine conditions with AND/OR
 		if len(whereClauses) > 0 {
 			if len(whereClauses) == 1 {
