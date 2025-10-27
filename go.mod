@@ -12,8 +12,6 @@ require (
 	github.com/tursodatabase/turso-go v0.2.2
 )
 
-require github.com/mattn/go-sqlite3 v1.14.32
-
 require (
 	github.com/ebitengine/purego v0.10.0-alpha.2 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
