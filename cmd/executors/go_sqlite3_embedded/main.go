@@ -14,20 +14,20 @@ import (
 	"sqlsmith-go/internal/generators/sqlite/helper"
 
 	"github.com/spf13/cobra"
-	_ "github.com/tursodatabase/turso-go"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
 	var flags executors.CommonFlags
 
 	rootCmd := &cobra.Command{
-		Use:   "turso_embedded",
-		Short: "Embedded Turso/LibSQL executor for SQL fuzzing",
+		Use:   "go_sqlite3_embedded",
+		Short: "Embedded go-sqlite3 executor for SQL fuzzing",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			common.InitLogger()
-			common.Logger.Info().Msg("Starting turso_embedded executor")
+			common.Logger.Info().Msg("Starting go_sqlite3_embedded executor")
 
-			conn, err := sql.Open("turso", flags.Dsn)
+			conn, err := sql.Open("sqlite3", flags.Dsn)
 			if err != nil {
 				common.Logger.Error().Err(err).Msg("Error opening database")
 				os.Exit(1)
@@ -111,7 +111,7 @@ func main() {
 		},
 	}
 
-	executors.AddCommonFlags(rootCmd, &flags, "/opt/assets/turso/init.sql")
+	executors.AddCommonFlags(rootCmd, &flags, "/opt/assets/go_sqlite3/init.sql")
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
