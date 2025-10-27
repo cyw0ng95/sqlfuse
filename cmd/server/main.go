@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -157,8 +160,34 @@ func main() {
 	RegisterJobRoutes(e)
 
 	common.Logger.Info().Msgf("Starting minimal server on port %s", serverConfig.Port)
-	if err := e.Start(":" + serverConfig.Port); err != nil {
-		fmt.Fprintf(os.Stderr, "server failed to start: %v\n", err)
+
+	// Set up signal handling for graceful shutdown
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+
+	// Start server in a goroutine
+	go func() {
+		if err := e.Start(":" + serverConfig.Port); err != nil && err != http.ErrServerClosed {
+			common.Logger.Error().Err(err).Msg("Server startup failed")
+			fmt.Fprintf(os.Stderr, "server failed to start: %v\n", err)
+			os.Exit(1)
+		}
+	}()
+
+	// Wait for interrupt signal to gracefully shutdown the server
+	sig := <-quit
+	common.Logger.Info().Msgf("Received signal: %v, initiating graceful shutdown...", sig)
+
+	// Create a context with timeout for shutdown
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Attempt graceful shutdown
+	if err := e.Shutdown(ctx); err != nil {
+		common.Logger.Error().Err(err).Msg("Server forced to shutdown")
+		fmt.Fprintf(os.Stderr, "server shutdown error: %v\n", err)
 		os.Exit(1)
 	}
+
+	common.Logger.Info().Msg("Server exited gracefully")
 }
