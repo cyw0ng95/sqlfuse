@@ -5,6 +5,19 @@ import (
 	"sqlsmith-go/internal/common"
 )
 
+// PragmaGenerator is a StmtGenerator for PRAGMA statements.
+type PragmaGenerator struct{}
+
+// Generate implements StmtGenerator for PRAGMA statements.
+func (g *PragmaGenerator) Generate(ctx *GenContext) (Stmt, error) {
+	return GenPragma(ctx.LCG), nil
+}
+
+// CanGenerate implements StmtGenerator. PRAGMA can always be generated.
+func (g *PragmaGenerator) CanGenerate(ctx *GenContext) bool {
+	return true
+}
+
 // GenPragma generates a PRAGMA statement compatible with Turso/LibSQL.
 // Only includes PRAGMAs that are fully or partially supported according to
 // https://github.com/tursodatabase/turso/blob/main/COMPAT.md#pragma

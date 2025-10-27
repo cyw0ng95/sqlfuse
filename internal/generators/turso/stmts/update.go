@@ -14,7 +14,7 @@ type UpdateGenerator struct{}
 
 // Generate implements StmtGenerator for UPDATE statements.
 func (g *UpdateGenerator) Generate(ctx *GenContext) (Stmt, error) {
-	return genUpdateInternal(ctx.LCG)
+	return GenUpdate(ctx.DB, ctx.LCG)
 }
 
 // CanGenerate implements StmtGenerator. UPDATE can always be generated (creates synthetic tables).
