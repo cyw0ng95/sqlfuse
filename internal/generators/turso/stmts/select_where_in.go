@@ -10,6 +10,8 @@ import (
 )
 
 // GenSelectWhereIn generates a SELECT with WHERE IN clause.
+// IMPORTANT: Uses IN with value list only, NOT subqueries.
+// Turso does NOT support IN (subquery) per COMPAT.md.
 func GenSelectWhereIn(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	tbls, err := helper.GetAllTablesAndCols(db)
 	if err != nil || len(tbls) == 0 {

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+
 	"sqlsmith-go/internal/common"
 	"sqlsmith-go/internal/generators/turso/helper"
 	"sqlsmith-go/internal/generators/turso/types"
@@ -19,7 +20,7 @@ func GenSelectWithScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error
 
 	rnd := lcg.Intn
 	tbl := tables[rnd(len(tables))]
-	
+
 	// Select a scalar function to test
 	scalarFuncs := []func(*common.LCG, []helper.TableInfo) string{
 		genAbsFunction,
@@ -27,12 +28,16 @@ func GenSelectWithScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error
 		genCoalesceFunction,
 		genConcatFunction,
 		genConcatWsFunction,
+		genGlobFunction,
 		genHexFunction,
 		genIfnullFunction,
 		genIifFunction,
 		genInstrFunction,
+		genLastInsertRowidFunction,
 		genLengthFunction,
 		genLikeFunction,
+		genLikelihoodFunction,
+		genLikelyFunction,
 		genLowerFunction,
 		genUpperFunction,
 		genLtrimFunction,
@@ -41,6 +46,7 @@ func GenSelectWithScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error
 		genMaxMinFunction,
 		genNullifFunction,
 		genOctetLengthFunction,
+		genPrintfFunction,
 		genQuoteFunction,
 		genRandomFunction,
 		genRandomBlobFunction,
@@ -48,11 +54,14 @@ func GenSelectWithScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error
 		genRoundFunction,
 		genSignFunction,
 		genSoundexFunction,
+		genSqliteSourceIdFunction,
+		genSqliteVersionFunction,
 		genSubstrFunction,
 		genSubstringFunction,
 		genTypeofFunction,
 		genUnhexFunction,
 		genUnicodeFunction,
+		genUnlikelyFunction,
 		genZeroblobFunction,
 	}
 
@@ -71,11 +80,15 @@ func genSelectScalarFunctionLiteral(lcg *common.LCG) SelectStmt {
 		"coalesce(NULL, 'default')",
 		"concat('Hello', ' ', 'World')",
 		"concat_ws(',', 'a', 'b', 'c')",
+		"glob('*.txt', 'test.txt')",
 		"hex('ABC')",
 		"ifnull(NULL, 'value')",
 		"iif(1 > 0, 'yes', 'no')",
 		"instr('Hello World', 'World')",
+		"last_insert_rowid()",
 		"length('Hello')",
+		"likelihood(1, 0.5)",
+		"likely(1)",
 		"lower('UPPER')",
 		"upper('lower')",
 		"ltrim('  spaces  ')",
@@ -85,6 +98,7 @@ func genSelectScalarFunctionLiteral(lcg *common.LCG) SelectStmt {
 		"min(1, 2, 3)",
 		"nullif(1, 2)",
 		"octet_length('ABC')",
+		"printf('Hello %s', 'World')",
 		"quote('text')",
 		"random()",
 		"randomblob(10)",
@@ -92,15 +106,15 @@ func genSelectScalarFunctionLiteral(lcg *common.LCG) SelectStmt {
 		"round(3.14159, 2)",
 		"sign(-42)",
 		"soundex('Hello')",
+		"sqlite_source_id()",
+		"sqlite_version()",
 		"substr('Hello', 1, 3)",
 		"substring('Hello', 2, 2)",
 		"typeof(123)",
 		"unhex('414243')",
 		"unicode('A')",
+		"unlikely(0)",
 		"zeroblob(10)",
-		"sqlite_version()",
-		"sqlite_source_id()",
-		"last_insert_rowid()",
 	}
 
 	funcIdx := lcg.Intn(len(scalarFuncs))
@@ -212,7 +226,7 @@ func genIfnullFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 func genIifFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 	conditions := []string{"1 > 0", "1 = 1", "0 < 1"}
 	cond := conditions[lcg.Intn(len(conditions))]
-	
+
 	// Try to use columns for the result values when available
 	if len(tbls) > 0 && lcg.Intn(2) == 0 {
 		col1 := findAnyColumn(tbls, lcg)
@@ -332,7 +346,7 @@ func genMaxMinFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 	if lcg.Intn(2) == 0 {
 		fn = "min"
 	}
-	
+
 	// Try to use numeric columns when available
 	if len(tbls) > 0 && lcg.Intn(2) == 0 {
 		numArgs := 2 + lcg.Intn(3)
@@ -349,7 +363,7 @@ func genMaxMinFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 			return fmt.Sprintf("%s(%s)", fn, joinStrings(args, ", "))
 		}
 	}
-	
+
 	numArgs := 2 + lcg.Intn(3)
 	args := make([]string, numArgs)
 	for i := 0; i < numArgs; i++ {
@@ -518,6 +532,109 @@ func genZeroblobFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 	return fmt.Sprintf("zeroblob(%d)", size)
 }
 
+func genGlobFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	patterns := []string{"'*.txt'", "'test*'", "'[0-9]*'", "'?.db'"}
+	pattern := patterns[lcg.Intn(len(patterns))]
+
+	if len(tbls) > 0 && lcg.Intn(2) == 0 {
+		col := findTextColumn(tbls, lcg)
+		if col != "" {
+			return fmt.Sprintf("glob(%s, %s)", pattern, col)
+		}
+	}
+	testStrings := []string{"'test.txt'", "'data.db'", "'123.log'", "'file.dat'"}
+	testStr := testStrings[lcg.Intn(len(testStrings))]
+	return fmt.Sprintf("glob(%s, %s)", pattern, testStr)
+}
+
+func genLastInsertRowidFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	return "last_insert_rowid()"
+}
+
+func genLikelihoodFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	// likelihood(X, Y) - Y is a probability between 0.0 and 1.0
+	probabilities := []string{"0.1", "0.5", "0.9", "0.25", "0.75"}
+	prob := probabilities[lcg.Intn(len(probabilities))]
+
+	if len(tbls) > 0 && lcg.Intn(2) == 0 {
+		tbl := tbls[lcg.Intn(len(tbls))]
+		if len(tbl.Cols) > 0 {
+			col := tbl.Cols[lcg.Intn(len(tbl.Cols))]
+			return fmt.Sprintf("likelihood(%s, %s)", quoteIdent(col.Name), prob)
+		}
+	}
+	return fmt.Sprintf("likelihood(1, %s)", prob)
+}
+
+func genLikelyFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	if len(tbls) > 0 && lcg.Intn(2) == 0 {
+		tbl := tbls[lcg.Intn(len(tbls))]
+		if len(tbl.Cols) > 0 {
+			col := tbl.Cols[lcg.Intn(len(tbl.Cols))]
+			return fmt.Sprintf("likely(%s)", quoteIdent(col.Name))
+		}
+	}
+	return "likely(1)"
+}
+
+func genUnlikelyFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	if len(tbls) > 0 && lcg.Intn(2) == 0 {
+		tbl := tbls[lcg.Intn(len(tbls))]
+		if len(tbl.Cols) > 0 {
+			col := tbl.Cols[lcg.Intn(len(tbl.Cols))]
+			return fmt.Sprintf("unlikely(%s)", quoteIdent(col.Name))
+		}
+	}
+	return "unlikely(0)"
+}
+
+func genPrintfFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	formats := []string{
+		"'Hello %s'",
+		"'Value: %d'",
+		"'%.2f'",
+		"'%s = %d'",
+	}
+	format := formats[lcg.Intn(len(formats))]
+
+	// Generate appropriate arguments based on format
+	if format == "'Hello %s'" {
+		if len(tbls) > 0 && lcg.Intn(2) == 0 {
+			col := findTextColumn(tbls, lcg)
+			if col != "" {
+				return fmt.Sprintf("printf(%s, %s)", format, col)
+			}
+		}
+		return "printf('Hello %s', 'World')"
+	} else if format == "'Value: %d'" {
+		if len(tbls) > 0 && lcg.Intn(2) == 0 {
+			col := findNumericColumn(tbls, lcg)
+			if col != "" {
+				return fmt.Sprintf("printf(%s, %s)", format, col)
+			}
+		}
+		return "printf('Value: %d', 42)"
+	} else if format == "'%.2f'" {
+		if len(tbls) > 0 && lcg.Intn(2) == 0 {
+			col := findNumericColumn(tbls, lcg)
+			if col != "" {
+				return fmt.Sprintf("printf(%s, %s)", format, col)
+			}
+		}
+		return "printf('%.2f', 3.14159)"
+	} else {
+		return "printf('%s = %d', 'answer', 42)"
+	}
+}
+
+func genSqliteVersionFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	return "sqlite_version()"
+}
+
+func genSqliteSourceIdFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	return "sqlite_source_id()"
+}
+
 // GenSelectWithMathFunction generates a SELECT statement with mathematical SQL functions
 func GenSelectWithMathFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	tables, err := helper.GetAllTablesAndCols(db)
@@ -527,7 +644,7 @@ func GenSelectWithMathFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) 
 
 	rnd := lcg.Intn
 	tbl := tables[rnd(len(tables))]
-	
+
 	mathFuncs := []func(*common.LCG, []helper.TableInfo) string{
 		genAcosFunction,
 		genAcoshFunction,
@@ -769,7 +886,7 @@ func GenSelectWithAggregateFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, er
 
 	rnd := lcg.Intn
 	tbl := tables[rnd(len(tables))]
-	
+
 	aggFuncs := []func(*common.LCG, []helper.TableInfo) string{
 		genAvgFunction,
 		genCountFunction,
@@ -1185,4 +1302,496 @@ func isBlobType(t string) bool {
 	}
 	up := strings.ToUpper(t)
 	return strings.Contains(up, "BLOB")
+}
+
+// GenSelectWithUUIDFunction generates a SELECT statement with UUID extension functions
+func GenSelectWithUUIDFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
+	uuidFuncs := []func(*common.LCG) string{
+		genUUID4Function,
+		genUUID4StrFunction,
+		genUUID7Function,
+		genUUID7WithTimestampFunction,
+		genUUID7TimestampMsFunction,
+		genUUIDStrFunction,
+		genUUIDBlobFunction,
+	}
+
+	rnd := lcg.Intn
+	funcIdx := rnd(len(uuidFuncs))
+	funcExpr := uuidFuncs[funcIdx](lcg)
+
+	sql := fmt.Sprintf("SELECT %s;", funcExpr)
+	return SelectStmt{sql: sql}, nil
+}
+
+// UUID function generators
+
+func genUUID4Function(lcg *common.LCG) string {
+	return "uuid4()"
+}
+
+func genUUID4StrFunction(lcg *common.LCG) string {
+	// Alias for gen_random_uuid() for PostgreSQL compatibility
+	return "uuid4_str()"
+}
+
+func genUUID7Function(lcg *common.LCG) string {
+	return "uuid7()"
+}
+
+func genUUID7WithTimestampFunction(lcg *common.LCG) string {
+	// UUID v7 with optional parameter for seconds since epoch
+	timestamp := 1609459200 + lcg.Intn(63072000) // 2021-01-01 to ~2023
+	return fmt.Sprintf("uuid7(%d)", timestamp)
+}
+
+func genUUID7TimestampMsFunction(lcg *common.LCG) string {
+	// Convert a UUID v7 to milliseconds since epoch
+	// First generate a UUID v7, then convert it
+	return "uuid7_timestamp_ms(uuid7())"
+}
+
+func genUUIDStrFunction(lcg *common.LCG) string {
+	// Convert a valid UUID to string
+	return "uuid_str(uuid4())"
+}
+
+func genUUIDBlobFunction(lcg *common.LCG) string {
+	// Convert a valid UUID to blob
+	return "uuid_blob(uuid4_str())"
+}
+
+// GenSelectWithRegexpFunction generates a SELECT statement with regexp extension functions
+func GenSelectWithRegexpFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
+	tables, err := helper.GetAllTablesAndCols(db)
+	if err != nil || len(tables) == 0 {
+		return genSelectRegexpFunctionLiteral(lcg), nil
+	}
+
+	rnd := lcg.Intn
+	regexpFuncs := []func(*common.LCG, []helper.TableInfo) string{
+		genRegexpFunction,
+		genRegexpLikeFunction,
+		genRegexpSubstrFunction,
+		genRegexpCaptureFunction,
+		genRegexpReplaceFunction,
+	}
+
+	funcIdx := rnd(len(regexpFuncs))
+	funcExpr := regexpFuncs[funcIdx](lcg, tables)
+
+	sql := fmt.Sprintf("SELECT %s;", funcExpr)
+	return SelectStmt{sql: sql}, nil
+}
+
+func genSelectRegexpFunctionLiteral(lcg *common.LCG) SelectStmt {
+	regexpFuncs := []string{
+		"regexp('[0-9]+', '123abc')",
+		"regexp_like('hello123', '[a-z]+')",
+		"regexp_substr('hello world', 'w[a-z]+')",
+		"regexp_capture('test@example.com', '([a-z]+)@([a-z]+\\.[a-z]+)')",
+		"regexp_replace('hello world', 'world', 'universe')",
+	}
+
+	funcIdx := lcg.Intn(len(regexpFuncs))
+	sql := fmt.Sprintf("SELECT %s;", regexpFuncs[funcIdx])
+	return SelectStmt{sql: sql}
+}
+
+// Regexp function generators
+
+func genRegexpFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	patterns := []string{"'[0-9]+'", "'[a-z]+'", "'[A-Z]+'", "'\\w+'"}
+	pattern := patterns[lcg.Intn(len(patterns))]
+
+	if len(tbls) > 0 && lcg.Intn(2) == 0 {
+		col := findTextColumn(tbls, lcg)
+		if col != "" {
+			return fmt.Sprintf("regexp(%s, %s)", pattern, col)
+		}
+	}
+	return fmt.Sprintf("regexp(%s, 'test123')", pattern)
+}
+
+func genRegexpLikeFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	patterns := []string{"'[0-9]+'", "'[a-z]+'", "'[A-Z]+'", "'\\w+'"}
+	pattern := patterns[lcg.Intn(len(patterns))]
+
+	if len(tbls) > 0 && lcg.Intn(2) == 0 {
+		col := findTextColumn(tbls, lcg)
+		if col != "" {
+			return fmt.Sprintf("regexp_like(%s, %s)", col, pattern)
+		}
+	}
+	return fmt.Sprintf("regexp_like('test123', %s)", pattern)
+}
+
+func genRegexpSubstrFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	patterns := []string{"'[0-9]+'", "'[a-z]+'", "'w[a-z]+'"}
+	pattern := patterns[lcg.Intn(len(patterns))]
+
+	if len(tbls) > 0 && lcg.Intn(2) == 0 {
+		col := findTextColumn(tbls, lcg)
+		if col != "" {
+			return fmt.Sprintf("regexp_substr(%s, %s)", col, pattern)
+		}
+	}
+	return fmt.Sprintf("regexp_substr('hello world', %s)", pattern)
+}
+
+func genRegexpCaptureFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	patterns := []string{
+		"'([a-z]+)@([a-z]+\\.[a-z]+)'",
+		"'([0-9]{3})-([0-9]{4})'",
+		"'(\\w+)\\s+(\\w+)'",
+	}
+	pattern := patterns[lcg.Intn(len(patterns))]
+
+	if len(tbls) > 0 && lcg.Intn(2) == 0 {
+		col := findTextColumn(tbls, lcg)
+		if col != "" {
+			if lcg.Intn(2) == 0 {
+				// With capture group number
+				n := 1 + lcg.Intn(2)
+				return fmt.Sprintf("regexp_capture(%s, %s, %d)", col, pattern, n)
+			}
+			return fmt.Sprintf("regexp_capture(%s, %s)", col, pattern)
+		}
+	}
+	return "regexp_capture('test@example.com', '([a-z]+)@([a-z]+\\.[a-z]+)')"
+}
+
+func genRegexpReplaceFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	patterns := []string{"'[0-9]+'", "'world'", "'test'"}
+	replacements := []string{"'NUM'", "'universe'", "'TEST'"}
+
+	idx := lcg.Intn(len(patterns))
+	pattern := patterns[idx]
+	replacement := replacements[idx]
+
+	if len(tbls) > 0 && lcg.Intn(2) == 0 {
+		col := findTextColumn(tbls, lcg)
+		if col != "" {
+			return fmt.Sprintf("regexp_replace(%s, %s, %s)", col, pattern, replacement)
+		}
+	}
+	return fmt.Sprintf("regexp_replace('hello world', %s, %s)", pattern, replacement)
+}
+
+// GenSelectWithVectorFunction generates a SELECT statement with vector extension functions
+func GenSelectWithVectorFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
+	vectorFuncs := []func(*common.LCG) string{
+		genVectorFunction,
+		genVector32Function,
+		genVector64Function,
+		genVectorExtractFunction,
+		genVectorDistanceCosFunction,
+		genVectorDistanceL2Function,
+		genVectorConcatFunction,
+		genVectorSliceFunction,
+	}
+
+	rnd := lcg.Intn
+	funcIdx := rnd(len(vectorFuncs))
+	funcExpr := vectorFuncs[funcIdx](lcg)
+
+	sql := fmt.Sprintf("SELECT %s;", funcExpr)
+	return SelectStmt{sql: sql}, nil
+}
+
+// Vector function generators
+
+func genVectorFunction(lcg *common.LCG) string {
+	// Generate a simple vector with random floats
+	size := 2 + lcg.Intn(6) // 2-7 dimensions
+	values := make([]string, size)
+	for i := 0; i < size; i++ {
+		values[i] = fmt.Sprintf("%.2f", float64(lcg.Intn(100))/10.0)
+	}
+	return fmt.Sprintf("vector('[%s]')", joinStrings(values, ","))
+}
+
+func genVector32Function(lcg *common.LCG) string {
+	// Generate a 32-bit float vector
+	size := 2 + lcg.Intn(6)
+	values := make([]string, size)
+	for i := 0; i < size; i++ {
+		values[i] = fmt.Sprintf("%.2f", float64(lcg.Intn(100))/10.0)
+	}
+	return fmt.Sprintf("vector32('[%s]')", joinStrings(values, ","))
+}
+
+func genVector64Function(lcg *common.LCG) string {
+	// Generate a 64-bit float vector
+	size := 2 + lcg.Intn(6)
+	values := make([]string, size)
+	for i := 0; i < size; i++ {
+		values[i] = fmt.Sprintf("%.2f", float64(lcg.Intn(100))/10.0)
+	}
+	return fmt.Sprintf("vector64('[%s]')", joinStrings(values, ","))
+}
+
+func genVectorExtractFunction(lcg *common.LCG) string {
+	// Extract vector from a vector
+	return "vector_extract(vector('[1.0,2.0,3.0]'))"
+}
+
+func genVectorDistanceCosFunction(lcg *common.LCG) string {
+	// Cosine distance between two vectors
+	return "vector_distance_cos(vector('[1.0,2.0,3.0]'), vector('[4.0,5.0,6.0]'))"
+}
+
+func genVectorDistanceL2Function(lcg *common.LCG) string {
+	// Euclidean distance between two vectors
+	return "vector_distance_l2(vector('[1.0,2.0,3.0]'), vector('[4.0,5.0,6.0]'))"
+}
+
+func genVectorConcatFunction(lcg *common.LCG) string {
+	// Concatenate two vectors
+	return "vector_concat(vector('[1.0,2.0]'), vector('[3.0,4.0]'))"
+}
+
+func genVectorSliceFunction(lcg *common.LCG) string {
+	// Slice a vector
+	startIdx := lcg.Intn(2)
+	endIdx := 2 + lcg.Intn(2)
+	return fmt.Sprintf("vector_slice(vector('[1.0,2.0,3.0,4.0]'), %d, %d)", startIdx, endIdx)
+}
+
+// GenSelectWithTimeFunction generates a SELECT statement with time extension functions
+func GenSelectWithTimeFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
+	timeFuncs := []func(*common.LCG) string{
+		genTimeNowFunction,
+		genTimeDateFunction,
+		genTimeGetFunction,
+		genTimeUnixFunction,
+		genTimeMilliFunction,
+		genTimeMicroFunction,
+		genTimeNanoFunction,
+		genTimeToUnixFunction,
+		genTimeToMilliFunction,
+		genTimeToMicroFunction,
+		genTimeToNanoFunction,
+		genTimeAfterFunction,
+		genTimeBeforeFunction,
+		genTimeCompareFunction,
+		genTimeEqualFunction,
+		genTimeAddFunction,
+		genTimeAddDateFunction,
+		genTimeSubFunction,
+		genTimeSinceFunction,
+		genTimeUntilFunction,
+		genTimeTruncFunction,
+		genTimeRoundFunction,
+		genTimeFmtIsoFunction,
+		genTimeFmtDatetimeFunction,
+		genTimeFmtDateFunction,
+		genTimeFmtTimeFunction,
+		genTimeParseFunction,
+		genDurFunction,
+	}
+
+	rnd := lcg.Intn
+	funcIdx := rnd(len(timeFuncs))
+	funcExpr := timeFuncs[funcIdx](lcg)
+
+	sql := fmt.Sprintf("SELECT %s;", funcExpr)
+	return SelectStmt{sql: sql}, nil
+}
+
+// Time function generators
+
+func genTimeNowFunction(lcg *common.LCG) string {
+	return "time_now()"
+}
+
+func genTimeDateFunction(lcg *common.LCG) string {
+	year := 2020 + lcg.Intn(5)
+	month := 1 + lcg.Intn(12)
+	day := 1 + lcg.Intn(28)
+
+	if lcg.Intn(2) == 0 {
+		// Just date
+		return fmt.Sprintf("time_date(%d, %d, %d)", year, month, day)
+	}
+	// With time
+	hour := lcg.Intn(24)
+	min := lcg.Intn(60)
+	sec := lcg.Intn(60)
+	return fmt.Sprintf("time_date(%d, %d, %d, %d, %d, %d)", year, month, day, hour, min, sec)
+}
+
+func genTimeGetFunction(lcg *common.LCG) string {
+	fields := []string{"'year'", "'month'", "'day'", "'hour'", "'minute'", "'second'", "'nano'", "'weekday'", "'yearday'"}
+	field := fields[lcg.Intn(len(fields))]
+
+	getFuncs := []string{
+		"time_get_year(time_now())",
+		"time_get_month(time_now())",
+		"time_get_day(time_now())",
+		"time_get_hour(time_now())",
+		"time_get_minute(time_now())",
+		"time_get_second(time_now())",
+		"time_get_nano(time_now())",
+		"time_get_weekday(time_now())",
+		"time_get_yearday(time_now())",
+		"time_get_isoyear(time_now())",
+		"time_get_isoweek(time_now())",
+		fmt.Sprintf("time_get(time_now(), %s)", field),
+	}
+
+	return getFuncs[lcg.Intn(len(getFuncs))]
+}
+
+func genTimeUnixFunction(lcg *common.LCG) string {
+	sec := 1609459200 + lcg.Intn(63072000) // 2021-01-01 to ~2023
+	if lcg.Intn(2) == 0 {
+		return fmt.Sprintf("time_unix(%d)", sec)
+	}
+	nsec := lcg.Intn(1000000000)
+	return fmt.Sprintf("time_unix(%d, %d)", sec, nsec)
+}
+
+func genTimeMilliFunction(lcg *common.LCG) string {
+	// Use a smaller range to avoid integer overflow on 32-bit systems
+	// Add up to ~730 days (2 years) in milliseconds
+	msec := 1609459200000 + int64(lcg.Intn(63072000))*1000
+	return fmt.Sprintf("time_milli(%d)", msec)
+}
+
+func genTimeMicroFunction(lcg *common.LCG) string {
+	// Add up to ~1 day in microseconds for meaningful test coverage
+	usec := 1609459200000000 + int64(lcg.Intn(86400))*1000000
+	return fmt.Sprintf("time_micro(%d)", usec)
+}
+
+func genTimeNanoFunction(lcg *common.LCG) string {
+	// Add up to ~1 hour in nanoseconds for meaningful test coverage
+	nsec := 1609459200000000000 + int64(lcg.Intn(3600))*1000000000
+	return fmt.Sprintf("time_nano(%d)", nsec)
+}
+
+func genTimeToUnixFunction(lcg *common.LCG) string {
+	return "time_to_unix(time_now())"
+}
+
+func genTimeToMilliFunction(lcg *common.LCG) string {
+	return "time_to_milli(time_now())"
+}
+
+func genTimeToMicroFunction(lcg *common.LCG) string {
+	return "time_to_micro(time_now())"
+}
+
+func genTimeToNanoFunction(lcg *common.LCG) string {
+	return "time_to_nano(time_now())"
+}
+
+func genTimeAfterFunction(lcg *common.LCG) string {
+	return "time_after(time_now(), time_unix(1609459200))"
+}
+
+func genTimeBeforeFunction(lcg *common.LCG) string {
+	return "time_before(time_unix(1609459200), time_now())"
+}
+
+func genTimeCompareFunction(lcg *common.LCG) string {
+	return "time_compare(time_now(), time_unix(1609459200))"
+}
+
+func genTimeEqualFunction(lcg *common.LCG) string {
+	return "time_equal(time_now(), time_now())"
+}
+
+func genTimeAddFunction(lcg *common.LCG) string {
+	// Add duration to time
+	duration := lcg.Intn(86400000000000) // up to 1 day in nanoseconds
+	return fmt.Sprintf("time_add(time_now(), %d)", duration)
+}
+
+func genTimeAddDateFunction(lcg *common.LCG) string {
+	years := lcg.Intn(5)
+	if lcg.Intn(2) == 0 {
+		return fmt.Sprintf("time_add_date(time_now(), %d)", years)
+	}
+	months := lcg.Intn(12)
+	days := lcg.Intn(30)
+	return fmt.Sprintf("time_add_date(time_now(), %d, %d, %d)", years, months, days)
+}
+
+func genTimeSubFunction(lcg *common.LCG) string {
+	return "time_sub(time_now(), time_unix(1609459200))"
+}
+
+func genTimeSinceFunction(lcg *common.LCG) string {
+	return "time_since(time_unix(1609459200))"
+}
+
+func genTimeUntilFunction(lcg *common.LCG) string {
+	return "time_until(time_add(time_now(), 3600000000000))"
+}
+
+func genTimeTruncFunction(lcg *common.LCG) string {
+	fields := []string{"'year'", "'month'", "'day'", "'hour'", "'minute'", "'second'"}
+	field := fields[lcg.Intn(len(fields))]
+	return fmt.Sprintf("time_trunc(time_now(), %s)", field)
+}
+
+func genTimeRoundFunction(lcg *common.LCG) string {
+	duration := 3600000000000 // 1 hour in nanoseconds
+	return fmt.Sprintf("time_round(time_now(), %d)", duration)
+}
+
+func genTimeFmtIsoFunction(lcg *common.LCG) string {
+	if lcg.Intn(2) == 0 {
+		return "time_fmt_iso(time_now())"
+	}
+	offset := lcg.Intn(43200) - 21600 // -6 to +6 hours
+	return fmt.Sprintf("time_fmt_iso(time_now(), %d)", offset)
+}
+
+func genTimeFmtDatetimeFunction(lcg *common.LCG) string {
+	if lcg.Intn(2) == 0 {
+		return "time_fmt_datetime(time_now())"
+	}
+	offset := lcg.Intn(43200) - 21600
+	return fmt.Sprintf("time_fmt_datetime(time_now(), %d)", offset)
+}
+
+func genTimeFmtDateFunction(lcg *common.LCG) string {
+	if lcg.Intn(2) == 0 {
+		return "time_fmt_date(time_now())"
+	}
+	offset := lcg.Intn(43200) - 21600
+	return fmt.Sprintf("time_fmt_date(time_now(), %d)", offset)
+}
+
+func genTimeFmtTimeFunction(lcg *common.LCG) string {
+	if lcg.Intn(2) == 0 {
+		return "time_fmt_time(time_now())"
+	}
+	offset := lcg.Intn(43200) - 21600
+	return fmt.Sprintf("time_fmt_time(time_now(), %d)", offset)
+}
+
+func genTimeParseFunction(lcg *common.LCG) string {
+	timestamps := []string{
+		"'2024-01-01T12:00:00Z'",
+		"'2024-01-01 12:00:00'",
+		"'2024-01-01'",
+	}
+	ts := timestamps[lcg.Intn(len(timestamps))]
+	return fmt.Sprintf("time_parse(%s)", ts)
+}
+
+func genDurFunction(lcg *common.LCG) string {
+	durFuncs := []string{
+		"dur_ns()",
+		"dur_us()",
+		"dur_ms()",
+		"dur_s()",
+		"dur_m()",
+		"dur_h()",
+	}
+	return durFuncs[lcg.Intn(len(durFuncs))]
 }
