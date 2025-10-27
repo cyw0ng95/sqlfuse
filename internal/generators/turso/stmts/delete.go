@@ -14,7 +14,7 @@ type DeleteGenerator struct{}
 
 // Generate implements StmtGenerator for DELETE statements.
 func (g *DeleteGenerator) Generate(ctx *GenContext) (Stmt, error) {
-	return genDeleteInternal(ctx.LCG)
+	return GenDelete(ctx.DB, ctx.LCG)
 }
 
 // CanGenerate implements StmtGenerator. DELETE can always be generated (creates synthetic tables).
