@@ -11,7 +11,8 @@ import (
 )
 
 func main() {
-	fmt.Println("=== SQL Flavor Design Pattern Demo ===\n")
+	fmt.Println("=== SQL Flavor Design Pattern Demo ===")
+	fmt.Println()
 
 	lcg := common.NewLCG(42)
 
@@ -21,7 +22,8 @@ func main() {
 	sqliteStmt, _ := stmts.GenSelectWithWindowFunction(nil, lcg)
 	fmt.Printf("   Flavor: %s\n", sqliteCtx.Flavor.Name())
 	fmt.Printf("   Supports window_functions: %v\n", sqliteCtx.SupportsFeature("window_functions"))
-	fmt.Printf("   Generated SQL: %s\n\n", sqliteStmt.SQL())
+	fmt.Printf("   Generated SQL: %s\n", sqliteStmt.SQL())
+	fmt.Println()
 
 	// Example 2: Turso flavor (restricted features)
 	fmt.Println("2. Turso LibSQL Flavor (does NOT support window functions):")
@@ -30,7 +32,8 @@ func main() {
 	fmt.Printf("   Flavor: %s\n", tursoCtx.Flavor.Name())
 	fmt.Printf("   Supports window_functions: %v\n", tursoCtx.SupportsFeature("window_functions"))
 	fmt.Printf("   Note: Old API (backward compat) still generates literals.\n")
-	fmt.Printf("         New flavor-aware generators would use ROWID instead of OVER.\n\n")
+	fmt.Printf("         New flavor-aware generators would use ROWID instead of OVER.\n")
+	fmt.Println()
 
 	// Example 3: Recursive CTEs
 	fmt.Println("3. Recursive CTE Support Comparison:")
@@ -43,7 +46,8 @@ func main() {
 	// Turso does NOT support RECURSIVE
 	fmt.Println("   Turso (does NOT support cte_recursive):")
 	fmt.Printf("   Supports cte_recursive: %v\n", tursoCtx.SupportsFeature("cte_recursive"))
-	fmt.Printf("   (Would generate non-recursive CTE as alternative)\n\n")
+	fmt.Printf("   (Would generate non-recursive CTE as alternative)\n")
+	fmt.Println()
 
 	// Example 4: Feature compatibility check
 	fmt.Println("4. Feature Compatibility Matrix:")
