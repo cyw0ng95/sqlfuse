@@ -5,6 +5,19 @@ import (
 	"sqlsmith-go/internal/common"
 )
 
+// AlterTableGenerator is a StmtGenerator for ALTER TABLE statements.
+type AlterTableGenerator struct{}
+
+// Generate implements StmtGenerator for ALTER TABLE statements.
+func (g *AlterTableGenerator) Generate(ctx *GenContext) (Stmt, error) {
+	return genAlterTableInternal(ctx.LCG)
+}
+
+// CanGenerate implements StmtGenerator. ALTER TABLE can always be generated.
+func (g *AlterTableGenerator) CanGenerate(ctx *GenContext) bool {
+	return true
+}
+
 // AlterTableStmt represents an ALTER TABLE statement.
 type AlterTableStmt struct {
 	sql string
@@ -18,7 +31,13 @@ func (s *AlterTableStmt) Type() string { return "alter_table" }
 // - RENAME COLUMN
 // - RENAME TABLE
 // It targets lightweight pseudo-random table and column names produced by the LCG.
+// This function is kept for backward compatibility with existing code.
 func GenAlterTable(lcg *common.LCG) (Stmt, error) {
+	return genAlterTableInternal(lcg)
+}
+
+// genAlterTableInternal is the internal implementation used by both old and new interfaces.
+func genAlterTableInternal(lcg *common.LCG) (Stmt, error) {
 	if lcg == nil {
 		lcg = common.NewLCG(1)
 	}

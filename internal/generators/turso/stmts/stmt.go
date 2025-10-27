@@ -2,6 +2,8 @@ package stmts
 
 import (
 	"database/sql"
+	"fmt"
+	"sync"
 )
 
 // Stmt represents a SQL statement that can be generated and executed.
@@ -56,6 +58,72 @@ func (g *StmtGeneratorWithCheck) CanGenerate(ctx *GenContext) bool {
 	return g.CanGenerateFn(ctx)
 }
 
+// GeneratorRegistry provides a centralized registry for statement generators.
+// This allows dynamic registration and lookup of generators by name.
+type GeneratorRegistry struct {
+	mu         sync.RWMutex
+	generators map[string]StmtGenerator
+}
+
+// NewGeneratorRegistry creates a new empty generator registry.
+func NewGeneratorRegistry() *GeneratorRegistry {
+	return &GeneratorRegistry{
+		generators: make(map[string]StmtGenerator),
+	}
+}
+
+// Register adds or updates a generator in the registry.
+func (r *GeneratorRegistry) Register(name string, gen StmtGenerator) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.generators[name] = gen
+}
+
+// Get retrieves a generator by name. Returns nil if not found.
+func (r *GeneratorRegistry) Get(name string) StmtGenerator {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return r.generators[name]
+}
+
+// Has checks if a generator with the given name exists.
+func (r *GeneratorRegistry) Has(name string) bool {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	_, exists := r.generators[name]
+	return exists
+}
+
+// Names returns all registered generator names.
+func (r *GeneratorRegistry) Names() []string {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	names := make([]string, 0, len(r.generators))
+	for name := range r.generators {
+		names = append(names, name)
+	}
+	return names
+}
+
+// DefaultRegistry returns a registry pre-populated with all standard generators.
+func DefaultRegistry() *GeneratorRegistry {
+	reg := NewGeneratorRegistry()
+	
+	// Register all standard generators
+	reg.Register("pragma", &PragmaGenerator{})
+	reg.Register("insert", &InsertGenerator{})
+	reg.Register("select", &SelectGenerator{})
+	reg.Register("update", &UpdateGenerator{})
+	reg.Register("delete", &DeleteGenerator{})
+	reg.Register("create_table", &CreateTableGenerator{})
+	reg.Register("drop_table", &DropTableGenerator{})
+	reg.Register("alter_table", &AlterTableGenerator{})
+	reg.Register("create_view", &CreateViewGenerator{})
+	reg.Register("drop_view", &DropViewGenerator{})
+	
+	return reg
+}
+
 // PragmaStmt represents a PRAGMA statement.
 type PragmaStmt struct {
 	sql string
@@ -76,4 +144,18 @@ func hasTables(db *sql.DB) bool {
 		return false
 	}
 	return count > 0
+}
+
+// GenerateStmt is a convenience function that generates a statement using a named generator.
+// It uses the default registry to look up the generator.
+func GenerateStmt(ctx *GenContext, generatorName string) (Stmt, error) {
+	reg := DefaultRegistry()
+	gen := reg.Get(generatorName)
+	if gen == nil {
+		return nil, fmt.Errorf("generator %q not found", generatorName)
+	}
+	if !gen.CanGenerate(ctx) {
+		return nil, fmt.Errorf("generator %q cannot generate with current context", generatorName)
+	}
+	return gen.Generate(ctx)
 }
