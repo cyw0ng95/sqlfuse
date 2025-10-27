@@ -11,7 +11,7 @@ import (
 	"sqlsmith-go/internal/common"
 	"sqlsmith-go/internal/executors"
 	"sqlsmith-go/internal/generators/turso"
-	"sqlsmith-go/internal/generators/turso/helper"
+	"sqlsmith-go/internal/generators/sqlite/helper"
 
 	"github.com/spf13/cobra"
 	_ "github.com/tursodatabase/turso-go"

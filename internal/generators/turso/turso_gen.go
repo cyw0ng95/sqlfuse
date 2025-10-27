@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/generators/turso/stmts"
+	"sqlsmith-go/internal/generators/sqlite/stmts"
 )
 
 // Generator uses an LCG to drive generation directions and produce SQL snippets.
