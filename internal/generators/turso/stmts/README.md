@@ -83,20 +83,21 @@ stmt, err := stmts.GenerateStmt(ctx, "pragma")
 
 All standard generators are pre-registered in the default registry:
 
-| Generator Name | Generator Type | Requires DB | Description |
-|---------------|----------------|-------------|-------------|
+| Generator Name | Generator Type | Requires Tables | Description |
+|---------------|----------------|-----------------|-------------|
 | `pragma` | `PragmaGenerator` | No | PRAGMA statements |
 | `insert` | `InsertGenerator` | Yes | Single row INSERT |
 | `select` | `SelectGenerator` | No* | Basic SELECT |
-| `update` | `UpdateGenerator` | No | UPDATE statements |
-| `delete` | `DeleteGenerator` | No | DELETE statements |
+| `update` | `UpdateGenerator` | No** | UPDATE statements |
+| `delete` | `DeleteGenerator` | No** | DELETE statements |
 | `create_table` | `CreateTableGenerator` | No | CREATE TABLE |
 | `drop_table` | `DropTableGenerator` | No | DROP TABLE |
 | `alter_table` | `AlterTableGenerator` | No | ALTER TABLE |
 | `create_view` | `CreateViewGenerator` | No | CREATE VIEW |
 | `drop_view` | `DropViewGenerator` | No | DROP VIEW |
 
-*SELECT can generate without DB (returns `SELECT 1`)
+*SELECT can generate without tables (returns `SELECT 1`)
+**UPDATE/DELETE generate synthetic table names, don't require existing tables
 
 ## Builder Pattern
 
@@ -146,8 +147,6 @@ stmt, err := stmts.NewSelectBuilder(ctx).
 Fluent interface for building INSERT statements:
 
 ```go
-ctx := stmts.NewInsertBuilder(ctx).
-
 // Single row
 stmt, err := stmts.NewInsertBuilder(ctx).
     Into("users").
@@ -347,10 +346,10 @@ func (g *ComplexQueryGenerator) Generate(ctx *stmts.GenContext) (stmts.Stmt, err
     builder.FromTable(table).
         SelectColumns(table, 3)
     
-    // Maybe add subquery
+    // Maybe add subquery in FROM clause
     if ctx.CanRecurse() && ctx.Intn(2) == 0 {
         subCtx := ctx.Descend()
-        subGen := stmts.NewRandomSelectBuilder(subCtx, ctx.DB)
+        subGen := stmts.NewRandomSelectBuilder(subCtx, subCtx.DB)
         subStmt, _ := subGen.Build()
         builder.FromSubquery(subStmt.SQL(), "subq")
     }
