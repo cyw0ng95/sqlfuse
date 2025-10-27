@@ -5,6 +5,19 @@ import (
 	"sqlsmith-go/internal/common"
 )
 
+// CreateViewGenerator is a StmtGenerator for CREATE VIEW statements.
+type CreateViewGenerator struct{}
+
+// Generate implements StmtGenerator for CREATE VIEW statements.
+func (g *CreateViewGenerator) Generate(ctx *GenContext) (Stmt, error) {
+	return genCreateViewInternal(ctx.LCG)
+}
+
+// CanGenerate implements StmtGenerator. CREATE VIEW can always be generated.
+func (g *CreateViewGenerator) CanGenerate(ctx *GenContext) bool {
+	return true
+}
+
 // CreateViewStmt represents a CREATE VIEW statement.
 type CreateViewStmt struct {
 	sql string
@@ -15,7 +28,13 @@ func (s *CreateViewStmt) Type() string { return "create_view" }
 
 // GenCreateView generates a simple CREATE VIEW statement that selects a constant.
 // Using a constant SELECT avoids depending on existing tables.
+// This function is kept for backward compatibility with existing code.
 func GenCreateView(lcg *common.LCG) (Stmt, error) {
+	return genCreateViewInternal(lcg)
+}
+
+// genCreateViewInternal is the internal implementation used by both old and new interfaces.
+func genCreateViewInternal(lcg *common.LCG) (Stmt, error) {
 	if lcg == nil {
 		lcg = common.NewLCG(1)
 	}

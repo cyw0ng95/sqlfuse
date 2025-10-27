@@ -9,7 +9,7 @@ func TestStringLiteral_Lengths(t *testing.T) {
 	lcg := common.NewLCG(99)
 	lengths := make(map[int]struct{})
 	for i := 0; i < 1000; i++ {
-		s := StringLiteral(lcg)
+		s := StringLiteral(lcg, "")
 		lengths[len(s)] = struct{}{}
 	}
 	if len(lengths) < 5 {

@@ -5,25 +5,43 @@ import (
 	"sqlsmith-go/internal/common"
 )
 
-// GenPragma generates a PRAGMA statement; values are chosen via the LCG.
+// PragmaGenerator is a StmtGenerator for PRAGMA statements.
+type PragmaGenerator struct{}
+
+// Generate implements StmtGenerator for PRAGMA statements.
+func (g *PragmaGenerator) Generate(ctx *GenContext) (Stmt, error) {
+	return GenPragma(ctx.LCG), nil
+}
+
+// CanGenerate implements StmtGenerator. PRAGMA can always be generated.
+func (g *PragmaGenerator) CanGenerate(ctx *GenContext) bool {
+	return true
+}
+
+// GenPragma generates a PRAGMA statement compatible with Turso/LibSQL.
+// Only includes PRAGMAs that are fully or partially supported according to
+// https://github.com/tursodatabase/turso/blob/main/COMPAT.md#pragma
 func GenPragma(lcg *common.LCG) Stmt {
+	// Only include PRAGMAs with "Yes" or "Partial" support in Turso
 	pragmas := []string{
-		"application_id",
-		"cache_size",
-		"encoding",
-		"freelist_count",
-		"integrity_check",
-		"journal_mode",
-		"legacy_file_format",
-		"max_page_count",
-		"page_count",
-		"page_size",
-		"pragma_list",
-		"query_only",
-		"schema_version",
-		"synchronous",
-		"table_info",
-		"user_version",
+		"application_id",     // Yes
+		"cache_size",         // Yes
+		"database_list",      // Yes
+		"encoding",           // Yes
+		"freelist_count",     // Yes
+		"integrity_check",    // Yes
+		"journal_mode",       // Yes
+		"legacy_file_format", // Yes
+		"max_page_count",     // Yes
+		"page_count",         // Yes
+		"page_size",          // Yes
+		"pragma_list",        // Yes
+		"query_only",         // Yes
+		"schema_version",     // Yes (write is noop in defensive mode)
+		"synchronous",        // Partial (only OFF and FULL)
+		"table_info",         // Yes
+		"user_version",       // Yes
+		"wal_checkpoint",     // Partial (without param)
 	}
 
 	p := pragmas[lcg.Intn(len(pragmas))]
@@ -50,7 +68,7 @@ func GenPragma(lcg *common.LCG) Stmt {
 		values := []string{"ON", "OFF"}
 		v := values[lcg.Intn(len(values))]
 		sql = fmt.Sprintf("PRAGMA legacy_file_format = %s;", v)
-	case "integrity_check", "freelist_count", "page_count", "pragma_list", "table_info":
+	case "integrity_check", "freelist_count", "page_count", "pragma_list", "table_info", "database_list", "wal_checkpoint":
 		sql = fmt.Sprintf("PRAGMA %s;", p)
 	default:
 		sql = fmt.Sprintf("PRAGMA %s;", p)

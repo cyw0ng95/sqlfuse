@@ -9,6 +9,19 @@ import (
 	"strings"
 )
 
+// InsertGenerator is a StmtGenerator for basic INSERT statements.
+type InsertGenerator struct{}
+
+// Generate implements StmtGenerator for INSERT statements.
+func (g *InsertGenerator) Generate(ctx *GenContext) (Stmt, error) {
+	return genInsertSingle(ctx.DB, ctx.LCG)
+}
+
+// CanGenerate implements StmtGenerator. INSERT requires tables to exist.
+func (g *InsertGenerator) CanGenerate(ctx *GenContext) bool {
+	return hasTables(ctx.DB)
+}
+
 // InsertStmt represents an INSERT statement.
 type InsertStmt struct {
 	sql string
@@ -18,8 +31,14 @@ func (s *InsertStmt) SQL() string  { return s.sql }
 func (s *InsertStmt) Type() string { return "insert" }
 
 // GenInsert generates a type-aware INSERT for a random user table.
+// This function is kept for backward compatibility with existing code.
 // lcg should be *common.LCG.
 func GenInsert(db *sql.DB, lcg *common.LCG) (Stmt, error) {
+	return genInsertSingle(db, lcg)
+}
+
+// genInsertSingle is the internal implementation for single-row inserts.
+func genInsertSingle(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	tables, err := helper.GetAllTablesAndCols(db)
 	if err != nil || len(tables) == 0 {
 		return nil, fmt.Errorf("no tables available for INSERT: %v", err)
@@ -309,4 +328,211 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// GenInsertOrReplace generates an INSERT OR REPLACE statement
+func GenInsertOrReplace(db *sql.DB, lcg *common.LCG) (Stmt, error) {
+	tables, err := helper.GetAllTablesAndCols(db)
+	if err != nil || len(tables) == 0 {
+		return nil, fmt.Errorf("no tables for insert or replace: %v", err)
+	}
+
+	var rnd func(int) int
+	if lcg != nil {
+		rnd = lcg.Intn
+	} else {
+		rnd = func(n int) int { return 0 }
+	}
+
+	tbl := tables[rnd(len(tables))]
+	if len(tbl.Cols) == 0 {
+		return &InsertStmt{sql: fmt.Sprintf("INSERT OR REPLACE INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name))}, nil
+	}
+
+	// Filter columns (skip 'id')
+	filteredCols := []helper.ColumnInfo{}
+	for _, c := range tbl.Cols {
+		if strings.EqualFold(c.Name, "id") {
+			continue
+		}
+		filteredCols = append(filteredCols, c)
+	}
+
+	if len(filteredCols) == 0 {
+		return &InsertStmt{sql: fmt.Sprintf("INSERT OR REPLACE INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name))}, nil
+	}
+
+	cols := colsNames(filteredCols)
+	vals, err := buildValuesRow(filteredCols, lcg)
+	if err != nil {
+		return nil, err
+	}
+
+	sql := fmt.Sprintf("INSERT OR REPLACE INTO %s (%s) VALUES (%s);", quoteIdent(tbl.Name), strings.Join(cols, ", "), vals)
+	return &InsertStmt{sql: sql}, nil
+}
+
+// GenInsertOrIgnore generates an INSERT OR IGNORE statement
+func GenInsertOrIgnore(db *sql.DB, lcg *common.LCG) (Stmt, error) {
+	tables, err := helper.GetAllTablesAndCols(db)
+	if err != nil || len(tables) == 0 {
+		return nil, fmt.Errorf("no tables for insert or ignore: %v", err)
+	}
+
+	var rnd func(int) int
+	if lcg != nil {
+		rnd = lcg.Intn
+	} else {
+		rnd = func(n int) int { return 0 }
+	}
+
+	tbl := tables[rnd(len(tables))]
+	if len(tbl.Cols) == 0 {
+		return &InsertStmt{sql: fmt.Sprintf("INSERT OR IGNORE INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name))}, nil
+	}
+
+	// Filter columns (skip 'id')
+	filteredCols := []helper.ColumnInfo{}
+	for _, c := range tbl.Cols {
+		if strings.EqualFold(c.Name, "id") {
+			continue
+		}
+		filteredCols = append(filteredCols, c)
+	}
+
+	if len(filteredCols) == 0 {
+		return &InsertStmt{sql: fmt.Sprintf("INSERT OR IGNORE INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name))}, nil
+	}
+
+	cols := colsNames(filteredCols)
+	vals, err := buildValuesRow(filteredCols, lcg)
+	if err != nil {
+		return nil, err
+	}
+
+	sql := fmt.Sprintf("INSERT OR IGNORE INTO %s (%s) VALUES (%s);", quoteIdent(tbl.Name), strings.Join(cols, ", "), vals)
+	return &InsertStmt{sql: sql}, nil
+}
+
+// GenInsertOrAbort generates an INSERT OR ABORT statement
+func GenInsertOrAbort(db *sql.DB, lcg *common.LCG) (Stmt, error) {
+	tables, err := helper.GetAllTablesAndCols(db)
+	if err != nil || len(tables) == 0 {
+		return nil, fmt.Errorf("no tables for insert or abort: %v", err)
+	}
+
+	var rnd func(int) int
+	if lcg != nil {
+		rnd = lcg.Intn
+	} else {
+		rnd = func(n int) int { return 0 }
+	}
+
+	tbl := tables[rnd(len(tables))]
+	if len(tbl.Cols) == 0 {
+		return &InsertStmt{sql: fmt.Sprintf("INSERT OR ABORT INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name))}, nil
+	}
+
+	filteredCols := []helper.ColumnInfo{}
+	for _, c := range tbl.Cols {
+		if strings.EqualFold(c.Name, "id") {
+			continue
+		}
+		filteredCols = append(filteredCols, c)
+	}
+
+	if len(filteredCols) == 0 {
+		return &InsertStmt{sql: fmt.Sprintf("INSERT OR ABORT INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name))}, nil
+	}
+
+	cols := colsNames(filteredCols)
+	vals, err := buildValuesRow(filteredCols, lcg)
+	if err != nil {
+		return nil, err
+	}
+
+	sql := fmt.Sprintf("INSERT OR ABORT INTO %s (%s) VALUES (%s);", quoteIdent(tbl.Name), strings.Join(cols, ", "), vals)
+	return &InsertStmt{sql: sql}, nil
+}
+
+// GenInsertOrRollback generates an INSERT OR ROLLBACK statement
+func GenInsertOrRollback(db *sql.DB, lcg *common.LCG) (Stmt, error) {
+	tables, err := helper.GetAllTablesAndCols(db)
+	if err != nil || len(tables) == 0 {
+		return nil, fmt.Errorf("no tables for insert or rollback: %v", err)
+	}
+
+	var rnd func(int) int
+	if lcg != nil {
+		rnd = lcg.Intn
+	} else {
+		rnd = func(n int) int { return 0 }
+	}
+
+	tbl := tables[rnd(len(tables))]
+	if len(tbl.Cols) == 0 {
+		return &InsertStmt{sql: fmt.Sprintf("INSERT OR ROLLBACK INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name))}, nil
+	}
+
+	filteredCols := []helper.ColumnInfo{}
+	for _, c := range tbl.Cols {
+		if strings.EqualFold(c.Name, "id") {
+			continue
+		}
+		filteredCols = append(filteredCols, c)
+	}
+
+	if len(filteredCols) == 0 {
+		return &InsertStmt{sql: fmt.Sprintf("INSERT OR ROLLBACK INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name))}, nil
+	}
+
+	cols := colsNames(filteredCols)
+	vals, err := buildValuesRow(filteredCols, lcg)
+	if err != nil {
+		return nil, err
+	}
+
+	sql := fmt.Sprintf("INSERT OR ROLLBACK INTO %s (%s) VALUES (%s);", quoteIdent(tbl.Name), strings.Join(cols, ", "), vals)
+	return &InsertStmt{sql: sql}, nil
+}
+
+// GenInsertOrFail generates an INSERT OR FAIL statement
+func GenInsertOrFail(db *sql.DB, lcg *common.LCG) (Stmt, error) {
+	tables, err := helper.GetAllTablesAndCols(db)
+	if err != nil || len(tables) == 0 {
+		return nil, fmt.Errorf("no tables for insert or fail: %v", err)
+	}
+
+	var rnd func(int) int
+	if lcg != nil {
+		rnd = lcg.Intn
+	} else {
+		rnd = func(n int) int { return 0 }
+	}
+
+	tbl := tables[rnd(len(tables))]
+	if len(tbl.Cols) == 0 {
+		return &InsertStmt{sql: fmt.Sprintf("INSERT OR FAIL INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name))}, nil
+	}
+
+	filteredCols := []helper.ColumnInfo{}
+	for _, c := range tbl.Cols {
+		if strings.EqualFold(c.Name, "id") {
+			continue
+		}
+		filteredCols = append(filteredCols, c)
+	}
+
+	if len(filteredCols) == 0 {
+		return &InsertStmt{sql: fmt.Sprintf("INSERT OR FAIL INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name))}, nil
+	}
+
+	cols := colsNames(filteredCols)
+	vals, err := buildValuesRow(filteredCols, lcg)
+	if err != nil {
+		return nil, err
+	}
+
+	sql := fmt.Sprintf("INSERT OR FAIL INTO %s (%s) VALUES (%s);", quoteIdent(tbl.Name), strings.Join(cols, ", "), vals)
+	return &InsertStmt{sql: sql}, nil
 }
