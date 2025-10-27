@@ -45,8 +45,10 @@ build_project() {
     
     echo "-- [INFO] Building turso_embedded_executor..."
     go build "${build_flags[@]}" -o output/turso_embedded_executor cmd/executors/turso_embedded/main.go
+    echo "-- [INFO] Building sqlite3_embedded_executor..."
+    go build "${build_flags[@]}" -o output/sqlite3_embedded_executor cmd/executors/sqlite3_embedded/main.go
     go build "${build_flags[@]}" -o output/server ./cmd/server
-    echo "-- [INFO] Build complete. Output: output/turso_embedded_executor, output/server"
+    echo "-- [INFO] Build complete. Output: output/turso_embedded_executor, output/sqlite3_embedded_executor, output/server"
     
     # Build the frontend view
     build_view
