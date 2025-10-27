@@ -175,4 +175,3 @@ func GenSelectWithComplexJoin(db *sql.DB, lcg *common.LCG, maxDepth int) (Select
 
 	return SelectStmt{sql: sql}, nil
 }
-

@@ -22,7 +22,7 @@ func (eg *ExprGenerator) GenCastExpr(tbls []helper.TableInfo) string {
 	}
 
 	col := tbl.Cols[eg.ctx.Intn(len(tbl.Cols))]
-	
+
 	// Target types for CAST
 	targetTypes := []string{"INTEGER", "TEXT", "REAL", "BLOB"}
 	targetType := targetTypes[eg.ctx.Intn(len(targetTypes))]
@@ -136,7 +136,7 @@ func (eg *ExprGenerator) GenIsDistinctFromExpr(tbls []helper.TableInfo, useNot b
 	}
 
 	col := tbl.Cols[eg.ctx.Intn(len(tbl.Cols))]
-	
+
 	// For IS DISTINCT FROM, compare with NULL or another value
 	var compareVal string
 	if eg.ctx.Intn(2) == 0 {

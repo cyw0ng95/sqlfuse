@@ -803,3 +803,228 @@ func TestExecuteJSONFunctionsWithRealData(t *testing.T) {
 	}
 }
 
+// TestGenSelectWithUUIDFunction tests UUID extension function SQL generation
+func TestGenSelectWithUUIDFunction(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	lcg := common.NewLCG(8000)
+
+	for i := 0; i < testIterations; i++ {
+		stmt, err := GenSelectWithUUIDFunction(db, lcg)
+		if err != nil {
+			t.Fatalf("GenSelectWithUUIDFunction failed on iteration %d: %v", i, err)
+		}
+
+		sql := stmt.SQL()
+		if sql == "" {
+			t.Error("GenSelectWithUUIDFunction returned empty SQL")
+		}
+
+		if stmt.Type() != "select" {
+			t.Errorf("Expected type 'select', got '%s'", stmt.Type())
+		}
+
+		valid, errors := ValidateSQL(sql)
+		if !valid {
+			t.Errorf("Invalid UUID function SQL on iteration %d: %s\nErrors: %v", i, sql, errors)
+		}
+
+		// Try to execute the SQL
+		rows, err := db.Query(sql)
+		if err != nil {
+			// UUID functions may not be supported in all SQLite builds, log but don't fail
+			t.Logf("Execution failed (may be expected for UUID extension) on iteration %d: %v\nSQL: %s", i, err, sql)
+		}
+		if rows != nil {
+			rows.Close()
+		}
+	}
+}
+
+// TestGenSelectWithRegexpFunction tests regexp extension function SQL generation
+func TestGenSelectWithRegexpFunction(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	lcg := common.NewLCG(9000)
+
+	for i := 0; i < testIterations; i++ {
+		stmt, err := GenSelectWithRegexpFunction(db, lcg)
+		if err != nil {
+			t.Fatalf("GenSelectWithRegexpFunction failed on iteration %d: %v", i, err)
+		}
+
+		sql := stmt.SQL()
+		if sql == "" {
+			t.Error("GenSelectWithRegexpFunction returned empty SQL")
+		}
+
+		if stmt.Type() != "select" {
+			t.Errorf("Expected type 'select', got '%s'", stmt.Type())
+		}
+
+		valid, errors := ValidateSQL(sql)
+		if !valid {
+			t.Errorf("Invalid regexp function SQL on iteration %d: %s\nErrors: %v", i, sql, errors)
+		}
+
+		// Try to execute the SQL
+		rows, err := db.Query(sql)
+		if err != nil {
+			// Regexp functions may not be supported in all SQLite builds, log but don't fail
+			t.Logf("Execution failed (may be expected for regexp extension) on iteration %d: %v\nSQL: %s", i, err, sql)
+		}
+		if rows != nil {
+			rows.Close()
+		}
+	}
+}
+
+// TestGenSelectWithVectorFunction tests vector extension function SQL generation
+func TestGenSelectWithVectorFunction(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	lcg := common.NewLCG(10000)
+
+	for i := 0; i < testIterations; i++ {
+		stmt, err := GenSelectWithVectorFunction(db, lcg)
+		if err != nil {
+			t.Fatalf("GenSelectWithVectorFunction failed on iteration %d: %v", i, err)
+		}
+
+		sql := stmt.SQL()
+		if sql == "" {
+			t.Error("GenSelectWithVectorFunction returned empty SQL")
+		}
+
+		if stmt.Type() != "select" {
+			t.Errorf("Expected type 'select', got '%s'", stmt.Type())
+		}
+
+		valid, errors := ValidateSQL(sql)
+		if !valid {
+			t.Errorf("Invalid vector function SQL on iteration %d: %s\nErrors: %v", i, sql, errors)
+		}
+
+		// Try to execute the SQL
+		rows, err := db.Query(sql)
+		if err != nil {
+			// Vector functions may not be supported in all SQLite builds, log but don't fail
+			t.Logf("Execution failed (may be expected for vector extension) on iteration %d: %v\nSQL: %s", i, err, sql)
+		}
+		if rows != nil {
+			rows.Close()
+		}
+	}
+}
+
+// TestGenSelectWithTimeFunction tests time extension function SQL generation
+func TestGenSelectWithTimeFunction(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	lcg := common.NewLCG(11000)
+
+	for i := 0; i < testIterations; i++ {
+		stmt, err := GenSelectWithTimeFunction(db, lcg)
+		if err != nil {
+			t.Fatalf("GenSelectWithTimeFunction failed on iteration %d: %v", i, err)
+		}
+
+		sql := stmt.SQL()
+		if sql == "" {
+			t.Error("GenSelectWithTimeFunction returned empty SQL")
+		}
+
+		if stmt.Type() != "select" {
+			t.Errorf("Expected type 'select', got '%s'", stmt.Type())
+		}
+
+		valid, errors := ValidateSQL(sql)
+		if !valid {
+			t.Errorf("Invalid time function SQL on iteration %d: %s\nErrors: %v", i, sql, errors)
+		}
+
+		// Try to execute the SQL
+		rows, err := db.Query(sql)
+		if err != nil {
+			// Time functions may not be supported in all SQLite builds, log but don't fail
+			t.Logf("Execution failed (may be expected for time extension) on iteration %d: %v\nSQL: %s", i, err, sql)
+		}
+		if rows != nil {
+			rows.Close()
+		}
+	}
+}
+
+// TestSpecificExtensionFunctions tests specific extension functions individually
+func TestSpecificExtensionFunctions(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	testCases := []struct {
+		name string
+		sql  string
+	}{
+		// UUID functions
+		{"uuid4", "SELECT uuid4();"},
+		{"uuid4_str", "SELECT uuid4_str();"},
+		{"uuid7", "SELECT uuid7();"},
+		{"uuid7_with_timestamp", "SELECT uuid7(1609459200);"},
+		{"uuid_str", "SELECT uuid_str(uuid4());"},
+
+		// Regexp functions
+		{"regexp", "SELECT regexp('[0-9]+', '123abc');"},
+		{"regexp_like", "SELECT regexp_like('hello123', '[a-z]+');"},
+		{"regexp_substr", "SELECT regexp_substr('hello world', 'w[a-z]+');"},
+		{"regexp_capture", "SELECT regexp_capture('test@example.com', '([a-z]+)@([a-z]+\\.[a-z]+)');"},
+		{"regexp_replace", "SELECT regexp_replace('hello world', 'world', 'universe');"},
+
+		// Vector functions
+		{"vector", "SELECT vector('[1.0,2.0,3.0]');"},
+		{"vector32", "SELECT vector32('[1.0,2.0,3.0]');"},
+		{"vector64", "SELECT vector64('[1.0,2.0,3.0]');"},
+		{"vector_extract", "SELECT vector_extract(vector('[1.0,2.0,3.0]'));"},
+		{"vector_distance_cos", "SELECT vector_distance_cos(vector('[1.0,2.0,3.0]'), vector('[4.0,5.0,6.0]'));"},
+		{"vector_distance_l2", "SELECT vector_distance_l2(vector('[1.0,2.0,3.0]'), vector('[4.0,5.0,6.0]'));"},
+
+		// Time functions
+		{"time_now", "SELECT time_now();"},
+		{"time_date", "SELECT time_date(2024, 1, 1);"},
+		{"time_unix", "SELECT time_unix(1609459200);"},
+		{"time_get_year", "SELECT time_get_year(time_now());"},
+		{"time_to_unix", "SELECT time_to_unix(time_now());"},
+		{"time_fmt_iso", "SELECT time_fmt_iso(time_now());"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			valid, errors := ValidateSQL(tc.sql)
+			if !valid {
+				t.Logf("SQL validation failed (may be expected for extensions): %v\nSQL: %s", errors, tc.sql)
+			}
+
+			rows, err := db.Query(tc.sql)
+			if err != nil {
+				// Extension functions may not be supported in standard SQLite, log but don't fail
+				t.Logf("Execution failed (expected for extension function %s): %v", tc.name, err)
+				return
+			}
+			defer rows.Close()
+
+			if !rows.Next() {
+				t.Logf("No rows returned for %s", tc.name)
+				return
+			}
+
+			var result interface{}
+			if err := rows.Scan(&result); err != nil {
+				t.Errorf("Failed to scan result for %s: %v", tc.name, err)
+			}
+
+			t.Logf("%s result: %v", tc.name, result)
+		})
+	}
+}

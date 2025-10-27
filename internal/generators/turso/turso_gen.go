@@ -57,6 +57,10 @@ const (
 	StmtSelectCTE              StmtType = "select_cte"
 	StmtSelectMultipleCTE      StmtType = "select_multiple_cte"
 	StmtSelectRecursiveCTE     StmtType = "select_recursive_cte"
+	StmtSelectUUID             StmtType = "select_uuid"
+	StmtSelectRegexp           StmtType = "select_regexp"
+	StmtSelectVector           StmtType = "select_vector"
+	StmtSelectTime             StmtType = "select_time"
 	StmtCreateTable            StmtType = "create_table"
 	StmtDropTable              StmtType = "drop_table"
 	StmtAlterTable             StmtType = "alter_table"
@@ -100,6 +104,10 @@ var AllStmtTypes = []StmtType{
 	StmtSelectCTE,
 	StmtSelectMultipleCTE,
 	StmtSelectRecursiveCTE,
+	StmtSelectUUID,
+	StmtSelectRegexp,
+	StmtSelectVector,
+	StmtSelectTime,
 	StmtCreateTable,
 	StmtDropTable,
 	StmtAlterTable,
@@ -152,6 +160,16 @@ func DefaultStmtWeights() map[StmtType]uint64 {
 	w[StmtSelectMultipleCTE] = 20
 	w[StmtSelectRecursiveCTE] = 15
 	// DDL (keep low by default)
+	// new: recursive/complex generation
+	w[StmtSelectRecursive] = 30   // new: recursive SELECT with nested expressions
+	w[StmtSelectNestedCase] = 25  // new: nested CASE expressions
+	w[StmtSelectComplexJoin] = 25 // new: joins with complex conditions/subqueries
+	// new: Turso extension functions
+	w[StmtSelectUUID] = 30   // new: UUID extension functions
+	w[StmtSelectRegexp] = 30 // new: regexp extension functions
+	w[StmtSelectVector] = 20 // new: vector extension functions
+	w[StmtSelectTime] = 35   // new: time extension functions
+	// leave DDL low by default
 	w[StmtCreateTable] = 40
 	w[StmtDropTable] = 40
 	w[StmtAlterTable] = 40
@@ -505,6 +523,31 @@ func (g *Generator) GenerateWithDB(db *sql.DB) string {
 		stmt, err := stmts.GenSelectWithRecursiveCTE(db, g.lcg)
 		if err != nil {
 			fmt.Println("Error generating SELECT RECURSIVE CTE:", err)
+	case StmtSelectUUID:
+		stmt, err := stmts.GenSelectWithUUIDFunction(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT UUID:", err)
+			return "SELECT 1"
+		}
+		return stmt.SQL()
+	case StmtSelectRegexp:
+		stmt, err := stmts.GenSelectWithRegexpFunction(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT REGEXP:", err)
+			return "SELECT 1"
+		}
+		return stmt.SQL()
+	case StmtSelectVector:
+		stmt, err := stmts.GenSelectWithVectorFunction(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT VECTOR:", err)
+			return "SELECT 1"
+		}
+		return stmt.SQL()
+	case StmtSelectTime:
+		stmt, err := stmts.GenSelectWithTimeFunction(db, g.lcg)
+		if err != nil {
+			fmt.Println("Error generating SELECT TIME:", err)
 			return "SELECT 1"
 		}
 		return stmt.SQL()
