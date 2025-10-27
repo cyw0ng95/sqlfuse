@@ -9,6 +9,28 @@ import (
 
 // Expr provides centralized expression generation for various SQL expressions.
 // This module covers expression types from https://github.com/tursodatabase/turso/blob/main/COMPAT.md#expressions
+//
+// Supported expressions (as per Turso COMPAT.md):
+//   - literals
+//   - unary operators (+, -, ~, NOT)
+//   - binary operators (excluding %, !<, !>)
+//   - (expr) - parenthesized expressions
+//   - CAST (expr AS type)
+//   - COLLATE (partial - custom collations not supported)
+//   - (NOT) LIKE
+//   - (NOT) GLOB
+//   - IS (NOT)
+//   - IS (NOT) DISTINCT FROM
+//   - (NOT) BETWEEN ... AND ...
+//   - CASE WHEN THEN ELSE END
+//
+// Unsupported expressions (generated for testing but will fail on Turso):
+//   - (NOT) REGEXP - not supported
+//   - (NOT) MATCH - not supported
+//   - (NOT) IN (subquery) - not supported
+//   - (NOT) EXISTS (subquery) - not supported
+//   - agg() FILTER (WHERE ...) - incorrectly ignored
+//   - ... OVER (...) - incorrectly ignored
 
 // GenCastExpr generates a CAST expression: CAST(expr AS type)
 func (eg *ExprGenerator) GenCastExpr(tbls []helper.TableInfo) string {
