@@ -266,7 +266,7 @@ func genLiteral(lcg *common.LCG) string {
 	case 0:
 		return types.IntLiteral(lcg, "")
 	case 1:
-		return types.StringLiteral(lcg)
+		return types.StringLiteral(lcg, "")
 	case 2:
 		return types.RealLiteral(lcg)
 	case 3:

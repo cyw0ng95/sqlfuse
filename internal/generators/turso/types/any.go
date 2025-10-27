@@ -6,7 +6,7 @@ import "sqlsmith-go/internal/common"
 func ValueForType(typ string, lcg *common.LCG, hint string) string {
 	if typ == "" {
 		// fallback to string
-		return StringLiteral(lcg)
+		return StringLiteral(lcg, hint)
 	}
 	t := typ
 	// simple case-insensitive checks
@@ -20,5 +20,5 @@ func ValueForType(typ string, lcg *common.LCG, hint string) string {
 		return BlobLiteral(lcg)
 	}
 	// default
-	return StringLiteral(lcg)
+	return StringLiteral(lcg, hint)
 }
