@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"io/ioutil"
 	"os"
 	"strings"
 	"sync"
@@ -36,7 +35,7 @@ func main() {
 
 			// Initialize schema if provided
 			if strings.TrimSpace(flags.InitSQLPath) != "" {
-				initSQL, err := ioutil.ReadFile(flags.InitSQLPath)
+				initSQL, err := os.ReadFile(flags.InitSQLPath)
 				if err != nil {
 					common.Logger.Error().Err(err).Str("path", flags.InitSQLPath).Msg("Failed to read init SQL file")
 					os.Exit(1)
