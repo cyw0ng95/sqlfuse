@@ -392,7 +392,8 @@ func (eg *ExprGenerator) GenRegexpExpr(tbls []helper.TableInfo, useNot bool) str
 	}
 
 	// Generate regex patterns
-	patterns := []string{"^[a-z]+$", ".*[0-9].*", "^test", "[A-Z]+", "\\d+"}
+	// Note: Using explicit character classes for better SQLite compatibility
+	patterns := []string{"^[a-z]+$", ".*[0-9].*", "^test", "[A-Z]+", "[0-9]+"}
 	pattern := patterns[eg.ctx.Intn(len(patterns))]
 
 	notClause := ""
@@ -600,9 +601,9 @@ func (eg *ExprGenerator) GenRandomExpr(tbls []helper.TableInfo) string {
 
 	// Choose random expression type
 	// Note: IS DISTINCT FROM excluded as it's not supported by the SQLite ANTLR parser
-	// New expression types added: REGEXP, MATCH, IN (subquery), EXISTS, FILTER, OVER
-	exprTypes := []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14}
-	exprType := exprTypes[eg.ctx.Intn(len(exprTypes))]
+	// Expression types: 0-8 are supported, 9-14 are unsupported (for testing)
+	const numExprTypes = 15
+	exprType := eg.ctx.Intn(numExprTypes)
 
 	switch exprType {
 	case 0:
