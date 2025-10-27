@@ -347,3 +347,275 @@ func TestGenCreateVirtualTable(t *testing.T) {
 		}
 	}
 }
+
+// TestGenInsertOrReplace tests INSERT OR REPLACE statement generation
+func TestGenInsertOrReplace(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	lcg := common.NewLCG(1000)
+
+	for i := 0; i < testIterations; i++ {
+		stmt, err := GenInsertOrReplace(db, lcg)
+		if err != nil {
+			t.Fatalf("GenInsertOrReplace failed on iteration %d: %v", i, err)
+		}
+
+		sql := stmt.SQL()
+		if sql == "" {
+			t.Error("GenInsertOrReplace returned empty SQL")
+		}
+
+		if stmt.Type() != "insert" {
+			t.Errorf("Expected type 'insert', got '%s'", stmt.Type())
+		}
+
+		// Verify it contains INSERT OR REPLACE
+		if !strings.Contains(sql, "INSERT OR REPLACE") {
+			t.Errorf("Statement should contain INSERT OR REPLACE: %s", sql)
+		}
+
+		valid, errors := ValidateSQL(sql)
+		if !valid {
+			t.Errorf("Invalid INSERT OR REPLACE SQL on iteration %d: %s\nErrors: %v", i, sql, errors)
+		}
+	}
+}
+
+// TestGenInsertOrIgnore tests INSERT OR IGNORE statement generation
+func TestGenInsertOrIgnore(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	lcg := common.NewLCG(2000)
+
+	for i := 0; i < testIterations; i++ {
+		stmt, err := GenInsertOrIgnore(db, lcg)
+		if err != nil {
+			t.Fatalf("GenInsertOrIgnore failed on iteration %d: %v", i, err)
+		}
+
+		sql := stmt.SQL()
+		if sql == "" {
+			t.Error("GenInsertOrIgnore returned empty SQL")
+		}
+
+		if stmt.Type() != "insert" {
+			t.Errorf("Expected type 'insert', got '%s'", stmt.Type())
+		}
+
+		// Verify it contains INSERT OR IGNORE
+		if !strings.Contains(sql, "INSERT OR IGNORE") {
+			t.Errorf("Statement should contain INSERT OR IGNORE: %s", sql)
+		}
+
+		valid, errors := ValidateSQL(sql)
+		if !valid {
+			t.Errorf("Invalid INSERT OR IGNORE SQL on iteration %d: %s\nErrors: %v", i, sql, errors)
+		}
+	}
+}
+
+// TestGenInsertOrAbort tests INSERT OR ABORT statement generation
+func TestGenInsertOrAbort(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	lcg := common.NewLCG(3000)
+
+	for i := 0; i < testIterations; i++ {
+		stmt, err := GenInsertOrAbort(db, lcg)
+		if err != nil {
+			t.Fatalf("GenInsertOrAbort failed on iteration %d: %v", i, err)
+		}
+
+		sql := stmt.SQL()
+		if sql == "" {
+			t.Error("GenInsertOrAbort returned empty SQL")
+		}
+
+		if stmt.Type() != "insert" {
+			t.Errorf("Expected type 'insert', got '%s'", stmt.Type())
+		}
+
+		// Verify it contains INSERT OR ABORT
+		if !strings.Contains(sql, "INSERT OR ABORT") {
+			t.Errorf("Statement should contain INSERT OR ABORT: %s", sql)
+		}
+
+		valid, errors := ValidateSQL(sql)
+		if !valid {
+			t.Errorf("Invalid INSERT OR ABORT SQL on iteration %d: %s\nErrors: %v", i, sql, errors)
+		}
+	}
+}
+
+// TestGenInsertOrRollback tests INSERT OR ROLLBACK statement generation
+func TestGenInsertOrRollback(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	lcg := common.NewLCG(4000)
+
+	for i := 0; i < testIterations; i++ {
+		stmt, err := GenInsertOrRollback(db, lcg)
+		if err != nil {
+			t.Fatalf("GenInsertOrRollback failed on iteration %d: %v", i, err)
+		}
+
+		sql := stmt.SQL()
+		if sql == "" {
+			t.Error("GenInsertOrRollback returned empty SQL")
+		}
+
+		if stmt.Type() != "insert" {
+			t.Errorf("Expected type 'insert', got '%s'", stmt.Type())
+		}
+
+		// Verify it contains INSERT OR ROLLBACK
+		if !strings.Contains(sql, "INSERT OR ROLLBACK") {
+			t.Errorf("Statement should contain INSERT OR ROLLBACK: %s", sql)
+		}
+
+		valid, errors := ValidateSQL(sql)
+		if !valid {
+			t.Errorf("Invalid INSERT OR ROLLBACK SQL on iteration %d: %s\nErrors: %v", i, sql, errors)
+		}
+	}
+}
+
+// TestGenInsertOrFail tests INSERT OR FAIL statement generation
+func TestGenInsertOrFail(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	lcg := common.NewLCG(5000)
+
+	for i := 0; i < testIterations; i++ {
+		stmt, err := GenInsertOrFail(db, lcg)
+		if err != nil {
+			t.Fatalf("GenInsertOrFail failed on iteration %d: %v", i, err)
+		}
+
+		sql := stmt.SQL()
+		if sql == "" {
+			t.Error("GenInsertOrFail returned empty SQL")
+		}
+
+		if stmt.Type() != "insert" {
+			t.Errorf("Expected type 'insert', got '%s'", stmt.Type())
+		}
+
+		// Verify it contains INSERT OR FAIL
+		if !strings.Contains(sql, "INSERT OR FAIL") {
+			t.Errorf("Statement should contain INSERT OR FAIL: %s", sql)
+		}
+
+		valid, errors := ValidateSQL(sql)
+		if !valid {
+			t.Errorf("Invalid INSERT OR FAIL SQL on iteration %d: %s\nErrors: %v", i, sql, errors)
+		}
+	}
+}
+
+// TestGenSelectWithCTE tests SELECT statement with Common Table Expression
+func TestGenSelectWithCTE(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	lcg := common.NewLCG(6000)
+
+	for i := 0; i < testIterations; i++ {
+		stmt, err := GenSelectWithCTE(db, lcg)
+		if err != nil {
+			t.Fatalf("GenSelectWithCTE failed on iteration %d: %v", i, err)
+		}
+
+		sql := stmt.SQL()
+		if sql == "" {
+			t.Error("GenSelectWithCTE returned empty SQL")
+		}
+
+		if stmt.Type() != "select" {
+			t.Errorf("Expected type 'select', got '%s'", stmt.Type())
+		}
+
+		// Verify it contains WITH clause
+		if !strings.Contains(sql, "WITH ") {
+			t.Errorf("Statement should contain WITH clause: %s", sql)
+		}
+
+		valid, errors := ValidateSQL(sql)
+		if !valid {
+			t.Errorf("Invalid SELECT WITH CTE SQL on iteration %d: %s\nErrors: %v", i, sql, errors)
+		}
+	}
+}
+
+// TestGenSelectWithMultipleCTE tests SELECT statement with multiple CTEs
+func TestGenSelectWithMultipleCTE(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	lcg := common.NewLCG(7000)
+
+	for i := 0; i < testIterations; i++ {
+		stmt, err := GenSelectWithMultipleCTE(db, lcg)
+		if err != nil {
+			t.Fatalf("GenSelectWithMultipleCTE failed on iteration %d: %v", i, err)
+		}
+
+		sql := stmt.SQL()
+		if sql == "" {
+			t.Error("GenSelectWithMultipleCTE returned empty SQL")
+		}
+
+		if stmt.Type() != "select" {
+			t.Errorf("Expected type 'select', got '%s'", stmt.Type())
+		}
+
+		// Verify it contains WITH clause
+		if !strings.Contains(sql, "WITH ") {
+			t.Errorf("Statement should contain WITH clause: %s", sql)
+		}
+
+		valid, errors := ValidateSQL(sql)
+		if !valid {
+			t.Errorf("Invalid SELECT WITH MULTIPLE CTE SQL on iteration %d: %s\nErrors: %v", i, sql, errors)
+		}
+	}
+}
+
+// TestGenSelectWithRecursiveCTE tests SELECT statement with recursive CTE
+func TestGenSelectWithRecursiveCTE(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	lcg := common.NewLCG(8000)
+
+	for i := 0; i < testIterations; i++ {
+		stmt, err := GenSelectWithRecursiveCTE(db, lcg)
+		if err != nil {
+			t.Fatalf("GenSelectWithRecursiveCTE failed on iteration %d: %v", i, err)
+		}
+
+		sql := stmt.SQL()
+		if sql == "" {
+			t.Error("GenSelectWithRecursiveCTE returned empty SQL")
+		}
+
+		if stmt.Type() != "select" {
+			t.Errorf("Expected type 'select', got '%s'", stmt.Type())
+		}
+
+		// Verify it contains WITH RECURSIVE
+		if !strings.Contains(sql, "WITH RECURSIVE") {
+			t.Errorf("Statement should contain WITH RECURSIVE: %s", sql)
+		}
+
+		valid, errors := ValidateSQL(sql)
+		if !valid {
+			t.Errorf("Invalid SELECT WITH RECURSIVE CTE SQL on iteration %d: %s\nErrors: %v", i, sql, errors)
+		}
+	}
+}

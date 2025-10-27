@@ -598,16 +598,18 @@ func (eg *ExprGenerator) GenOverExpr(tbls []helper.TableInfo) string {
 }
 
 // GenRandomExpr generates a random expression from all available expression types
+// Only generates Turso-supported expression types (excluding REGEXP, MATCH, IN subquery,
+// EXISTS subquery, FILTER, and OVER which are not supported by Turso LibSQL)
 func (eg *ExprGenerator) GenRandomExpr(tbls []helper.TableInfo) string {
 	if len(tbls) == 0 {
 		return "1"
 	}
 
 	// Choose random expression type
-	// Note: IS DISTINCT FROM excluded as it's not supported by the SQLite ANTLR parser
-	// Expression types: 0-8 are supported, 9-14 are unsupported (for testing)
-	const numExprTypes = 15
-	exprType := eg.ctx.Intn(numExprTypes)
+	// Only use supported expression types (0-8) that work with Turso LibSQL
+	// Unsupported types (9-14) include: REGEXP, MATCH, IN subquery, EXISTS subquery, FILTER, OVER
+	const numSupportedExprTypes = 9
+	exprType := eg.ctx.Intn(numSupportedExprTypes)
 
 	switch exprType {
 	case 0:
@@ -626,26 +628,7 @@ func (eg *ExprGenerator) GenRandomExpr(tbls []helper.TableInfo) string {
 		return eg.GenParenthesizedExpr(tbls)
 	case 7:
 		return eg.GenIsNullExpr(tbls, eg.ctx.Intn(2) == 0)
-	case 8:
-		// Existing CASE expression
+	default: // case 8
 		return eg.genCaseExpr(tbls)
-	case 9:
-		// REGEXP - unsupported by Turso
-		return eg.GenRegexpExpr(tbls, eg.ctx.Intn(2) == 0)
-	case 10:
-		// MATCH - unsupported by Turso
-		return eg.GenMatchExpr(tbls, eg.ctx.Intn(2) == 0)
-	case 11:
-		// IN (subquery) - unsupported by Turso
-		return eg.GenInSubqueryExpr(tbls, eg.ctx.Intn(2) == 0)
-	case 12:
-		// EXISTS (subquery) - unsupported by Turso
-		return eg.GenExistsSubqueryExpr(tbls, eg.ctx.Intn(2) == 0)
-	case 13:
-		// FILTER clause - unsupported by Turso (incorrectly ignored)
-		return eg.GenFilterExpr(tbls)
-	default:
-		// OVER clause - unsupported by Turso (incorrectly ignored)
-		return eg.GenOverExpr(tbls)
 	}
 }
