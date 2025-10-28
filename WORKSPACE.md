@@ -103,7 +103,24 @@ HTTP API server for managing fuzzing jobs.
 
 ## Building
 
-### Build all executables:
+### Quick Start with Makefile (Recommended):
+```bash
+# Fast development build (with caching)
+make dev-build
+
+# Production build (optimized, smaller binaries)
+make release-build
+
+# Run tests with coverage
+make test
+
+# See all available targets
+make help
+```
+
+See [BUILD_OPTIMIZATION.md](BUILD_OPTIMIZATION.md) for detailed build performance documentation.
+
+### Using build.sh (Container-based):
 ```bash
 export SQLSMITH_GO_CONTAINER_TYPE=test
 bash build.sh
@@ -117,17 +134,27 @@ This builds:
 ### Build individual modules:
 ```bash
 # Build turso executor
-cd cmd/executors/turso_embedded && go build -o ../../../output/turso_embedded_executor .
+cd cmd/executors/turso_embedded && go build -trimpath -o ../../../output/turso_embedded_executor .
 
 # Build go-sqlite3 executor
-cd cmd/executors/go_sqlite3_embedded && go build -o ../../../output/go_sqlite3_embedded_executor .
+cd cmd/executors/go_sqlite3_embedded && go build -trimpath -o ../../../output/go_sqlite3_embedded_executor .
 
 # Build server
-cd cmd/server && go build -o ../../output/server .
+cd cmd/server && go build -trimpath -o ../../output/server .
 ```
 
 ## Testing
 
+### Quick test with Makefile:
+```bash
+# Run all tests with coverage
+make test
+
+# Verbose test output
+make test-verbose
+```
+
+### Manual testing:
 Tests are located in the `internal` module:
 ```bash
 cd internal && go test ./...
