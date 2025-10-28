@@ -103,7 +103,9 @@ HTTP API server for managing fuzzing jobs.
 
 ## Building
 
-### Quick Start with Makefile (Recommended):
+### Quick Start with Makefile (Recommended for faster builds):
+The Makefile provides parallel compilation, optimized caching, and incremental builds.
+
 ```bash
 # Fast development build (with caching)
 make dev-build
@@ -118,7 +120,7 @@ make test
 make help
 ```
 
-See [BUILD_OPTIMIZATION.md](BUILD_OPTIMIZATION.md) for detailed build performance documentation.
+See [BUILD_OPTIMIZATION.md](BUILD_OPTIMIZATION.md) for detailed performance benchmarks, optimization strategies, and troubleshooting.
 
 ### Using build.sh (Container-based):
 ```bash
