@@ -113,3 +113,9 @@ func (ctx *GenContext) SupportsFeature(feature string) bool {
 	}
 	return true // Default to supporting everything if no flavor is set
 }
+
+// GetDefaultFlavor returns a default FlavorConfig instance.
+// This is used for backward compatibility when no specific flavor is provided.
+func GetDefaultFlavor() FlavorConfig {
+	return &DefaultFlavorConfig{}
+}

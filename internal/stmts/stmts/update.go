@@ -24,11 +24,13 @@ func (g *UpdateGenerator) CanGenerate(ctx *GenContext) bool {
 
 // UpdateStmt represents an UPDATE statement.
 type UpdateStmt struct {
-	sql string
+	sql    string
+	flavor FlavorConfig
 }
 
-func (s *UpdateStmt) SQL() string  { return s.sql }
-func (s *UpdateStmt) Type() string { return "update" }
+func (s *UpdateStmt) SQL() string          { return s.sql }
+func (s *UpdateStmt) Type() string         { return "update" }
+func (s *UpdateStmt) Flavor() FlavorConfig { return s.flavor }
 
 // GenUpdate generates an UPDATE statement using actual schema information.
 // It supports complex SET expressions and WHERE clauses.
@@ -249,7 +251,7 @@ func GenUpdate(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	}
 
 	sql := fmt.Sprintf("UPDATE %s SET %s%s;", quoteIdent(tbl.Name), strings.Join(setExprs, ", "), where)
-	return &UpdateStmt{sql: sql}, nil
+	return &UpdateStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
 // genUpdateFallback generates a simple UPDATE without schema information
@@ -270,7 +272,7 @@ func genUpdateFallback(lcg *common.LCG) *UpdateStmt {
 	}
 
 	sql := fmt.Sprintf("UPDATE \"%s\" SET %s%s;", tbl, join(sets, ", "), where)
-	return &UpdateStmt{sql: sql}
+	return &UpdateStmt{sql: sql, flavor: GetDefaultFlavor()}
 }
 
 func genLiteral(lcg *common.LCG) string {

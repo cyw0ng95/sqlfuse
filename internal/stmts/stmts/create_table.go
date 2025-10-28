@@ -21,11 +21,13 @@ func (g *CreateTableGenerator) CanGenerate(ctx *GenContext) bool {
 
 // CreateTableStmt represents a CREATE TABLE statement.
 type CreateTableStmt struct {
-	sql string
+	sql    string
+	flavor FlavorConfig
 }
 
-func (s *CreateTableStmt) SQL() string  { return s.sql }
-func (s *CreateTableStmt) Type() string { return "create_table" }
+func (s *CreateTableStmt) SQL() string          { return s.sql }
+func (s *CreateTableStmt) Type() string         { return "create_table" }
+func (s *CreateTableStmt) Flavor() FlavorConfig { return s.flavor }
 
 // GenCreateTable generates a simple CREATE TABLE statement using the provided LCG.
 // This function is kept for backward compatibility with existing code.
@@ -54,5 +56,5 @@ func genCreateTableInternal(lcg *common.LCG) (Stmt, error) {
 	tbl := fmt.Sprintf("tbl_%d", lcg.Uint64()%1000000)
 
 	sql := fmt.Sprintf("CREATE TABLE IF NOT EXISTS \"%s\" (%s);", tbl, strings.Join(cols, ", "))
-	return &CreateTableStmt{sql: sql}, nil
+	return &CreateTableStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }

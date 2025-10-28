@@ -73,5 +73,5 @@ func GenPragma(lcg *common.LCG) Stmt {
 	default:
 		sql = fmt.Sprintf("PRAGMA %s;", p)
 	}
-	return &PragmaStmt{sql: sql}
+	return &PragmaStmt{sql: sql, flavor: GetDefaultFlavor()}
 }

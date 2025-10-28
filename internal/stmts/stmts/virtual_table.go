@@ -8,11 +8,13 @@ import (
 
 // CreateVirtualTableStmt represents a CREATE VIRTUAL TABLE statement.
 type CreateVirtualTableStmt struct {
-	sql string
+	sql    string
+	flavor FlavorConfig
 }
 
-func (s *CreateVirtualTableStmt) SQL() string  { return s.sql }
-func (s *CreateVirtualTableStmt) Type() string { return "create_virtual_table" }
+func (s *CreateVirtualTableStmt) SQL() string          { return s.sql }
+func (s *CreateVirtualTableStmt) Type() string         { return "create_virtual_table" }
+func (s *CreateVirtualTableStmt) Flavor() FlavorConfig { return s.flavor }
 
 // GenCreateVirtualTable generates a CREATE VIRTUAL TABLE statement.
 // According to Turso COMPAT.md: Yes (full support).
@@ -39,7 +41,7 @@ func GenCreateVirtualTable(lcg *common.LCG) (Stmt, error) {
 		sql = genFTS5TableComplex(tblName, lcg)
 	}
 
-	return &CreateVirtualTableStmt{sql: sql}, nil
+	return &CreateVirtualTableStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
 // genFTS5Table generates a simple FTS5 virtual table

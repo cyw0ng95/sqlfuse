@@ -10,19 +10,23 @@ import (
 
 // CreateIndexStmt represents a CREATE INDEX statement.
 type CreateIndexStmt struct {
-	sql string
+	sql    string
+	flavor FlavorConfig
 }
 
-func (s *CreateIndexStmt) SQL() string  { return s.sql }
-func (s *CreateIndexStmt) Type() string { return "create_index" }
+func (s *CreateIndexStmt) SQL() string          { return s.sql }
+func (s *CreateIndexStmt) Type() string         { return "create_index" }
+func (s *CreateIndexStmt) Flavor() FlavorConfig { return s.flavor }
 
 // DropIndexStmt represents a DROP INDEX statement.
 type DropIndexStmt struct {
-	sql string
+	sql    string
+	flavor FlavorConfig
 }
 
-func (s *DropIndexStmt) SQL() string  { return s.sql }
-func (s *DropIndexStmt) Type() string { return "drop_index" }
+func (s *DropIndexStmt) SQL() string          { return s.sql }
+func (s *DropIndexStmt) Type() string         { return "drop_index" }
+func (s *DropIndexStmt) Flavor() FlavorConfig { return s.flavor }
 
 // GenCreateIndex generates a CREATE INDEX statement.
 // According to Turso COMPAT.md: Partial support (only for columns, not arbitrary expressions).
@@ -98,7 +102,7 @@ func GenCreateIndex(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 
 	sql := fmt.Sprintf("CREATE %sINDEX %s%s ON %s (%s);",
 		unique, ifNotExists, quoteIdent(indexName), quoteIdent(tbl.Name), strings.Join(indexCols, ", "))
-	return &CreateIndexStmt{sql: sql}, nil
+	return &CreateIndexStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
 // genCreateIndexFallback generates a simple CREATE INDEX without schema information
@@ -113,7 +117,7 @@ func genCreateIndexFallback(lcg *common.LCG) *CreateIndexStmt {
 	}
 
 	sql := fmt.Sprintf("CREATE %sINDEX IF NOT EXISTS \"%s\" ON \"%s\" (\"%s\");", unique, idx, tbl, col)
-	return &CreateIndexStmt{sql: sql}
+	return &CreateIndexStmt{sql: sql, flavor: GetDefaultFlavor()}
 }
 
 // GenDropIndex generates a DROP INDEX statement.
@@ -128,5 +132,5 @@ func GenDropIndex(lcg *common.LCG) (Stmt, error) {
 
 	// Always use IF EXISTS to avoid errors
 	sql := fmt.Sprintf("DROP INDEX IF EXISTS \"%s\";", indexName)
-	return &DropIndexStmt{sql: sql}, nil
+	return &DropIndexStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }

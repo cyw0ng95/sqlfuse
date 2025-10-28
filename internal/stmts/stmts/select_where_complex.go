@@ -13,7 +13,7 @@ import (
 func GenSelectWhereComplex(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	tbls, err := helper.GetAllTablesAndCols(db)
 	if err != nil || len(tbls) == 0 {
-		return SelectStmt{sql: "SELECT 1;"}, nil
+		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
 
 	var rnd func(int) int
@@ -25,7 +25,7 @@ func GenSelectWhereComplex(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 	tbl := tbls[rnd(len(tbls))]
 	if len(tbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name))}, nil
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// pick up to 3 columns for selection
@@ -100,5 +100,5 @@ func GenSelectWhereComplex(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 	limit := 1 + rnd(50)
 	sql := fmt.Sprintf("SELECT %s FROM %s%s LIMIT %d;", joinCols(cols), quoteIdent(tbl.Name), where, limit)
-	return SelectStmt{sql: sql}, nil
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }

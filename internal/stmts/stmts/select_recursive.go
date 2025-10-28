@@ -13,7 +13,7 @@ import (
 func GenSelectRecursive(db *sql.DB, lcg *common.LCG, maxDepth int) (SelectStmt, error) {
 	tbls, err := helper.GetAllTablesAndCols(db)
 	if err != nil || len(tbls) == 0 {
-		return SelectStmt{sql: "SELECT 1;"}, nil
+		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
 
 	ctx := NewGenContext(db, lcg, maxDepth)
@@ -22,7 +22,7 @@ func GenSelectRecursive(db *sql.DB, lcg *common.LCG, maxDepth int) (SelectStmt, 
 	// Pick a primary table
 	tbl := tbls[ctx.Intn(len(tbls))]
 	if len(tbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name))}, nil
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// Generate SELECT expressions (may include complex nested expressions)
@@ -44,7 +44,7 @@ func GenSelectRecursive(db *sql.DB, lcg *common.LCG, maxDepth int) (SelectStmt, 
 	sql := fmt.Sprintf("SELECT %s FROM %s%s LIMIT %d;",
 		strings.Join(selectExprs, ", "), fromClause, whereClause, limit)
 
-	return SelectStmt{sql: sql}, nil
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
 // genFromClause generates a FROM clause, possibly with a subquery.
@@ -65,13 +65,13 @@ func genFromClause(ctx *GenContext, tbls []helper.TableInfo, defaultTbl helper.T
 func GenSelectWithNestedCase(db *sql.DB, lcg *common.LCG, maxDepth int) (SelectStmt, error) {
 	tbls, err := helper.GetAllTablesAndCols(db)
 	if err != nil || len(tbls) == 0 {
-		return SelectStmt{sql: "SELECT 1;"}, nil
+		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
 
 	ctx := NewGenContext(db, lcg, maxDepth)
 	tbl := tbls[ctx.Intn(len(tbls))]
 	if len(tbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name))}, nil
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// Generate nested CASE expression
@@ -88,7 +88,7 @@ func GenSelectWithNestedCase(db *sql.DB, lcg *common.LCG, maxDepth int) (SelectS
 	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;",
 		strings.Join(selectCols, ", "), quoteIdent(tbl.Name), limit)
 
-	return SelectStmt{sql: sql}, nil
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
 // genNestedCase generates a potentially nested CASE expression.
@@ -117,7 +117,7 @@ func genNestedCase(ctx *GenContext, tbl helper.TableInfo, depth int) string {
 func GenSelectWithComplexJoin(db *sql.DB, lcg *common.LCG, maxDepth int) (SelectStmt, error) {
 	tbls, err := helper.GetAllTablesAndCols(db)
 	if err != nil || len(tbls) < 2 {
-		return SelectStmt{sql: "SELECT 1;"}, nil
+		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
 
 	ctx := NewGenContext(db, lcg, maxDepth)
@@ -132,7 +132,7 @@ func GenSelectWithComplexJoin(db *sql.DB, lcg *common.LCG, maxDepth int) (Select
 	}
 
 	if len(tbl1.Cols) == 0 || len(tbl2.Cols) == 0 {
-		return SelectStmt{sql: "SELECT 1;"}, nil
+		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
 
 	// Select columns from both tables
@@ -173,5 +173,5 @@ func GenSelectWithComplexJoin(db *sql.DB, lcg *common.LCG, maxDepth int) (Select
 		whereClause,
 		limit)
 
-	return SelectStmt{sql: sql}, nil
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }

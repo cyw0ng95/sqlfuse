@@ -212,7 +212,7 @@ func (b *SelectBuilder) Build() (*SelectStmt, error) {
 
 	sql += ";"
 
-	return &SelectStmt{sql: sql}, nil
+	return &SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
 // BuildSQL is a shorthand for Build().SQL().
@@ -291,7 +291,7 @@ func (b *InsertBuilder) Build() (*InsertStmt, error) {
 	// Handle DEFAULT VALUES case
 	if len(b.columns) == 0 || len(b.values) == 0 {
 		sql := fmt.Sprintf("INSERT INTO %s DEFAULT VALUES;", quoteIdent(b.table))
-		return &InsertStmt{sql: sql}, nil
+		return &InsertStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 	}
 
 	// Build column list
@@ -318,7 +318,7 @@ func (b *InsertBuilder) Build() (*InsertStmt, error) {
 
 	sql += ";"
 
-	return &InsertStmt{sql: sql}, nil
+	return &InsertStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
 // BuildSQL is a shorthand for Build().SQL().
@@ -348,7 +348,7 @@ func NewRandomSelectBuilder(ctx *GenContext, db *sql.DB) *RandomSelectBuilder {
 func (r *RandomSelectBuilder) Build() (*SelectStmt, error) {
 	tables, err := helper.GetAllTablesAndCols(r.db)
 	if err != nil || len(tables) == 0 {
-		return &SelectStmt{sql: "SELECT 1;"}, nil
+		return &SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
 
 	// Pick a random table

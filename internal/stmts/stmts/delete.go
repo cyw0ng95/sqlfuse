@@ -24,11 +24,13 @@ func (g *DeleteGenerator) CanGenerate(ctx *GenContext) bool {
 
 // DeleteStmt represents a DELETE statement.
 type DeleteStmt struct {
-	sql string
+	sql    string
+	flavor FlavorConfig
 }
 
-func (s *DeleteStmt) SQL() string  { return s.sql }
-func (s *DeleteStmt) Type() string { return "delete" }
+func (s *DeleteStmt) SQL() string          { return s.sql }
+func (s *DeleteStmt) Type() string         { return "delete" }
+func (s *DeleteStmt) Flavor() FlavorConfig { return s.flavor }
 
 // GenDelete generates a DELETE statement using actual schema information.
 // It supports complex WHERE clauses with multiple conditions.
@@ -181,7 +183,7 @@ func GenDelete(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	}
 
 	sql := fmt.Sprintf("DELETE FROM %s%s%s;", quoteIdent(tbl.Name), where, limitClause)
-	return &DeleteStmt{sql: sql}, nil
+	return &DeleteStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
 // genDeleteFallback generates a simple DELETE without schema information
@@ -194,5 +196,5 @@ func genDeleteFallback(lcg *common.LCG) *DeleteStmt {
 	}
 
 	sql := fmt.Sprintf("DELETE FROM \"%s\"%s;", tbl, where)
-	return &DeleteStmt{sql: sql}
+	return &DeleteStmt{sql: sql, flavor: GetDefaultFlavor()}
 }

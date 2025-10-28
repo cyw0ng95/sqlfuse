@@ -20,11 +20,13 @@ func (g *DropTableGenerator) CanGenerate(ctx *GenContext) bool {
 
 // DropTableStmt represents a DROP TABLE statement.
 type DropTableStmt struct {
-	sql string
+	sql    string
+	flavor FlavorConfig
 }
 
-func (s *DropTableStmt) SQL() string  { return s.sql }
-func (s *DropTableStmt) Type() string { return "drop_table" }
+func (s *DropTableStmt) SQL() string          { return s.sql }
+func (s *DropTableStmt) Type() string         { return "drop_table" }
+func (s *DropTableStmt) Flavor() FlavorConfig { return s.flavor }
 
 // GenDropTable generates a DROP TABLE IF EXISTS statement for a pseudo-random
 // table name using the provided LCG.
@@ -42,5 +44,5 @@ func genDropTableInternal(lcg *common.LCG) (Stmt, error) {
 	// Use same naming scheme as GenCreateTable to sometimes target recently created tables.
 	tbl := fmt.Sprintf("tbl_%d", lcg.Uint64()%1000000)
 	sql := fmt.Sprintf("DROP TABLE IF EXISTS \"%s\";", tbl)
-	return &DropTableStmt{sql: sql}, nil
+	return &DropTableStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }

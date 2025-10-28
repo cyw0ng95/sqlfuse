@@ -12,7 +12,7 @@ import (
 func GenSelectAggregateComplex(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	tbls, err := helper.GetAllTablesAndCols(db)
 	if err != nil || len(tbls) == 0 {
-		return SelectStmt{sql: "SELECT 1;"}, nil
+		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
 
 	var rnd func(int) int
@@ -24,7 +24,7 @@ func GenSelectAggregateComplex(db *sql.DB, lcg *common.LCG) (SelectStmt, error) 
 
 	tbl := tbls[rnd(len(tbls))]
 	if len(tbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name))}, nil
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// Build multiple aggregate expressions
@@ -89,5 +89,5 @@ func GenSelectAggregateComplex(db *sql.DB, lcg *common.LCG) (SelectStmt, error) 
 	}
 
 	sql := fmt.Sprintf("SELECT %s FROM %s%s;", strings.Join(aggregates, ", "), quoteIdent(tbl.Name), groupBy)
-	return SelectStmt{sql: sql}, nil
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }

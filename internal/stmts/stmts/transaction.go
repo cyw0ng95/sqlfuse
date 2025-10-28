@@ -6,11 +6,13 @@ import (
 
 // TransactionStmt represents transaction control statements (BEGIN, COMMIT, ROLLBACK).
 type TransactionStmt struct {
-	sql string
+	sql    string
+	flavor FlavorConfig
 }
 
-func (s *TransactionStmt) SQL() string  { return s.sql }
-func (s *TransactionStmt) Type() string { return "transaction" }
+func (s *TransactionStmt) SQL() string          { return s.sql }
+func (s *TransactionStmt) Type() string         { return "transaction" }
+func (s *TransactionStmt) Flavor() FlavorConfig { return s.flavor }
 
 // GenBeginTransaction generates a BEGIN TRANSACTION statement.
 // According to Turso COMPAT.md: Partial support (no transaction names).
@@ -33,7 +35,7 @@ func GenBeginTransaction(lcg *common.LCG) Stmt {
 	}
 
 	sql := variants[lcg.Intn(len(variants))]
-	return &TransactionStmt{sql: sql}
+	return &TransactionStmt{sql: sql, flavor: GetDefaultFlavor()}
 }
 
 // GenCommitTransaction generates a COMMIT TRANSACTION statement.
@@ -53,7 +55,7 @@ func GenCommitTransaction(lcg *common.LCG) Stmt {
 	}
 
 	sql := variants[lcg.Intn(len(variants))]
-	return &TransactionStmt{sql: sql}
+	return &TransactionStmt{sql: sql, flavor: GetDefaultFlavor()}
 }
 
 // GenRollbackTransaction generates a ROLLBACK TRANSACTION statement.
@@ -70,5 +72,5 @@ func GenRollbackTransaction(lcg *common.LCG) Stmt {
 	}
 
 	sql := variants[lcg.Intn(len(variants))]
-	return &TransactionStmt{sql: sql}
+	return &TransactionStmt{sql: sql, flavor: GetDefaultFlavor()}
 }
