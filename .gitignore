@@ -81,3 +81,4 @@ go_sqlite3_embedded
 
 # Server binary built in source directory
 cmd/server/server
+server
