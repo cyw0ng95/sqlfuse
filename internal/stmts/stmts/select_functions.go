@@ -22,8 +22,13 @@ func GenSelectWithScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error
 	tbl := tables[rnd(len(tables))]
 
 	// Select a scalar function to test
+	// Note: format(), sqlite_compileoption_get/used(), and sqlite_offset() are go-sqlite3
+	// specific and not included here to maintain Turso compatibility. For go-sqlite3 specific
+	// functions, use GenSelectWithGoSQLite3ScalarFunction() instead.
+	// However, changes() and total_changes() ARE supported by both Turso and go-sqlite3.
 	scalarFuncs := []func(*common.LCG, []helper.TableInfo) string{
 		genAbsFunction,
+		genChangesFunction,
 		genCharFunction,
 		genCoalesceFunction,
 		genConcatFunction,
@@ -58,6 +63,7 @@ func GenSelectWithScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error
 		genSqliteVersionFunction,
 		genSubstrFunction,
 		genSubstringFunction,
+		genTotalChangesFunction,
 		genTypeofFunction,
 		genUnhexFunction,
 		genUnicodeFunction,
@@ -74,8 +80,12 @@ func GenSelectWithScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error
 
 // genSelectScalarFunctionLiteral generates a SELECT with scalar function using literal values
 func genSelectScalarFunctionLiteral(lcg *common.LCG) SelectStmt {
+	// Note: go-sqlite3 specific functions like format(), sqlite_compileoption_get/used()
+	// are not included here to maintain Turso compatibility.
+	// However, changes() and total_changes() ARE supported by both Turso and go-sqlite3.
 	scalarFuncs := []string{
 		"abs(-42)",
+		"changes()",
 		"char(65, 66, 67)",
 		"coalesce(NULL, 'default')",
 		"concat('Hello', ' ', 'World')",
@@ -110,6 +120,7 @@ func genSelectScalarFunctionLiteral(lcg *common.LCG) SelectStmt {
 		"sqlite_version()",
 		"substr('Hello', 1, 3)",
 		"substring('Hello', 2, 2)",
+		"total_changes()",
 		"typeof(123)",
 		"unhex('414243')",
 		"unicode('A')",
@@ -633,6 +644,80 @@ func genSqliteVersionFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 
 func genSqliteSourceIdFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 	return "sqlite_source_id()"
+}
+
+func genChangesFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	return "changes()"
+}
+
+func genTotalChangesFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	return "total_changes()"
+}
+
+func genFormatFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	// format(FORMAT, ...) - String formatting similar to printf
+	// Available in SQLite 3.38.0+
+	formats := []string{
+		"'%d'",
+		"'%s'",
+		"'%f'",
+		"'%q'",
+		"'%Q'",
+		"'Value: %d'",
+	}
+	format := formats[lcg.Intn(len(formats))]
+
+	// Generate appropriate arguments based on format
+	if format == "'%d'" || format == "'Value: %d'" {
+		if len(tbls) > 0 && lcg.Intn(2) == 0 {
+			col := findNumericColumn(tbls, lcg)
+			if col != "" {
+				return fmt.Sprintf("format(%s, %s)", format, col)
+			}
+		}
+		return fmt.Sprintf("format(%s, %d)", format, lcg.Intn(100))
+	} else if format == "'%s'" || format == "'%q'" || format == "'%Q'" {
+		if len(tbls) > 0 && lcg.Intn(2) == 0 {
+			col := findTextColumn(tbls, lcg)
+			if col != "" {
+				return fmt.Sprintf("format(%s, %s)", format, col)
+			}
+		}
+		return "format('%s', 'test')"
+	} else if format == "'%f'" {
+		return fmt.Sprintf("format('%s', %f)", "%f", 3.14+float64(lcg.Intn(100))/10.0)
+	}
+	return "format('%d', 42)"
+}
+
+func genSqliteCompileoptionGetFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	// sqlite_compileoption_get(N) - Returns the N-th compile-time option
+	n := lcg.Intn(10)
+	return fmt.Sprintf("sqlite_compileoption_get(%d)", n)
+}
+
+func genSqliteCompileoptionUsedFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	// sqlite_compileoption_used(X) - Returns whether option X was used
+	options := []string{
+		"'ENABLE_FTS5'",
+		"'ENABLE_JSON1'",
+		"'ENABLE_RTREE'",
+		"'THREADSAFE'",
+		"'ENABLE_COLUMN_METADATA'",
+	}
+	option := options[lcg.Intn(len(options))]
+	return fmt.Sprintf("sqlite_compileoption_used(%s)", option)
+}
+
+func genSqliteOffsetFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	// sqlite_offset(X) - Returns byte offset of column X
+	// This function requires a column reference from a real query
+	if len(tbls) > 0 && len(tbls[0].Cols) > 0 {
+		col := tbls[0].Cols[lcg.Intn(len(tbls[0].Cols))]
+		return fmt.Sprintf("sqlite_offset(%s)", quoteIdent(col.Name))
+	}
+	// Fallback - this will likely fail at runtime but is syntactically valid
+	return "sqlite_offset(1)"
 }
 
 // GenSelectWithMathFunction generates a SELECT statement with mathematical SQL functions
@@ -1794,4 +1879,49 @@ func genDurFunction(lcg *common.LCG) string {
 		"dur_h()",
 	}
 	return durFuncs[lcg.Intn(len(durFuncs))]
+}
+
+// GenSelectWithGoSQLite3ScalarFunction generates a SELECT statement with go-sqlite3 specific core functions.
+// These functions are only supported by full SQLite3 (via go-sqlite3) and not by Turso LibSQL.
+func GenSelectWithGoSQLite3ScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
+	tables, err := helper.GetAllTablesAndCols(db)
+	if err != nil || len(tables) == 0 {
+		// No tables available, use literal values
+		return genSelectGoSQLite3ScalarFunctionLiteral(lcg), nil
+	}
+
+	rnd := lcg.Intn
+	tbl := tables[rnd(len(tables))]
+
+	// go-sqlite3 specific scalar functions
+	scalarFuncs := []func(*common.LCG, []helper.TableInfo) string{
+		genFormatFunction,
+		genSqliteCompileoptionGetFunction,
+		genSqliteCompileoptionUsedFunction,
+		genSqliteOffsetFunction,
+	}
+
+	funcIdx := rnd(len(scalarFuncs))
+	funcExpr := scalarFuncs[funcIdx](lcg, tables)
+
+	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;", funcExpr, quoteIdent(tbl.Name), 1+rnd(10))
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
+}
+
+// genSelectGoSQLite3ScalarFunctionLiteral generates a SELECT with go-sqlite3 specific scalar functions using literal values
+func genSelectGoSQLite3ScalarFunctionLiteral(lcg *common.LCG) SelectStmt {
+	scalarFuncs := []string{
+		"format('%d', 42)",
+		"format('%s', 'test')",
+		"format('%f', 3.14)",
+		"sqlite_compileoption_get(0)",
+		"sqlite_compileoption_get(1)",
+		"sqlite_compileoption_used('THREADSAFE')",
+		"sqlite_compileoption_used('ENABLE_FTS5')",
+		"sqlite_compileoption_used('ENABLE_JSON1')",
+	}
+
+	funcIdx := lcg.Intn(len(scalarFuncs))
+	sql := fmt.Sprintf("SELECT %s;", scalarFuncs[funcIdx])
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}
 }
