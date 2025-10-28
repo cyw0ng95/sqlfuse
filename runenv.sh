@@ -97,7 +97,7 @@ DOCKER_COMMON_ARGS=(--rm
     -p 3000:3000
     -v "$(pwd)":/opt:Z
     -v "$(pwd)/.cache/go":/root/go:Z
-    -v "$(pwd)/.cache/go-build":/root/.cache/go-build/
+    -v "$(pwd)/.cache/go-build":/root/.cache/go-build:Z
 )
 
 # If a command is provided to this script, forward it to the container and run it
