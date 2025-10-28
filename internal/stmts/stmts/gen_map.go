@@ -278,6 +278,14 @@ func BuildGeneratorFuncs(lcg *common.LCG, maxRecursionDepth int, flavorConfig Fl
 		return s.SQL(), nil
 	}
 
+	m["select_json"] = func(db *sql.DB) (string, error) {
+		s, err := GenSelectWithJSONFunction(db, lcg)
+		if err != nil {
+			return "SELECT 1", err
+		}
+		return s.SQL(), nil
+	}
+
 	m["select_uuid"] = func(db *sql.DB) (string, error) {
 		s, err := GenSelectWithUUIDFunction(db, lcg)
 		if err != nil {
