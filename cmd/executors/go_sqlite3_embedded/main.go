@@ -25,7 +25,7 @@ func main() {
 				"Starting go_sqlite3_embedded executor",
 				&flags,
 				func(dsn string) (*sql.DB, error) { return sql.Open("sqlite3", dsn) },
-				func(seed uint64) generators.Generator { return generators.NewTursoGenerator(seed) },
+				func(seed uint64) generators.Generator { return generators.NewGoSQLite3Generator(seed) },
 				print_schema,
 			)
 		},
