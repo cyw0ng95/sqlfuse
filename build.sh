@@ -11,10 +11,11 @@ run_tests() {
     echo "-- [INFO] Running tests with coverage..."
     mkdir -p .cache
     # Add -v flag when running in GitHub Actions for verbose output
+    # Run tests in the internal module which contains all the tests
     if [ "${GITHUB_ACTIONS:-false}" = "true" ]; then
-        go test -v -coverprofile=.cache/coverage.out ./...
+        (cd internal && go test -v -coverprofile=../.cache/coverage.out ./...)
     else
-        go test -coverprofile=.cache/coverage.out ./...
+        (cd internal && go test -coverprofile=../.cache/coverage.out ./...)
     fi
     go tool cover -html=.cache/coverage.out -o .cache/coverage.html
     echo "-- [INFO] Coverage report generated: .cache/coverage.html"
@@ -47,17 +48,15 @@ go_build() {
 build_project() {
     echo "-- [INFO] Starting build..."
     mkdir -p output
-    echo "-- [INFO] Running go mod vendor..."
-    go mod vendor
-
+    
     echo "-- [INFO] Building turso_embedded_executor..."
-    go_build output/turso_embedded_executor cmd/executors/turso_embedded/main.go
+    (cd cmd/executors/turso_embedded && go_build ../../../output/turso_embedded_executor .)
 
     echo "-- [INFO] Building go_sqlite3_embedded_executor..."
-    go_build output/go_sqlite3_embedded_executor cmd/executors/go_sqlite3_embedded/main.go
+    (cd cmd/executors/go_sqlite3_embedded && go_build ../../../output/go_sqlite3_embedded_executor .)
 
     echo "-- [INFO] Building server..."
-    go_build output/server ./cmd/server
+    (cd cmd/server && go_build ../../output/server .)
 
     echo "-- [INFO] Build complete. Output: output/turso_embedded_executor, output/go_sqlite3_embedded_executor, output/server"
 
