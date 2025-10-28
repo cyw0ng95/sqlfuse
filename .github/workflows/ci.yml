@@ -84,15 +84,25 @@ jobs:
       - name: Export skip-build flag for runenv
         run: echo "SQLSMITH_GO_SKIP_BUILD=1" >> $GITHUB_ENV
 
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.work'
+          cache-dependency-path: |
+            **/go.sum
+          cache: true
+
       - name: Cache Go modules and build cache
         uses: actions/cache@v4
         with:
           path: |
             .cache/go
             .cache/go-build
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum', 'go.work') }}-${{ hashFiles('**/*.go') }}
           restore-keys: |
+            ${{ runner.os }}-go-${{ hashFiles('**/go.sum', 'go.work') }}-
             ${{ runner.os }}-go-
+      
       - name: Cache pnpm store
         uses: actions/cache@v4
         with:

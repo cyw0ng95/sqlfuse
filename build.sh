@@ -42,23 +42,31 @@ go_build() {
         flags=(-v)
     fi
     echo "-- [INFO] Building ${pkg} -> ${out}"
-    go build "${flags[@]}" -o "$out" "$pkg"
+    go build "${flags[@]}" -trimpath -o "$out" "$pkg"
 }
 
 build_project() {
     echo "-- [INFO] Starting build..."
-    mkdir -p output
     
-    echo "-- [INFO] Building turso_embedded_executor..."
-    (cd cmd/executors/turso_embedded && go_build ../../../output/turso_embedded_executor .)
+    # Use Makefile for optimized parallel builds if available
+    if [ -f Makefile ]; then
+        echo "-- [INFO] Using Makefile for optimized build..."
+        make dev-build
+    else
+        # Fallback to original build process
+        mkdir -p output
+        
+        echo "-- [INFO] Building turso_embedded_executor..."
+        (cd cmd/executors/turso_embedded && go_build ../../../output/turso_embedded_executor .)
 
-    echo "-- [INFO] Building go_sqlite3_embedded_executor..."
-    (cd cmd/executors/go_sqlite3_embedded && go_build ../../../output/go_sqlite3_embedded_executor .)
+        echo "-- [INFO] Building go_sqlite3_embedded_executor..."
+        (cd cmd/executors/go_sqlite3_embedded && go_build ../../../output/go_sqlite3_embedded_executor .)
 
-    echo "-- [INFO] Building server..."
-    (cd cmd/server && go_build ../../output/server .)
+        echo "-- [INFO] Building server..."
+        (cd cmd/server && go_build ../../output/server .)
 
-    echo "-- [INFO] Build complete. Output: output/turso_embedded_executor, output/go_sqlite3_embedded_executor, output/server"
+        echo "-- [INFO] Build complete. Output: output/turso_embedded_executor, output/go_sqlite3_embedded_executor, output/server"
+    fi
 
     # Build the frontend view
     build_view
