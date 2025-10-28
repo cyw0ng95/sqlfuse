@@ -18,7 +18,7 @@ main
 # vendor/
 
 # Go workspace file
-go.work
+go.work.sum
 
 # IDE files
 .vscode/
@@ -72,13 +72,13 @@ output/
 
 # For copilot
 # Executor binaries built in source directories
-cmd/executors/turso_embedded/turso_embedded
-turso_embedded
-cmd/executors/chai_embedded/chai_embedded
-chai_embedded
-cmd/executors/go_sqlite3_embedded/go_sqlite3_embedded
-go_sqlite3_embedded
+/cmd/executors/turso_embedded/turso_embedded
+/turso_embedded
+/cmd/executors/chai_embedded/chai_embedded
+/chai_embedded
+/cmd/executors/go_sqlite3_embedded/go_sqlite3_embedded
+/go_sqlite3_embedded
 
 # Server binary built in source directory
-cmd/server/server
-server
+/cmd/server/server
+/server
