@@ -30,11 +30,17 @@ The architecture uses the **Composition Pattern** (specifically, embedding in Go
 
 3. **Specific Generators** (e.g., `turso.go`)
    - Embed `BaseGenerator` for common functionality
-   - Add database-specific configuration (e.g., flavor config)
+   - Reference database-specific dialect configuration from `dialects/` directory
    - Implement `Name()` and `SupportedStmts()` methods
    - Define default weights for their SQL flavor
    - Placed directly in the `internal/generators/` directory (not in subdirectories)
-   - Each generator is self-contained in a single file including its flavor configuration
+   - Generator files contain only generator-specific code (weights, initialization)
+
+4. **Dialect Configurations** (`dialects/` directory)
+   - Database-specific `FlavorConfig` implementations
+   - Each dialect in its own file (e.g., `turso.go`)
+   - Defines feature support for specific database flavors
+   - Kept separate from generator logic for better organization
 
 ## Benefits
 
@@ -43,6 +49,7 @@ The architecture uses the **Composition Pattern** (specifically, embedding in Go
 3. **Extensibility**: New generators can be added by embedding `BaseGenerator`
 4. **Flexibility**: Each generator can override or extend base behavior
 5. **Type Safety**: Go's embedding provides compile-time type checking
+6. **Separation of Concerns**: Dialect configurations are separated from generator implementations
 
 ## Integration of GeneratorInfo
 
@@ -78,19 +85,23 @@ gen.SetWeight(stmts.StmtSelect, 500)
 
 To add a new database-specific generator:
 
-1. Create a new file in `internal/generators/` (e.g., `mydb.go`)
-2. Include both the generator implementation and flavor configuration in the same file
-3. Define a generator struct that embeds `*BaseGenerator`
-4. Implement `DefaultXXXStmtWeights()` for your database flavor
-5. Implement `Name()` and `SupportedStmts()` methods
-6. Implement any database-specific initialization in `NewXXXGenerator()`
-7. Add flavor-specific configuration if needed
+1. Create a new dialect configuration file in `internal/generators/dialects/` (e.g., `mydb.go`)
+   - Define a `MyDBFlavorConfig` struct implementing `stmts.FlavorConfig`
+   - Implement `Name()`, `SupportsFeature()`, and `ValidateSQL()` methods
+   - Provide a `NewMyDBFlavorConfig()` constructor
 
-Example:
+2. Create a new generator file in `internal/generators/` (e.g., `mydb.go`)
+   - Define a generator struct that embeds `*BaseGenerator`
+   - Implement `DefaultMyDBStmtWeights()` for your database flavor
+   - Implement `Name()` and `SupportedStmts()` methods
+   - Implement `NewMyDBGenerator()` constructor
+
+Example dialect configuration (`dialects/mydb.go`):
 ```go
-package generators
+package dialects
 
-// Flavor configuration
+import "sqlsmith-go/internal/stmts/stmts"
+
 type MyDBFlavorConfig struct{}
 
 func (m *MyDBFlavorConfig) Name() string {
@@ -99,26 +110,58 @@ func (m *MyDBFlavorConfig) Name() string {
 
 func (m *MyDBFlavorConfig) SupportsFeature(feature string) bool {
     // Implementation
+    return true
+}
+
+func (m *MyDBFlavorConfig) ValidateSQL(sql string) error {
+    return nil
 }
 
 func NewMyDBFlavorConfig() stmts.FlavorConfig {
     return &MyDBFlavorConfig{}
 }
+```
 
-// Generator implementation
+Example generator (`mydb.go`):
+```go
+package generators
+
+import (
+    "database/sql"
+    "sqlsmith-go/internal/generators/dialects"
+    "sqlsmith-go/internal/stmts/stmts"
+)
+
 type MyDBGenerator struct {
     *BaseGenerator
     flavorConfig stmts.FlavorConfig
 }
 
+func DefaultMyDBStmtWeights() map[stmts.StmtType]uint64 {
+    // Define weights for your database flavor
+    w := map[stmts.StmtType]uint64{}
+    w[stmts.StmtSelectBasic] = 100
+    // ... more weights
+    return w
+}
+
 func NewMyDBGenerator(seed uint64) *MyDBGenerator {
     g := &MyDBGenerator{
         BaseGenerator: NewBaseGenerator(seed),
-        flavorConfig:  NewMyDBFlavorConfig(),
+        flavorConfig:  dialects.NewMyDBFlavorConfig(),
     }
     g.SetWeights(DefaultMyDBStmtWeights())
     g.initGenMap()
     return g
+}
+
+func (g *MyDBGenerator) initGenMap() {
+    built := stmts.BuildGeneratorFuncs(g.GetLCG(), g.GetMaxRecursionDepth(), g.flavorConfig)
+    m := make(map[stmts.StmtType]func(db *sql.DB) (string, error), len(built))
+    for k, fn := range built {
+        m[stmts.StmtType(k)] = fn
+    }
+    g.SetGenMap(m)
 }
 
 func (g *MyDBGenerator) Name() string {
@@ -126,6 +169,11 @@ func (g *MyDBGenerator) Name() string {
 }
 
 func (g *MyDBGenerator) SupportedStmts() map[string]uint64 {
-    // Return supported statements
+    w := DefaultMyDBStmtWeights()
+    out := make(map[string]uint64, len(w))
+    for k, v := range w {
+        out[string(k)] = v
+    }
+    return out
 }
 ```

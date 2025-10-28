@@ -87,7 +87,7 @@ func (g *BaseGenerator) Direction() stmts.StmtType {
 		g.firstGeneration = false
 		return stmts.StmtPragma
 	}
-	
+
 	if g.totalWeight > 0 {
 		r := g.lcg.Uint64() % g.totalWeight
 		var cum uint64
@@ -101,7 +101,7 @@ func (g *BaseGenerator) Direction() stmts.StmtType {
 		// fallback
 		return stmts.StmtPragma
 	}
-	
+
 	panic("totalWeight <= 0")
 }
 

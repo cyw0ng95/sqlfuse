@@ -64,7 +64,7 @@ func Run(startMsg string, flags *CommonFlags, connect func(dsn string) (*sql.DB,
 
 	// Initialize schema if provided
 	if strings.TrimSpace(flags.InitSQLPath) != "" {
-		initSQL, err := ioutil.ReadFile(flags.InitSQLPath)
+		initSQL, err := os.ReadFile(flags.InitSQLPath)
 		if err != nil {
 			common.Logger.Error().Err(err).Str("path", flags.InitSQLPath).Msg("Failed to read init SQL file")
 			os.Exit(1)
