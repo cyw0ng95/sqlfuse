@@ -15,7 +15,9 @@ require (
 	github.com/ebitengine/purego v0.10.0-alpha.2 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
+	github.com/mattn/go-sqlite3 v1.14.32 // indirect
 	github.com/spf13/pflag v1.0.9 // indirect
 	golang.org/x/exp v0.0.0-20250813145105-42675adae3e6 // indirect
 	golang.org/x/sys v0.37.0 // indirect
+	golang.org/x/text v0.28.0 // indirect
 )
