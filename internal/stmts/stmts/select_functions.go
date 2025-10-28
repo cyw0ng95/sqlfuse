@@ -24,10 +24,12 @@ func GenSelectWithScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error
 	// Select a scalar function to test
 	scalarFuncs := []func(*common.LCG, []helper.TableInfo) string{
 		genAbsFunction,
+		genChangesFunction,
 		genCharFunction,
 		genCoalesceFunction,
 		genConcatFunction,
 		genConcatWsFunction,
+		genFormatFunction,
 		genGlobFunction,
 		genHexFunction,
 		genIfnullFunction,
@@ -54,10 +56,14 @@ func GenSelectWithScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error
 		genRoundFunction,
 		genSignFunction,
 		genSoundexFunction,
+		genSqliteCompileoptionGetFunction,
+		genSqliteCompileoptionUsedFunction,
+		genSqliteOffsetFunction,
 		genSqliteSourceIdFunction,
 		genSqliteVersionFunction,
 		genSubstrFunction,
 		genSubstringFunction,
+		genTotalChangesFunction,
 		genTypeofFunction,
 		genUnhexFunction,
 		genUnicodeFunction,
@@ -76,10 +82,13 @@ func GenSelectWithScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error
 func genSelectScalarFunctionLiteral(lcg *common.LCG) SelectStmt {
 	scalarFuncs := []string{
 		"abs(-42)",
+		"changes()",
 		"char(65, 66, 67)",
 		"coalesce(NULL, 'default')",
 		"concat('Hello', ' ', 'World')",
 		"concat_ws(',', 'a', 'b', 'c')",
+		"format('%d', 42)",
+		"format('%s', 'test')",
 		"glob('*.txt', 'test.txt')",
 		"hex('ABC')",
 		"ifnull(NULL, 'value')",
@@ -106,10 +115,13 @@ func genSelectScalarFunctionLiteral(lcg *common.LCG) SelectStmt {
 		"round(3.14159, 2)",
 		"sign(-42)",
 		"soundex('Hello')",
+		"sqlite_compileoption_get(0)",
+		"sqlite_compileoption_used('ENABLE_FTS5')",
 		"sqlite_source_id()",
 		"sqlite_version()",
 		"substr('Hello', 1, 3)",
 		"substring('Hello', 2, 2)",
+		"total_changes()",
 		"typeof(123)",
 		"unhex('414243')",
 		"unicode('A')",
@@ -633,6 +645,80 @@ func genSqliteVersionFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 
 func genSqliteSourceIdFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 	return "sqlite_source_id()"
+}
+
+func genChangesFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	return "changes()"
+}
+
+func genTotalChangesFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	return "total_changes()"
+}
+
+func genFormatFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	// format(FORMAT, ...) - String formatting similar to printf
+	// Available in SQLite 3.38.0+
+	formats := []string{
+		"'%d'",
+		"'%s'",
+		"'%f'",
+		"'%q'",
+		"'%Q'",
+		"'Value: %d'",
+	}
+	format := formats[lcg.Intn(len(formats))]
+
+	// Generate appropriate arguments based on format
+	if format == "'%d'" || format == "'Value: %d'" {
+		if len(tbls) > 0 && lcg.Intn(2) == 0 {
+			col := findNumericColumn(tbls, lcg)
+			if col != "" {
+				return fmt.Sprintf("format(%s, %s)", format, col)
+			}
+		}
+		return fmt.Sprintf("format(%s, %d)", format, lcg.Intn(100))
+	} else if format == "'%s'" || format == "'%q'" || format == "'%Q'" {
+		if len(tbls) > 0 && lcg.Intn(2) == 0 {
+			col := findTextColumn(tbls, lcg)
+			if col != "" {
+				return fmt.Sprintf("format(%s, %s)", format, col)
+			}
+		}
+		return "format('%s', 'test')"
+	} else if format == "'%f'" {
+		return fmt.Sprintf("format('%s', %f)", "%f", 3.14+float64(lcg.Intn(100))/10.0)
+	}
+	return "format('%d', 42)"
+}
+
+func genSqliteCompileoptionGetFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	// sqlite_compileoption_get(N) - Returns the N-th compile-time option
+	n := lcg.Intn(10)
+	return fmt.Sprintf("sqlite_compileoption_get(%d)", n)
+}
+
+func genSqliteCompileoptionUsedFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	// sqlite_compileoption_used(X) - Returns whether option X was used
+	options := []string{
+		"'ENABLE_FTS5'",
+		"'ENABLE_JSON1'",
+		"'ENABLE_RTREE'",
+		"'THREADSAFE'",
+		"'ENABLE_COLUMN_METADATA'",
+	}
+	option := options[lcg.Intn(len(options))]
+	return fmt.Sprintf("sqlite_compileoption_used(%s)", option)
+}
+
+func genSqliteOffsetFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	// sqlite_offset(X) - Returns byte offset of column X
+	// This function requires a column reference from a real query
+	if len(tbls) > 0 && len(tbls[0].Cols) > 0 {
+		col := tbls[0].Cols[lcg.Intn(len(tbls[0].Cols))]
+		return fmt.Sprintf("sqlite_offset(%s)", quoteIdent(col.Name))
+	}
+	// Fallback - this will likely fail at runtime but is syntactically valid
+	return "sqlite_offset(1)"
 }
 
 // GenSelectWithMathFunction generates a SELECT statement with mathematical SQL functions
