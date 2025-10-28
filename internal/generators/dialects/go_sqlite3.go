@@ -39,6 +39,10 @@ func (g *GoSQLite3FlavorConfig) Name() string {
 //
 // Note: Some features like REGEXP may require extensions or custom functions
 // but are syntactically supported by SQLite3.
+//
+// Implementation Note: This returns true for ALL features since go-sqlite3
+// supports the complete SQLite3 specification. If new SQLite features are added
+// that go-sqlite3 doesn't support, they should be explicitly checked here.
 func (g *GoSQLite3FlavorConfig) SupportsFeature(feature string) bool {
 	// go-sqlite3 supports full SQLite3, so we return true for all features.
 	// This is the permissive default that allows maximum SQL generation coverage.

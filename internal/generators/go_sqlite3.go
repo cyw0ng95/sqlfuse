@@ -25,7 +25,6 @@ type GoSQLite3Generator struct {
 // Values are token-like weights; probabilities are weight / sum(weights).
 func DefaultGoSQLite3StmtWeights() map[stmts.StmtType]uint64 {
 	w := map[stmts.StmtType]uint64{}
-	
 	// INSERT variants
 	w[stmts.StmtInsert] = 250
 	w[stmts.StmtInsertMultiple] = 70
@@ -67,7 +66,7 @@ func DefaultGoSQLite3StmtWeights() map[stmts.StmtType]uint64 {
 	w[stmts.StmtSelectNestedCase] = 25
 	w[stmts.StmtSelectComplexJoin] = 25
 	
-	// Window functions and CTEs - HIGHER weights for go-sqlite3 since it supports them fully
+	// Window functions and CTEs - Higher weights for go-sqlite3 since it supports them fully
 	// Unlike Turso which doesn't support these, go-sqlite3 does, so we emphasize them
 	w[stmts.StmtSelectWindow] = 60          // Increased from 35 in Turso
 	w[stmts.StmtSelectMultipleWindows] = 40 // Increased from 20 in Turso
