@@ -44,6 +44,7 @@ Follow the established pattern in `cmd/executors/turso_embedded.go`:
 - Build: `go build ./cmd/executors/turso_embedded.go`
 - Run: `./turso_embedded` (creates local.db automatically)
 - The binary name `turso_embedded` is gitignored
+- When forming git patch, donot include any binary built
 
 ### Container Development
 Use the provided Containerfile for consistent environment:
