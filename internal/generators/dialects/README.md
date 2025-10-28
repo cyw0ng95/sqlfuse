@@ -15,31 +15,31 @@ Each database flavor has its own file:
 
 To add a new database dialect:
 
-1. Create a new file named after your database (e.g., `mydb.go`)
+1. Create a new file named after your database (e.g., `postgres.go` or `mysql.go`)
 2. Implement the `stmts.FlavorConfig` interface:
    ```go
-   type MyDBFlavorConfig struct{}
+   type PostgresFlavorConfig struct{}
 
-   func (m *MyDBFlavorConfig) Name() string {
-       return "mydb"
+   func (p *PostgresFlavorConfig) Name() string {
+       return "postgres"
    }
 
-   func (m *MyDBFlavorConfig) SupportsFeature(feature string) bool {
+   func (p *PostgresFlavorConfig) SupportsFeature(feature string) bool {
        // Define which features are supported
        return true
    }
 
-   func (m *MyDBFlavorConfig) ValidateSQL(sql string) error {
+   func (p *PostgresFlavorConfig) ValidateSQL(sql string) error {
        // Optional: validate SQL syntax
        return nil
    }
 
-   func NewMyDBFlavorConfig() stmts.FlavorConfig {
-       return &MyDBFlavorConfig{}
+   func NewPostgresFlavorConfig() stmts.FlavorConfig {
+       return &PostgresFlavorConfig{}
    }
    ```
 
-3. Create tests in `mydb_test.go` to verify feature support
+3. Create tests in `postgres_test.go` to verify feature support
 4. Use the dialect in your generator (see `../turso.go` for an example)
 
 ## Feature Flags
