@@ -14,7 +14,7 @@ type InsertGenerator struct{}
 
 // Generate implements StmtGenerator for INSERT statements.
 func (g *InsertGenerator) Generate(ctx *GenContext) (Stmt, error) {
-	return genInsertSingle(ctx.DB, ctx.LCG)
+	return genInsertSingleWithFlavor(ctx.DB, ctx.LCG, ctx.Flavor)
 }
 
 // CanGenerate implements StmtGenerator. INSERT requires tables to exist.
@@ -41,6 +41,14 @@ func GenInsert(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 
 // genInsertSingle is the internal implementation for single-row inserts.
 func genInsertSingle(db *sql.DB, lcg *common.LCG) (Stmt, error) {
+	return genInsertSingleWithFlavor(db, lcg, GetDefaultFlavor())
+}
+
+// genInsertSingleWithFlavor is the internal implementation for single-row inserts with flavor support.
+func genInsertSingleWithFlavor(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
+	if flavor == nil {
+		flavor = GetDefaultFlavor()
+	}
 	tables, err := helper.GetAllTablesAndCols(db)
 	if err != nil || len(tables) == 0 {
 		return nil, fmt.Errorf("no tables available for INSERT: %v", err)
@@ -58,7 +66,7 @@ func genInsertSingle(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	tbl := tables[rnd(len(tables))]
 	if len(tbl.Cols) == 0 {
 		// no columns -> use DEFAULT VALUES
-		return &InsertStmt{sql: fmt.Sprintf("INSERT INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return &InsertStmt{sql: fmt.Sprintf("INSERT INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name)), flavor: flavor}, nil
 	}
 
 	// Filter columns (skip 'id') and build values together
@@ -71,7 +79,7 @@ func genInsertSingle(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	}
 
 	if len(filteredCols) == 0 {
-		return &InsertStmt{sql: fmt.Sprintf("INSERT INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return &InsertStmt{sql: fmt.Sprintf("INSERT INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name)), flavor: flavor}, nil
 	}
 
 	cols := colsNames(filteredCols)
@@ -81,7 +89,7 @@ func genInsertSingle(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	}
 
 	sql := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s);", quoteIdent(tbl.Name), strings.Join(cols, ", "), vals)
-	return &InsertStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
+	return &InsertStmt{sql: sql, flavor: flavor}, nil
 }
 
 func quoteIdent(s string) string {

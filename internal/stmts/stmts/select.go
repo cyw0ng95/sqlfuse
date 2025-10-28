@@ -13,7 +13,7 @@ type SelectGenerator struct{}
 
 // Generate implements StmtGenerator for SELECT statements.
 func (g *SelectGenerator) Generate(ctx *GenContext) (Stmt, error) {
-	stmt, err := genSelectInternal(ctx.DB, ctx.LCG)
+	stmt, err := genSelectInternalWithFlavor(ctx.DB, ctx.LCG, ctx.Flavor)
 	return &stmt, err
 }
 

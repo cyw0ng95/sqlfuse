@@ -11,7 +11,7 @@ type CreateTableGenerator struct{}
 
 // Generate implements StmtGenerator for CREATE TABLE statements.
 func (g *CreateTableGenerator) Generate(ctx *GenContext) (Stmt, error) {
-	return genCreateTableInternal(ctx.LCG)
+	return genCreateTableWithFlavor(ctx.LCG, ctx.Flavor)
 }
 
 // CanGenerate implements StmtGenerator. CREATE TABLE can always be generated.
@@ -38,8 +38,16 @@ func GenCreateTable(lcg *common.LCG) (Stmt, error) {
 
 // genCreateTableInternal is the internal implementation used by both old and new interfaces.
 func genCreateTableInternal(lcg *common.LCG) (Stmt, error) {
+	return genCreateTableWithFlavor(lcg, GetDefaultFlavor())
+}
+
+// genCreateTableWithFlavor creates a CREATE TABLE statement with flavor support.
+func genCreateTableWithFlavor(lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
 	if lcg == nil {
 		lcg = common.NewLCG(1)
+	}
+	if flavor == nil {
+		flavor = GetDefaultFlavor()
 	}
 
 	// choose number of columns 1..4
@@ -56,5 +64,5 @@ func genCreateTableInternal(lcg *common.LCG) (Stmt, error) {
 	tbl := fmt.Sprintf("tbl_%d", lcg.Uint64()%1000000)
 
 	sql := fmt.Sprintf("CREATE TABLE IF NOT EXISTS \"%s\" (%s);", tbl, strings.Join(cols, ", "))
-	return &CreateTableStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
+	return &CreateTableStmt{sql: sql, flavor: flavor}, nil
 }

@@ -10,7 +10,7 @@ type PragmaGenerator struct{}
 
 // Generate implements StmtGenerator for PRAGMA statements.
 func (g *PragmaGenerator) Generate(ctx *GenContext) (Stmt, error) {
-	return GenPragma(ctx.LCG), nil
+	return genPragmaWithFlavor(ctx.LCG, ctx.Flavor), nil
 }
 
 // CanGenerate implements StmtGenerator. PRAGMA can always be generated.
@@ -22,6 +22,14 @@ func (g *PragmaGenerator) CanGenerate(ctx *GenContext) bool {
 // Only includes PRAGMAs that are fully or partially supported according to
 // https://github.com/tursodatabase/turso/blob/main/COMPAT.md#pragma
 func GenPragma(lcg *common.LCG) Stmt {
+	return genPragmaWithFlavor(lcg, GetDefaultFlavor())
+}
+
+// genPragmaWithFlavor generates a PRAGMA statement with flavor support.
+func genPragmaWithFlavor(lcg *common.LCG, flavor FlavorConfig) Stmt {
+	if flavor == nil {
+		flavor = GetDefaultFlavor()
+	}
 	// Only include PRAGMAs with "Yes" or "Partial" support in Turso
 	pragmas := []string{
 		"application_id",     // Yes
@@ -73,5 +81,5 @@ func GenPragma(lcg *common.LCG) Stmt {
 	default:
 		sql = fmt.Sprintf("PRAGMA %s;", p)
 	}
-	return &PragmaStmt{sql: sql, flavor: GetDefaultFlavor()}
+	return &PragmaStmt{sql: sql, flavor: flavor}
 }
