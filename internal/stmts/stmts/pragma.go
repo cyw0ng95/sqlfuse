@@ -145,7 +145,12 @@ func generatePragmaSQL(pragma string, lcg *common.LCG, flavor FlavorConfig) *Pra
 		}
 	
 	case "journal_size_limit":
-		limit := -1 + lcg.Intn(10000000) // -1 or positive value
+		var limit int
+		if lcg.Intn(10) == 0 { // 10% chance to disable the limit
+			limit = -1
+		} else {
+			limit = lcg.Intn(10000000) // A positive value
+		}
 		sql = fmt.Sprintf("PRAGMA journal_size_limit = %d;", limit)
 	
 	case "mmap_size":
