@@ -1037,3 +1037,83 @@ func TestSpecificExtensionFunctions(t *testing.T) {
 		})
 	}
 }
+
+// TestGenSelectWithGoSQLite3ScalarFunction tests go-sqlite3 specific core functions
+func TestGenSelectWithGoSQLite3ScalarFunction(t *testing.T) {
+	// This test uses Turso which doesn't support go-sqlite3 specific functions
+	// We just verify that the SQL is generated correctly, not that it executes
+	db := setupTestDB(t)
+	defer db.Close()
+
+	lcg := common.NewLCG(5000)
+
+	for i := 0; i < testIterations; i++ {
+		stmt, err := GenSelectWithGoSQLite3ScalarFunction(db, lcg)
+		if err != nil {
+			t.Fatalf("GenSelectWithGoSQLite3ScalarFunction failed on iteration %d: %v", i, err)
+		}
+
+		sql := stmt.SQL()
+		if sql == "" {
+			t.Error("GenSelectWithGoSQLite3ScalarFunction returned empty SQL")
+		}
+
+		if stmt.Type() != "select" {
+			t.Errorf("Expected type 'select', got '%s'", stmt.Type())
+		}
+
+		// Validate SQL syntax (will pass even if function not supported)
+		valid, errors := ValidateSQL(sql)
+		if !valid {
+			t.Errorf("Invalid go-sqlite3 scalar function SQL on iteration %d: %s\nErrors: %v", i, sql, errors)
+		}
+
+		// Note: We don't try to execute these functions with Turso as they're not supported
+		// They should be tested with actual go-sqlite3 database
+		t.Logf("Generated SQL (iteration %d): %s", i, sql)
+	}
+}
+
+// TestGoSQLite3SpecificFunctionGenerators tests individual go-sqlite3 specific function generators
+func TestGoSQLite3SpecificFunctionGenerators(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	lcg := common.NewLCG(6000)
+	
+	// Get tables for testing
+	tables, err := helper.GetAllTablesAndCols(db)
+	if err != nil {
+		t.Fatalf("Failed to get tables: %v", err)
+	}
+
+	tests := []struct {
+		name string
+		gen  func(*common.LCG, []helper.TableInfo) string
+	}{
+		{"changes", genChangesFunction},
+		{"total_changes", genTotalChangesFunction},
+		{"format", genFormatFunction},
+		{"sqlite_compileoption_get", genSqliteCompileoptionGetFunction},
+		{"sqlite_compileoption_used", genSqliteCompileoptionUsedFunction},
+		{"sqlite_offset", genSqliteOffsetFunction},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			funcExpr := tt.gen(lcg, tables)
+			if funcExpr == "" {
+				t.Error("Function generator returned empty string")
+				return
+			}
+
+			sql := fmt.Sprintf("SELECT %s;", funcExpr)
+			valid, errors := ValidateSQL(sql)
+			if !valid {
+				t.Errorf("Invalid SQL for %s: %s\nErrors: %v", tt.name, sql, errors)
+			}
+
+			t.Logf("Generated %s: %s", tt.name, funcExpr)
+		})
+	}
+}

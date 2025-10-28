@@ -22,6 +22,9 @@ func GenSelectWithScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error
 	tbl := tables[rnd(len(tables))]
 
 	// Select a scalar function to test
+	// Note: Some functions like format(), sqlite_compileoption_get/used(), and sqlite_offset()
+	// are go-sqlite3 specific and not included here to maintain Turso compatibility.
+	// For go-sqlite3 specific functions, use GenSelectWithGoSQLite3ScalarFunction() instead.
 	scalarFuncs := []func(*common.LCG, []helper.TableInfo) string{
 		genAbsFunction,
 		genChangesFunction,
@@ -29,7 +32,6 @@ func GenSelectWithScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error
 		genCoalesceFunction,
 		genConcatFunction,
 		genConcatWsFunction,
-		genFormatFunction,
 		genGlobFunction,
 		genHexFunction,
 		genIfnullFunction,
@@ -56,9 +58,6 @@ func GenSelectWithScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error
 		genRoundFunction,
 		genSignFunction,
 		genSoundexFunction,
-		genSqliteCompileoptionGetFunction,
-		genSqliteCompileoptionUsedFunction,
-		genSqliteOffsetFunction,
 		genSqliteSourceIdFunction,
 		genSqliteVersionFunction,
 		genSubstrFunction,
@@ -80,6 +79,8 @@ func GenSelectWithScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error
 
 // genSelectScalarFunctionLiteral generates a SELECT with scalar function using literal values
 func genSelectScalarFunctionLiteral(lcg *common.LCG) SelectStmt {
+	// Note: Some go-sqlite3 specific functions like format(), sqlite_compileoption_get/used()
+	// are not included here to maintain Turso compatibility.
 	scalarFuncs := []string{
 		"abs(-42)",
 		"changes()",
@@ -87,8 +88,6 @@ func genSelectScalarFunctionLiteral(lcg *common.LCG) SelectStmt {
 		"coalesce(NULL, 'default')",
 		"concat('Hello', ' ', 'World')",
 		"concat_ws(',', 'a', 'b', 'c')",
-		"format('%d', 42)",
-		"format('%s', 'test')",
 		"glob('*.txt', 'test.txt')",
 		"hex('ABC')",
 		"ifnull(NULL, 'value')",
@@ -115,8 +114,6 @@ func genSelectScalarFunctionLiteral(lcg *common.LCG) SelectStmt {
 		"round(3.14159, 2)",
 		"sign(-42)",
 		"soundex('Hello')",
-		"sqlite_compileoption_get(0)",
-		"sqlite_compileoption_used('ENABLE_FTS5')",
 		"sqlite_source_id()",
 		"sqlite_version()",
 		"substr('Hello', 1, 3)",
@@ -1880,4 +1877,49 @@ func genDurFunction(lcg *common.LCG) string {
 		"dur_h()",
 	}
 	return durFuncs[lcg.Intn(len(durFuncs))]
+}
+
+// GenSelectWithGoSQLite3ScalarFunction generates a SELECT statement with go-sqlite3 specific core functions.
+// These functions are only supported by full SQLite3 (via go-sqlite3) and not by Turso LibSQL.
+func GenSelectWithGoSQLite3ScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
+	tables, err := helper.GetAllTablesAndCols(db)
+	if err != nil || len(tables) == 0 {
+		// No tables available, use literal values
+		return genSelectGoSQLite3ScalarFunctionLiteral(lcg), nil
+	}
+
+	rnd := lcg.Intn
+	tbl := tables[rnd(len(tables))]
+
+	// go-sqlite3 specific scalar functions
+	scalarFuncs := []func(*common.LCG, []helper.TableInfo) string{
+		genFormatFunction,
+		genSqliteCompileoptionGetFunction,
+		genSqliteCompileoptionUsedFunction,
+		genSqliteOffsetFunction,
+	}
+
+	funcIdx := rnd(len(scalarFuncs))
+	funcExpr := scalarFuncs[funcIdx](lcg, tables)
+
+	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;", funcExpr, quoteIdent(tbl.Name), 1+rnd(10))
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
+}
+
+// genSelectGoSQLite3ScalarFunctionLiteral generates a SELECT with go-sqlite3 specific scalar functions using literal values
+func genSelectGoSQLite3ScalarFunctionLiteral(lcg *common.LCG) SelectStmt {
+	scalarFuncs := []string{
+		"format('%d', 42)",
+		"format('%s', 'test')",
+		"format('%f', 3.14)",
+		"sqlite_compileoption_get(0)",
+		"sqlite_compileoption_get(1)",
+		"sqlite_compileoption_used('THREADSAFE')",
+		"sqlite_compileoption_used('ENABLE_FTS5')",
+		"sqlite_compileoption_used('ENABLE_JSON1')",
+	}
+
+	funcIdx := lcg.Intn(len(scalarFuncs))
+	sql := fmt.Sprintf("SELECT %s;", scalarFuncs[funcIdx])
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}
 }
