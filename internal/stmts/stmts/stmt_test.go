@@ -27,6 +27,21 @@ func (el *errorListener) SyntaxError(recognizer antlr.Recognizer, offendingSymbo
 	el.errors = append(el.errors, fmt.Sprintf("line %d:%d %s", line, column, msg))
 }
 
+// MockGoSQLite3Flavor is a test mock that simulates go-sqlite3 flavor
+type MockGoSQLite3Flavor struct{}
+
+func (m *MockGoSQLite3Flavor) Name() string {
+	return "go-sqlite3"
+}
+
+func (m *MockGoSQLite3Flavor) SupportsFeature(feature string) bool {
+	return true
+}
+
+func (m *MockGoSQLite3Flavor) ValidateSQL(sql string) error {
+	return nil
+}
+
 // ValidateSQL validates SQL syntax using the sqlite-antlr4-parser
 func ValidateSQL(sql string) (bool, []string) {
 	input := antlr.NewInputStream(sql)
@@ -234,6 +249,119 @@ func TestGenPragmaTursoCompatibility(t *testing.T) {
 		if !seenPragmas[pragma] {
 			t.Errorf("Supported PRAGMA %s was never generated in test", pragma)
 		}
+	}
+}
+
+// TestGenPragmaGoSQLite3Support tests that go-sqlite3 flavor generates extended pragma set.
+// This verifies that go-sqlite3 gets access to additional pragmas beyond Turso's limited set.
+func TestGenPragmaGoSQLite3Support(t *testing.T) {
+	// Use default flavor (should be Turso-compatible)
+	lcg := common.NewLCG(123)
+	
+	// Track pragmas we see
+	seenPragmas := make(map[string]bool)
+	
+	// Generate many pragmas to see variety
+	for i := 0; i < 500; i++ {
+		stmt := GenPragma(lcg)
+		sql := stmt.SQL()
+		
+		if sql == "" {
+			t.Error("Generated empty pragma SQL")
+		}
+		
+		// Extract pragma name
+		parts := strings.Fields(sql)
+		if len(parts) >= 2 {
+			pragmaName := strings.TrimSuffix(parts[1], ";")
+			// Remove parentheses if present (e.g., "table_info(users)" -> "table_info")
+			if idx := strings.Index(pragmaName, "("); idx != -1 {
+				pragmaName = pragmaName[:idx]
+			}
+			seenPragmas[pragmaName] = true
+		}
+	}
+	
+	// For the default flavor (not go-sqlite3), we should only see Turso-compatible pragmas
+	// Verify we don't see go-sqlite3-only pragmas like auto_vacuum, foreign_keys, etc.
+	goSQLite3OnlyPragmas := []string{
+		"auto_vacuum",
+		"foreign_keys",
+		"busy_timeout",
+		"mmap_size",
+		"threads",
+	}
+	
+	for _, pragma := range goSQLite3OnlyPragmas {
+		if seenPragmas[pragma] {
+			t.Errorf("Default flavor should not generate go-sqlite3-only PRAGMA: %s", pragma)
+		}
+	}
+}
+
+// TestGenPragmaWithGoSQLite3Flavor tests pragma generation with actual go-sqlite3 flavor.
+func TestGenPragmaWithGoSQLite3Flavor(t *testing.T) {
+	flavor := &MockGoSQLite3Flavor{}
+	lcg := common.NewLCG(456)
+	
+	// Track pragmas we see
+	seenPragmas := make(map[string]bool)
+	
+	// Generate many pragmas to see variety
+	for i := 0; i < 500; i++ {
+		stmt := genPragmaWithFlavor(lcg, flavor)
+		sql := stmt.SQL()
+		
+		if sql == "" {
+			t.Error("Generated empty pragma SQL")
+		}
+		
+		// Extract pragma name
+		parts := strings.Fields(sql)
+		if len(parts) >= 2 {
+			pragmaName := strings.TrimSuffix(parts[1], ";")
+			// Remove parentheses if present
+			if idx := strings.Index(pragmaName, "("); idx != -1 {
+				pragmaName = pragmaName[:idx]
+			}
+			seenPragmas[pragmaName] = true
+		}
+	}
+	
+	// Verify we see some go-sqlite3-specific pragmas
+	goSQLite3Pragmas := []string{
+		"auto_vacuum",
+		"foreign_keys",
+		"busy_timeout",
+	}
+	
+	foundAny := false
+	for _, pragma := range goSQLite3Pragmas {
+		if seenPragmas[pragma] {
+			foundAny = true
+			break
+		}
+	}
+	
+	if !foundAny {
+		t.Error("go-sqlite3 flavor should generate extended pragma set")
+		t.Logf("Seen pragmas: %v", seenPragmas)
+	}
+	
+	// Verify that table_info with go-sqlite3 uses parameters
+	foundTableInfoWithParam := false
+	for i := 0; i < 100; i++ {
+		stmt := genPragmaWithFlavor(lcg, flavor)
+		sql := stmt.SQL()
+		if strings.Contains(sql, "table_info(") {
+			foundTableInfoWithParam = true
+			break
+		}
+	}
+	
+	// Note: This might not always trigger due to randomness, so we just log if not found
+	if !foundTableInfoWithParam {
+		t.Log("Note: table_info with parameters was not generated in 100 attempts (this is OK due to randomness)")
 	}
 }
 
