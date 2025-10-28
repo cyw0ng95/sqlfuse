@@ -22,9 +22,10 @@ func GenSelectWithScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error
 	tbl := tables[rnd(len(tables))]
 
 	// Select a scalar function to test
-	// Note: Some functions like format(), sqlite_compileoption_get/used(), and sqlite_offset()
-	// are go-sqlite3 specific and not included here to maintain Turso compatibility.
-	// For go-sqlite3 specific functions, use GenSelectWithGoSQLite3ScalarFunction() instead.
+	// Note: format(), sqlite_compileoption_get/used(), and sqlite_offset() are go-sqlite3
+	// specific and not included here to maintain Turso compatibility. For go-sqlite3 specific
+	// functions, use GenSelectWithGoSQLite3ScalarFunction() instead.
+	// However, changes() and total_changes() ARE supported by both Turso and go-sqlite3.
 	scalarFuncs := []func(*common.LCG, []helper.TableInfo) string{
 		genAbsFunction,
 		genChangesFunction,
@@ -79,8 +80,9 @@ func GenSelectWithScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error
 
 // genSelectScalarFunctionLiteral generates a SELECT with scalar function using literal values
 func genSelectScalarFunctionLiteral(lcg *common.LCG) SelectStmt {
-	// Note: Some go-sqlite3 specific functions like format(), sqlite_compileoption_get/used()
+	// Note: go-sqlite3 specific functions like format(), sqlite_compileoption_get/used()
 	// are not included here to maintain Turso compatibility.
+	// However, changes() and total_changes() ARE supported by both Turso and go-sqlite3.
 	scalarFuncs := []string{
 		"abs(-42)",
 		"changes()",
