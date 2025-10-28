@@ -8,7 +8,6 @@ import (
 	"sqlsmith-go/internal/common"
 	"sqlsmith-go/internal/executors"
 	"sqlsmith-go/internal/generators"
-	"sqlsmith-go/internal/generators/turso"
 	"sqlsmith-go/internal/stmts/helper"
 
 	"github.com/spf13/cobra"
@@ -27,7 +26,7 @@ func main() {
 				"Starting turso_embedded executor",
 				&flags,
 				func(dsn string) (*sql.DB, error) { return sql.Open("turso", dsn) },
-				func(seed uint64) generators.Generator { return turso.NewGenerator(seed) },
+				func(seed uint64) generators.Generator { return generators.NewTursoGenerator(seed) },
 				print_schema,
 			)
 		},

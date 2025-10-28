@@ -28,11 +28,13 @@ The architecture uses the **Composition Pattern** (specifically, embedding in Go
      - Direction selection (choosing which SQL statement type to generate)
    - Uses the **Template Method Pattern** for SQL generation
 
-3. **Specific Generators** (e.g., `turso/turso_gen.go`)
+3. **Specific Generators** (e.g., `turso.go`)
    - Embed `BaseGenerator` for common functionality
    - Add database-specific configuration (e.g., flavor config)
    - Implement `Name()` and `SupportedStmts()` methods
    - Define default weights for their SQL flavor
+   - Placed directly in the `internal/generators/` directory (not in subdirectories)
+   - Each generator is self-contained in a single file including its flavor configuration
 
 ## Benefits
 
@@ -59,7 +61,7 @@ This integration:
 
 ```go
 // Create a new generator
-gen := turso.NewGenerator(seed)
+gen := generators.NewTursoGenerator(seed)
 
 // Use interface methods
 name := gen.Name()                    // "turso"
@@ -76,26 +78,45 @@ gen.SetWeight(stmts.StmtSelect, 500)
 
 To add a new database-specific generator:
 
-1. Create a new package under `internal/generators/`
-2. Define a `Generator` struct that embeds `*generators.BaseGenerator`
-3. Implement `DefaultStmtWeights()` for your database flavor
-4. Implement `Name()` and `SupportedStmts()` methods
-5. Implement any database-specific initialization in `NewGenerator()`
-6. Add flavor-specific configuration if needed
+1. Create a new file in `internal/generators/` (e.g., `mydb.go`)
+2. Include both the generator implementation and flavor configuration in the same file
+3. Define a generator struct that embeds `*BaseGenerator`
+4. Implement `DefaultXXXStmtWeights()` for your database flavor
+5. Implement `Name()` and `SupportedStmts()` methods
+6. Implement any database-specific initialization in `NewXXXGenerator()`
+7. Add flavor-specific configuration if needed
 
 Example:
 ```go
-type MyDBGenerator struct {
-    *generators.BaseGenerator
-    customConfig MyDBFlavorConfig
+package generators
+
+// Flavor configuration
+type MyDBFlavorConfig struct{}
+
+func (m *MyDBFlavorConfig) Name() string {
+    return "mydb"
 }
 
-func NewGenerator(seed uint64) *MyDBGenerator {
+func (m *MyDBFlavorConfig) SupportsFeature(feature string) bool {
+    // Implementation
+}
+
+func NewMyDBFlavorConfig() stmts.FlavorConfig {
+    return &MyDBFlavorConfig{}
+}
+
+// Generator implementation
+type MyDBGenerator struct {
+    *BaseGenerator
+    flavorConfig stmts.FlavorConfig
+}
+
+func NewMyDBGenerator(seed uint64) *MyDBGenerator {
     g := &MyDBGenerator{
-        BaseGenerator: generators.NewBaseGenerator(seed),
-        customConfig:  NewMyDBFlavorConfig(),
+        BaseGenerator: NewBaseGenerator(seed),
+        flavorConfig:  NewMyDBFlavorConfig(),
     }
-    g.SetWeights(DefaultStmtWeights())
+    g.SetWeights(DefaultMyDBStmtWeights())
     g.initGenMap()
     return g
 }
