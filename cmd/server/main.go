@@ -130,7 +130,8 @@ func main() {
 
 	// Generator metadata endpoint
 	e.GET("/generators/get", func(c echo.Context) error {
-		gen := turso.Info
+		// Create a temporary generator instance to get metadata
+		gen := turso.NewGenerator(0)
 		resp := map[string]interface{}{
 			"generator": gen.Name(),
 			"stmts":     gen.SupportedStmts(),
