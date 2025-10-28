@@ -348,20 +348,11 @@ func TestGenPragmaWithGoSQLite3Flavor(t *testing.T) {
 		t.Logf("Seen pragmas: %v", seenPragmas)
 	}
 	
-	// Verify that table_info with go-sqlite3 uses parameters
-	foundTableInfoWithParam := false
-	for i := 0; i < 100; i++ {
-		stmt := genPragmaWithFlavor(lcg, flavor)
-		sql := stmt.SQL()
-		if strings.Contains(sql, "table_info(") {
-			foundTableInfoWithParam = true
-			break
-		}
-	}
-	
-	// Note: This might not always trigger due to randomness, so we just log if not found
-	if !foundTableInfoWithParam {
-		t.Log("Note: table_info with parameters was not generated in 100 attempts (this is OK due to randomness)")
+	// Verify that table_info with go-sqlite3 uses parameters deterministically
+	stmt := generatePragmaSQL("table_info", lcg, flavor)
+	sql := stmt.SQL()
+	if !strings.Contains(sql, "table_info(") {
+		t.Errorf("go-sqlite3 flavor should generate table_info with a parameter, but got: %s", sql)
 	}
 }
 
