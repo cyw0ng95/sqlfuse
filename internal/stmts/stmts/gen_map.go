@@ -11,7 +11,13 @@ func BuildGeneratorFuncs(lcg *common.LCG, maxRecursionDepth int, flavorConfig Fl
 	m := make(map[string]func(db *sql.DB) (string, error), 64)
 
 	m["pragma"] = func(db *sql.DB) (string, error) {
-		return GenPragma(lcg).SQL(), nil
+		ctx := NewGenContextWithFlavor(db, lcg, maxRecursionDepth, flavorConfig)
+		gen := &PragmaGenerator{}
+		stmt, err := gen.Generate(ctx)
+		if err != nil {
+			return "PRAGMA integrity_check;", err
+		}
+		return stmt.SQL(), nil
 	}
 
 	m["insert"] = func(db *sql.DB) (string, error) {

@@ -68,6 +68,10 @@ func DefaultTursoStmtWeights() map[stmts.StmtType]uint64 {
 	w[stmts.StmtCreateTable] = 40
 	w[stmts.StmtDropTable] = 40
 	w[stmts.StmtAlterTable] = 40
+	
+	// PRAGMA - Turso supports a limited set of pragmas
+	w[stmts.StmtPragma] = 30
+	
 	return w
 }
 

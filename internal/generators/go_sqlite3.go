@@ -87,6 +87,9 @@ func DefaultGoSQLite3StmtWeights() map[stmts.StmtType]uint64 {
 	w[stmts.StmtDropTable] = 40
 	w[stmts.StmtAlterTable] = 40
 	
+	// PRAGMA - go-sqlite3 supports all SQLite3 pragmas
+	w[stmts.StmtPragma] = 50
+	
 	return w
 }
 
