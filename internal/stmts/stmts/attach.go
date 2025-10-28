@@ -7,19 +7,23 @@ import (
 
 // AttachStmt represents an ATTACH DATABASE statement.
 type AttachStmt struct {
-	sql string
+	sql    string
+	flavor FlavorConfig
 }
 
-func (s *AttachStmt) SQL() string  { return s.sql }
-func (s *AttachStmt) Type() string { return "attach" }
+func (s *AttachStmt) SQL() string          { return s.sql }
+func (s *AttachStmt) Type() string         { return "attach" }
+func (s *AttachStmt) Flavor() FlavorConfig { return s.flavor }
 
 // DetachStmt represents a DETACH DATABASE statement.
 type DetachStmt struct {
-	sql string
+	sql    string
+	flavor FlavorConfig
 }
 
-func (s *DetachStmt) SQL() string  { return s.sql }
-func (s *DetachStmt) Type() string { return "detach" }
+func (s *DetachStmt) SQL() string          { return s.sql }
+func (s *DetachStmt) Type() string         { return "detach" }
+func (s *DetachStmt) Flavor() FlavorConfig { return s.flavor }
 
 // GenAttachDatabase generates an ATTACH DATABASE statement.
 // According to Turso COMPAT.md: Partial support (only for reads, modifications will fail).
@@ -50,7 +54,7 @@ func GenAttachDatabase(lcg *common.LCG) Stmt {
 
 	// ATTACH DATABASE 'path' AS alias
 	sql := fmt.Sprintf("ATTACH DATABASE '%s' AS \"%s\";", escapeSingleQuote(dbPath), alias)
-	return &AttachStmt{sql: sql}
+	return &AttachStmt{sql: sql, flavor: GetDefaultFlavor()}
 }
 
 // GenDetachDatabase generates a DETACH DATABASE statement.
@@ -70,7 +74,7 @@ func GenDetachDatabase(lcg *common.LCG) Stmt {
 	}
 
 	sql := variants[lcg.Intn(len(variants))]
-	return &DetachStmt{sql: sql}
+	return &DetachStmt{sql: sql, flavor: GetDefaultFlavor()}
 }
 
 // escapeSingleQuote escapes single quotes in strings for SQL literals

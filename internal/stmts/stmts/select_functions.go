@@ -69,7 +69,7 @@ func GenSelectWithScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error
 	funcExpr := scalarFuncs[funcIdx](lcg, tables)
 
 	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;", funcExpr, quoteIdent(tbl.Name), 1+rnd(10))
-	return SelectStmt{sql: sql}, nil
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
 // genSelectScalarFunctionLiteral generates a SELECT with scalar function using literal values
@@ -119,7 +119,7 @@ func genSelectScalarFunctionLiteral(lcg *common.LCG) SelectStmt {
 
 	funcIdx := lcg.Intn(len(scalarFuncs))
 	sql := fmt.Sprintf("SELECT %s;", scalarFuncs[funcIdx])
-	return SelectStmt{sql: sql}
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}
 }
 
 // Scalar function generators
@@ -681,7 +681,7 @@ func GenSelectWithMathFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) 
 	funcExpr := mathFuncs[funcIdx](lcg, tables)
 
 	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;", funcExpr, quoteIdent(tbl.Name), 1+rnd(10))
-	return SelectStmt{sql: sql}, nil
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
 func genSelectMathFunctionLiteral(lcg *common.LCG) SelectStmt {
@@ -720,7 +720,7 @@ func genSelectMathFunctionLiteral(lcg *common.LCG) SelectStmt {
 
 	funcIdx := lcg.Intn(len(mathFuncs))
 	sql := fmt.Sprintf("SELECT %s;", mathFuncs[funcIdx])
-	return SelectStmt{sql: sql}
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}
 }
 
 // Mathematical function generators
@@ -903,7 +903,7 @@ func GenSelectWithAggregateFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, er
 	funcExpr := aggFuncs[funcIdx](lcg, tables)
 
 	sql := fmt.Sprintf("SELECT %s FROM %s;", funcExpr, quoteIdent(tbl.Name))
-	return SelectStmt{sql: sql}, nil
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
 func genSelectAggregateFunctionLiteral(lcg *common.LCG) SelectStmt {
@@ -914,7 +914,7 @@ func genSelectAggregateFunctionLiteral(lcg *common.LCG) SelectStmt {
 
 	funcIdx := lcg.Intn(len(aggFuncs))
 	sql := fmt.Sprintf("SELECT %s;", aggFuncs[funcIdx])
-	return SelectStmt{sql: sql}
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}
 }
 
 // Aggregate function generators
@@ -1015,7 +1015,7 @@ func GenSelectWithDateTimeFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, err
 	funcExpr := datetimeFuncs[funcIdx](lcg)
 
 	sql := fmt.Sprintf("SELECT %s;", funcExpr)
-	return SelectStmt{sql: sql}, nil
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
 // Date/time function generators
@@ -1105,7 +1105,7 @@ func GenSelectWithJSONFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) 
 	funcExpr := jsonFuncs[funcIdx](lcg)
 
 	sql := fmt.Sprintf("SELECT %s;", funcExpr)
-	return SelectStmt{sql: sql}, nil
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
 // JSON function generators
@@ -1321,7 +1321,7 @@ func GenSelectWithUUIDFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) 
 	funcExpr := uuidFuncs[funcIdx](lcg)
 
 	sql := fmt.Sprintf("SELECT %s;", funcExpr)
-	return SelectStmt{sql: sql}, nil
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
 // UUID function generators
@@ -1381,7 +1381,7 @@ func GenSelectWithRegexpFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error
 	funcExpr := regexpFuncs[funcIdx](lcg, tables)
 
 	sql := fmt.Sprintf("SELECT %s;", funcExpr)
-	return SelectStmt{sql: sql}, nil
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
 func genSelectRegexpFunctionLiteral(lcg *common.LCG) SelectStmt {
@@ -1395,7 +1395,7 @@ func genSelectRegexpFunctionLiteral(lcg *common.LCG) SelectStmt {
 
 	funcIdx := lcg.Intn(len(regexpFuncs))
 	sql := fmt.Sprintf("SELECT %s;", regexpFuncs[funcIdx])
-	return SelectStmt{sql: sql}
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}
 }
 
 // Regexp function generators
@@ -1496,7 +1496,7 @@ func GenSelectWithVectorFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error
 	funcExpr := vectorFuncs[funcIdx](lcg)
 
 	sql := fmt.Sprintf("SELECT %s;", funcExpr)
-	return SelectStmt{sql: sql}, nil
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
 // Vector function generators
@@ -1596,7 +1596,7 @@ func GenSelectWithTimeFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) 
 	funcExpr := timeFuncs[funcIdx](lcg)
 
 	sql := fmt.Sprintf("SELECT %s;", funcExpr)
-	return SelectStmt{sql: sql}, nil
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
 // Time function generators

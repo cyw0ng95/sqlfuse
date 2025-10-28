@@ -11,7 +11,7 @@ import (
 func GenSelectJoinUsing(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	tbls, err := helper.GetAllTablesAndCols(db)
 	if err != nil || len(tbls) < 2 {
-		return SelectStmt{sql: "SELECT 1;"}, nil
+		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
 
 	var rnd func(int) int
@@ -29,7 +29,7 @@ func GenSelectJoinUsing(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	t1 := tbls[i]
 	t2 := tbls[j]
 	if len(t1.Cols) == 0 || len(t2.Cols) == 0 {
-		return SelectStmt{sql: "SELECT 1;"}, nil
+		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
 
 	using := ""
@@ -60,5 +60,5 @@ func GenSelectJoinUsing(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 		sql = fmt.Sprintf("SELECT %s FROM %s AS a INNER JOIN %s AS b ON 1=1 LIMIT %d;",
 			joinStrings(cols, ", "), quoteIdent(t1.Name), quoteIdent(t2.Name), limit)
 	}
-	return SelectStmt{sql: sql}, nil
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }

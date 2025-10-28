@@ -24,18 +24,18 @@ func genSelectWithWindowFunctionInternal(ctx *GenContext) (SelectStmt, error) {
 		// For flavors that don't support window functions (like Turso),
 		// generate a simple SELECT with row numbering via ROWID instead
 		if ctx.DB == nil {
-			return SelectStmt{sql: "SELECT 1 AS id, 1 AS row_num;"}, nil
+			return SelectStmt{sql: "SELECT 1 AS id, 1 AS row_num;", flavor: GetDefaultFlavor()}, nil
 		}
 
 		tables, err := helper.GetAllTablesAndCols(ctx.DB)
 		if err != nil || len(tables) == 0 {
-			return SelectStmt{sql: "SELECT 1 AS id, 1 AS row_num;"}, nil
+			return SelectStmt{sql: "SELECT 1 AS id, 1 AS row_num;", flavor: GetDefaultFlavor()}, nil
 		}
 
 		rnd := ctx.Intn
 		tbl := tables[rnd(len(tables))]
 		if len(tbl.Cols) == 0 {
-			return SelectStmt{sql: "SELECT 1 AS id, 1 AS row_num;"}, nil
+			return SelectStmt{sql: "SELECT 1 AS id, 1 AS row_num;", flavor: GetDefaultFlavor()}, nil
 		}
 
 		// Generate a simple SELECT with ROWID for row numbering
@@ -58,7 +58,7 @@ func genSelectWithWindowFunctionInternal(ctx *GenContext) (SelectStmt, error) {
 		limit := 1 + rnd(50)
 		sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;",
 			strings.Join(selectedCols, ", "), quoteIdent(tbl.Name), limit)
-		return SelectStmt{sql: sql}, nil
+		return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 	}
 
 	// Original window function logic for flavors that support it
@@ -223,7 +223,7 @@ func genSelectWithWindowFunctionInternal(ctx *GenContext) (SelectStmt, error) {
 	limit := 1 + rnd(50)
 	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;",
 		strings.Join(selectedCols, ", "), quoteIdent(tbl.Name), limit)
-	return SelectStmt{sql: sql}, nil
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
 // genSelectWindowFunctionLiteral generates a SELECT with window function using literal values
@@ -241,7 +241,7 @@ func genSelectWindowFunctionLiteral(lcg *common.LCG) SelectStmt {
 
 	funcIdx := lcg.Intn(len(windowExprs))
 	sql := fmt.Sprintf("SELECT %s AS win_result;", windowExprs[funcIdx])
-	return SelectStmt{sql: sql}
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}
 }
 
 // GenSelectWithMultipleWindows generates a SELECT with multiple window functions
@@ -260,18 +260,18 @@ func genSelectWithMultipleWindowsInternal(ctx *GenContext) (SelectStmt, error) {
 		// For flavors that don't support window functions,
 		// generate a simple SELECT with aggregates and GROUP BY instead
 		if ctx.DB == nil {
-			return SelectStmt{sql: "SELECT 1 AS id, COUNT(*) AS cnt;"}, nil
+			return SelectStmt{sql: "SELECT 1 AS id, COUNT(*) AS cnt;", flavor: GetDefaultFlavor()}, nil
 		}
 
 		tables, err := helper.GetAllTablesAndCols(ctx.DB)
 		if err != nil || len(tables) == 0 {
-			return SelectStmt{sql: "SELECT 1 AS id, COUNT(*) AS cnt;"}, nil
+			return SelectStmt{sql: "SELECT 1 AS id, COUNT(*) AS cnt;", flavor: GetDefaultFlavor()}, nil
 		}
 
 		rnd := ctx.Intn
 		tbl := tables[rnd(len(tables))]
 		if len(tbl.Cols) == 0 {
-			return SelectStmt{sql: "SELECT 1 AS id, COUNT(*) AS cnt;"}, nil
+			return SelectStmt{sql: "SELECT 1 AS id, COUNT(*) AS cnt;", flavor: GetDefaultFlavor()}, nil
 		}
 
 		// Generate GROUP BY with aggregates as alternative
@@ -279,7 +279,7 @@ func genSelectWithMultipleWindowsInternal(ctx *GenContext) (SelectStmt, error) {
 			groupCol := tbl.Cols[rnd(len(tbl.Cols))]
 			sql := fmt.Sprintf("SELECT %s, COUNT(*) AS cnt FROM %s GROUP BY %s LIMIT %d;",
 				quoteIdent(groupCol.Name), quoteIdent(tbl.Name), quoteIdent(groupCol.Name), 1+rnd(30))
-			return SelectStmt{sql: sql}, nil
+			return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 		}
 	}
 
@@ -374,10 +374,10 @@ func genSelectWithMultipleWindowsInternal(ctx *GenContext) (SelectStmt, error) {
 	limit := 1 + rnd(30)
 	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;",
 		strings.Join(allCols, ", "), quoteIdent(tbl.Name), limit)
-	return SelectStmt{sql: sql}, nil
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
 func genSelectMultipleWindowsLiteral(lcg *common.LCG) SelectStmt {
 	sql := "SELECT 1 AS id, ROW_NUMBER() OVER (ORDER BY 1) AS row_num, RANK() OVER (ORDER BY 1) AS rank_num;"
-	return SelectStmt{sql: sql}
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}
 }

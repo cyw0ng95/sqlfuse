@@ -234,3 +234,76 @@ func TestFlavorConfigBackwardCompatibility(t *testing.T) {
 		t.Error("Old-style call should generate SELECT")
 	}
 }
+
+// TestStmtFlavorPropagation tests that flavor is properly stored in statement structs
+func TestStmtFlavorPropagation(t *testing.T) {
+	lcg := common.NewLCG(42)
+
+	// Test with custom flavor
+	customFlavor := &MockFlavorConfig{
+		name: "custom_db",
+		supportedFeatures: map[string]bool{
+			"window_functions": false,
+		},
+	}
+
+	// Create context with custom flavor (nil DB is okay for this test)
+	ctx := NewGenContextWithFlavor(nil, lcg, 2, customFlavor)
+
+	// Test PragmaGenerator (doesn't need DB)
+	pragmaGen := &PragmaGenerator{}
+	if pragmaGen.CanGenerate(ctx) {
+		stmt, err := pragmaGen.Generate(ctx)
+		if err != nil {
+			t.Fatalf("PragmaGenerator.Generate failed: %v", err)
+		}
+		if stmt.Flavor() == nil {
+			t.Error("PragmaStmt should have a flavor")
+		}
+		if stmt.Flavor().Name() != "custom_db" {
+			t.Errorf("PragmaStmt flavor should be 'custom_db', got '%s'", stmt.Flavor().Name())
+		}
+	}
+
+	// Test that default flavor is used for backward compatibility functions
+	stmt2 := GenPragma(lcg)
+	if stmt2 != nil {
+		if stmt2.Flavor() == nil {
+			t.Error("Statement from GenPragma should have a flavor")
+		}
+		if stmt2.Flavor().Name() != "sqlite" {
+			t.Errorf("GenPragma should use default flavor 'sqlite', got '%s'", stmt2.Flavor().Name())
+		}
+	}
+
+	// Test CreateTableGenerator (doesn't need DB)
+	createTableGen := &CreateTableGenerator{}
+	if createTableGen.CanGenerate(ctx) {
+		stmt, err := createTableGen.Generate(ctx)
+		if err != nil {
+			t.Fatalf("CreateTableGenerator.Generate failed: %v", err)
+		}
+		if stmt.Flavor() == nil {
+			t.Error("CreateTableStmt should have a flavor")
+		}
+		if stmt.Flavor().Name() != "custom_db" {
+			t.Errorf("CreateTableStmt flavor should be 'custom_db', got '%s'", stmt.Flavor().Name())
+		}
+	}
+
+	// Test DropTableGenerator (doesn't need DB)
+	dropTableGen := &DropTableGenerator{}
+	if dropTableGen.CanGenerate(ctx) {
+		stmt, err := dropTableGen.Generate(ctx)
+		if err != nil {
+			t.Fatalf("DropTableGenerator.Generate failed: %v", err)
+		}
+		if stmt.Flavor() == nil {
+			t.Error("DropTableStmt should have a flavor")
+		}
+		if stmt.Flavor().Name() != "custom_db" {
+			t.Errorf("DropTableStmt flavor should be 'custom_db', got '%s'", stmt.Flavor().Name())
+		}
+	}
+}
+

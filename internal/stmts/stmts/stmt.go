@@ -9,7 +9,8 @@ import (
 // Stmt represents a SQL statement that can be generated and executed.
 type Stmt interface {
 	SQL() string
-	Type() string // e.g. "pragma", "ddl", "dml", "select", "insert", etc.
+	Type() string         // e.g. "pragma", "ddl", "dml", "select", "insert", etc.
+	Flavor() FlavorConfig // Returns the SQL flavor/dialect this statement was generated for
 }
 
 // StmtGenerator is a unified interface for all statement generators.
@@ -126,11 +127,13 @@ func DefaultRegistry() *GeneratorRegistry {
 
 // PragmaStmt represents a PRAGMA statement.
 type PragmaStmt struct {
-	sql string
+	sql    string
+	flavor FlavorConfig
 }
 
-func (p *PragmaStmt) SQL() string  { return p.sql }
-func (p *PragmaStmt) Type() string { return "pragma" }
+func (p *PragmaStmt) SQL() string           { return p.sql }
+func (p *PragmaStmt) Type() string          { return "pragma" }
+func (p *PragmaStmt) Flavor() FlavorConfig  { return p.flavor }
 
 // Helper function to check if database has tables (used by generators that need tables).
 func hasTables(db *sql.DB) bool {

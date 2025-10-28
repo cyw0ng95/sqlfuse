@@ -13,7 +13,7 @@ type SelectGenerator struct{}
 
 // Generate implements StmtGenerator for SELECT statements.
 func (g *SelectGenerator) Generate(ctx *GenContext) (Stmt, error) {
-	stmt, err := genSelectInternal(ctx.DB, ctx.LCG)
+	stmt, err := genSelectInternalWithFlavor(ctx.DB, ctx.LCG, ctx.Flavor)
 	return &stmt, err
 }
 
@@ -23,25 +23,35 @@ func (g *SelectGenerator) CanGenerate(ctx *GenContext) bool {
 }
 
 type SelectStmt struct {
-	sql string
+	sql    string
+	flavor FlavorConfig
 }
 
-func (s *SelectStmt) SQL() string  { return s.sql }
-func (s *SelectStmt) Type() string { return "select" }
+func (s *SelectStmt) SQL() string          { return s.sql }
+func (s *SelectStmt) Type() string         { return "select" }
+func (s *SelectStmt) Flavor() FlavorConfig { return s.flavor }
 
 // GenSelect generates a simple SELECT statement using available tables/columns.
 // This function is kept for backward compatibility with existing code.
 // lcg should be *common.LCG.
 func GenSelect(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	return genSelectInternal(db, lcg)
+	return genSelectInternalWithFlavor(db, lcg, GetDefaultFlavor())
 }
 
 // genSelectInternal is the internal implementation used by both old and new interfaces.
 func genSelectInternal(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
+	return genSelectInternalWithFlavor(db, lcg, GetDefaultFlavor())
+}
+
+// genSelectInternalWithFlavor is the internal implementation with flavor support.
+func genSelectInternalWithFlavor(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (SelectStmt, error) {
+	if flavor == nil {
+		flavor = GetDefaultFlavor()
+	}
 	tables, err := helper.GetAllTablesAndCols(db)
 	if err != nil || len(tables) == 0 {
 		// No real user tables available — return a harmless no-op select
-		return SelectStmt{sql: "SELECT 1;"}, nil
+		return SelectStmt{sql: "SELECT 1;", flavor: flavor}, nil
 	}
 
 	// choose rnd function from provided generator
@@ -57,7 +67,7 @@ func genSelectInternal(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	tbl := tables[rnd(len(tables))]
 	// if no columns known, select all
 	if len(tbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name))}, nil
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name)), flavor: flavor}, nil
 	}
 
 	// pick 1..min(3,len(cols)) columns using rnd
@@ -109,7 +119,7 @@ func genSelectInternal(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	limit := 1 + rnd(50)
 
 	sql := fmt.Sprintf("SELECT %s FROM %s%s LIMIT %d;", joinCols(cols), quoteIdent(tbl.Name), where, limit)
-	return SelectStmt{sql: sql}, nil
+	return SelectStmt{sql: sql, flavor: flavor}, nil
 }
 
 func joinCols(cols []helper.ColumnInfo) string {

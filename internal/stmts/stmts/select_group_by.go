@@ -11,7 +11,7 @@ import (
 func GenSelectGroupBy(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	tbls, err := helper.GetAllTablesAndCols(db)
 	if err != nil || len(tbls) == 0 {
-		return SelectStmt{sql: "SELECT 1;"}, nil
+		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
 
 	var rnd func(int) int
@@ -23,11 +23,11 @@ func GenSelectGroupBy(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 	tbl := tbls[rnd(len(tbls))]
 	if len(tbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name))}, nil
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// pick a group by column and an aggregate
 	grp := tbl.Cols[rnd(len(tbl.Cols))]
 	sql := fmt.Sprintf("SELECT %s, COUNT(1) FROM %s GROUP BY %s;", quoteIdent(grp.Name), quoteIdent(tbl.Name), quoteIdent(grp.Name))
-	return SelectStmt{sql: sql}, nil
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }

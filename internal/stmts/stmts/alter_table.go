@@ -20,11 +20,13 @@ func (g *AlterTableGenerator) CanGenerate(ctx *GenContext) bool {
 
 // AlterTableStmt represents an ALTER TABLE statement.
 type AlterTableStmt struct {
-	sql string
+	sql    string
+	flavor FlavorConfig
 }
 
-func (s *AlterTableStmt) SQL() string  { return s.sql }
-func (s *AlterTableStmt) Type() string { return "alter_table" }
+func (s *AlterTableStmt) SQL() string          { return s.sql }
+func (s *AlterTableStmt) Type() string         { return "alter_table" }
+func (s *AlterTableStmt) Flavor() FlavorConfig { return s.flavor }
 
 // GenAlterTable generates simple ALTER TABLE statements:
 // - ADD COLUMN
@@ -51,15 +53,15 @@ func genAlterTableInternal(lcg *common.LCG) (Stmt, error) {
 		col := fmt.Sprintf("col%d", 1+lcg.Intn(100))
 		t := types[lcg.Intn(len(types))]
 		sql := fmt.Sprintf("ALTER TABLE \"%s\" ADD COLUMN \"%s\" %s;", tbl, col, t)
-		return &AlterTableStmt{sql: sql}, nil
+		return &AlterTableStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 	case 1: // RENAME COLUMN
 		old := fmt.Sprintf("col%d", 1+lcg.Intn(100))
 		new := fmt.Sprintf("col%d", 101+lcg.Intn(100))
 		sql := fmt.Sprintf("ALTER TABLE \"%s\" RENAME COLUMN \"%s\" TO \"%s\";", tbl, old, new)
-		return &AlterTableStmt{sql: sql}, nil
+		return &AlterTableStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 	default: // RENAME TABLE
 		newTbl := fmt.Sprintf("tbl_%d", lcg.Uint64()%1000000)
 		sql := fmt.Sprintf("ALTER TABLE \"%s\" RENAME TO \"%s\";", tbl, newTbl)
-		return &AlterTableStmt{sql: sql}, nil
+		return &AlterTableStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 	}
 }

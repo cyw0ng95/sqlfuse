@@ -14,7 +14,7 @@ type DeleteGenerator struct{}
 
 // Generate implements StmtGenerator for DELETE statements.
 func (g *DeleteGenerator) Generate(ctx *GenContext) (Stmt, error) {
-	return GenDelete(ctx.DB, ctx.LCG)
+	return genDeleteWithFlavor(ctx.DB, ctx.LCG, ctx.Flavor)
 }
 
 // CanGenerate implements StmtGenerator. DELETE can always be generated (creates synthetic tables).
@@ -24,24 +24,34 @@ func (g *DeleteGenerator) CanGenerate(ctx *GenContext) bool {
 
 // DeleteStmt represents a DELETE statement.
 type DeleteStmt struct {
-	sql string
+	sql    string
+	flavor FlavorConfig
 }
 
-func (s *DeleteStmt) SQL() string  { return s.sql }
-func (s *DeleteStmt) Type() string { return "delete" }
+func (s *DeleteStmt) SQL() string          { return s.sql }
+func (s *DeleteStmt) Type() string         { return "delete" }
+func (s *DeleteStmt) Flavor() FlavorConfig { return s.flavor }
 
 // GenDelete generates a DELETE statement using actual schema information.
 // It supports complex WHERE clauses with multiple conditions.
 func GenDelete(db *sql.DB, lcg *common.LCG) (Stmt, error) {
+	return genDeleteWithFlavor(db, lcg, GetDefaultFlavor())
+}
+
+// genDeleteWithFlavor generates a DELETE statement with flavor support.
+func genDeleteWithFlavor(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
 	if lcg == nil {
 		lcg = common.NewLCG(1)
+	}
+	if flavor == nil {
+		flavor = GetDefaultFlavor()
 	}
 
 	// Try to get actual tables from schema
 	tables, err := helper.GetAllTablesAndCols(db)
 	if err != nil || len(tables) == 0 {
 		// Fallback to simple delete without schema
-		return genDeleteFallback(lcg), nil
+		return genDeleteFallbackWithFlavor(lcg, flavor), nil
 	}
 
 	rnd := lcg.Intn
@@ -181,11 +191,19 @@ func GenDelete(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	}
 
 	sql := fmt.Sprintf("DELETE FROM %s%s%s;", quoteIdent(tbl.Name), where, limitClause)
-	return &DeleteStmt{sql: sql}, nil
+	return &DeleteStmt{sql: sql, flavor: flavor}, nil
 }
 
 // genDeleteFallback generates a simple DELETE without schema information
 func genDeleteFallback(lcg *common.LCG) *DeleteStmt {
+	return genDeleteFallbackWithFlavor(lcg, GetDefaultFlavor())
+}
+
+// genDeleteFallbackWithFlavor generates a simple DELETE without schema information with flavor support
+func genDeleteFallbackWithFlavor(lcg *common.LCG, flavor FlavorConfig) *DeleteStmt {
+	if flavor == nil {
+		flavor = GetDefaultFlavor()
+	}
 	tbl := fmt.Sprintf("tbl_%d", lcg.Uint64()%1000000)
 	where := ""
 	if lcg.Intn(2) == 0 {
@@ -194,5 +212,5 @@ func genDeleteFallback(lcg *common.LCG) *DeleteStmt {
 	}
 
 	sql := fmt.Sprintf("DELETE FROM \"%s\"%s;", tbl, where)
-	return &DeleteStmt{sql: sql}
+	return &DeleteStmt{sql: sql, flavor: flavor}
 }

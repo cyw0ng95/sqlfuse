@@ -70,7 +70,7 @@ func GenSelectWithCTE(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	sql := fmt.Sprintf("WITH %s AS (%s) SELECT %s FROM %s%s LIMIT %d;",
 		quoteIdent(cteName), cteQuery, mainSelectCols, quoteIdent(cteName), mainWhere, limit)
 
-	return SelectStmt{sql: sql}, nil
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
 // genSelectCTELiteral generates a simple CTE with literal values
@@ -81,7 +81,7 @@ func genSelectCTELiteral(lcg *common.LCG) SelectStmt {
 		"WITH filtered AS (SELECT 1 AS x, 2 AS y) SELECT x * y AS result FROM filtered;",
 	}
 	sql := ctes[lcg.Intn(len(ctes))]
-	return SelectStmt{sql: sql}
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}
 }
 
 // GenSelectWithMultipleCTE generates a SELECT with multiple CTEs
@@ -156,12 +156,12 @@ func GenSelectWithMultipleCTE(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	sql := fmt.Sprintf("WITH %s AS (%s), %s AS (%s) %s LIMIT %d;",
 		quoteIdent(cte1Name), cte1Query, quoteIdent(cte2Name), cte2Query, mainQuery, limit)
 
-	return SelectStmt{sql: sql}, nil
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
 func genSelectMultipleCTELiteral(lcg *common.LCG) SelectStmt {
 	sql := "WITH a AS (SELECT 1 AS x), b AS (SELECT 2 AS y) SELECT a.x, b.y FROM a, b;"
-	return SelectStmt{sql: sql}
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}
 }
 
 // GenSelectWithRecursiveCTE generates a SELECT with recursive CTE
@@ -185,7 +185,7 @@ func genSelectWithRecursiveCTEInternal(ctx *GenContext) (SelectStmt, error) {
 		// generate a regular CTE with multiple SELECT UNION instead
 		sql := fmt.Sprintf("WITH %s AS (SELECT 1 AS n UNION ALL SELECT 2 UNION ALL SELECT 3) SELECT * FROM %s;",
 			quoteIdent(cteName), quoteIdent(cteName))
-		return SelectStmt{sql: sql}, nil
+		return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 	}
 
 	// Recursive CTEs follow pattern: WITH RECURSIVE name AS (base UNION ALL recursive)
@@ -205,5 +205,5 @@ func genSelectWithRecursiveCTEInternal(ctx *GenContext) (SelectStmt, error) {
 	}
 
 	sql := recursivePatterns[rnd(len(recursivePatterns))]
-	return SelectStmt{sql: sql}, nil
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }

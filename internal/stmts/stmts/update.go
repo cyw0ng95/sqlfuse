@@ -14,7 +14,7 @@ type UpdateGenerator struct{}
 
 // Generate implements StmtGenerator for UPDATE statements.
 func (g *UpdateGenerator) Generate(ctx *GenContext) (Stmt, error) {
-	return GenUpdate(ctx.DB, ctx.LCG)
+	return genUpdateWithFlavor(ctx.DB, ctx.LCG, ctx.Flavor)
 }
 
 // CanGenerate implements StmtGenerator. UPDATE can always be generated (creates synthetic tables).
@@ -24,30 +24,40 @@ func (g *UpdateGenerator) CanGenerate(ctx *GenContext) bool {
 
 // UpdateStmt represents an UPDATE statement.
 type UpdateStmt struct {
-	sql string
+	sql    string
+	flavor FlavorConfig
 }
 
-func (s *UpdateStmt) SQL() string  { return s.sql }
-func (s *UpdateStmt) Type() string { return "update" }
+func (s *UpdateStmt) SQL() string          { return s.sql }
+func (s *UpdateStmt) Type() string         { return "update" }
+func (s *UpdateStmt) Flavor() FlavorConfig { return s.flavor }
 
 // GenUpdate generates an UPDATE statement using actual schema information.
 // It supports complex SET expressions and WHERE clauses.
 func GenUpdate(db *sql.DB, lcg *common.LCG) (Stmt, error) {
+	return genUpdateWithFlavor(db, lcg, GetDefaultFlavor())
+}
+
+// genUpdateWithFlavor generates an UPDATE statement with flavor support.
+func genUpdateWithFlavor(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
 	if lcg == nil {
 		lcg = common.NewLCG(1)
+	}
+	if flavor == nil {
+		flavor = GetDefaultFlavor()
 	}
 
 	// Try to get actual tables from schema
 	tables, err := helper.GetAllTablesAndCols(db)
 	if err != nil || len(tables) == 0 {
 		// Fallback to simple update without schema
-		return genUpdateFallback(lcg), nil
+		return genUpdateFallbackWithFlavor(lcg, flavor), nil
 	}
 
 	rnd := lcg.Intn
 	tbl := tables[rnd(len(tables))]
 	if len(tbl.Cols) == 0 {
-		return genUpdateFallback(lcg), nil
+		return genUpdateFallbackWithFlavor(lcg, flavor), nil
 	}
 
 	// Filter out id column from SET clause
@@ -59,7 +69,7 @@ func GenUpdate(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	}
 
 	if len(setCols) == 0 {
-		return genUpdateFallback(lcg), nil
+		return genUpdateFallbackWithFlavor(lcg, flavor), nil
 	}
 
 	// Choose 1..min(3, len(setCols)) columns to update
@@ -249,11 +259,19 @@ func GenUpdate(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	}
 
 	sql := fmt.Sprintf("UPDATE %s SET %s%s;", quoteIdent(tbl.Name), strings.Join(setExprs, ", "), where)
-	return &UpdateStmt{sql: sql}, nil
+	return &UpdateStmt{sql: sql, flavor: flavor}, nil
 }
 
 // genUpdateFallback generates a simple UPDATE without schema information
 func genUpdateFallback(lcg *common.LCG) *UpdateStmt {
+	return genUpdateFallbackWithFlavor(lcg, GetDefaultFlavor())
+}
+
+// genUpdateFallbackWithFlavor generates a simple UPDATE without schema information with flavor support
+func genUpdateFallbackWithFlavor(lcg *common.LCG, flavor FlavorConfig) *UpdateStmt {
+	if flavor == nil {
+		flavor = GetDefaultFlavor()
+	}
 	tbl := fmt.Sprintf("tbl_%d", lcg.Uint64()%1000000)
 	n := 1 + lcg.Intn(3)
 	sets := make([]string, 0, n)
@@ -270,7 +288,7 @@ func genUpdateFallback(lcg *common.LCG) *UpdateStmt {
 	}
 
 	sql := fmt.Sprintf("UPDATE \"%s\" SET %s%s;", tbl, join(sets, ", "), where)
-	return &UpdateStmt{sql: sql}
+	return &UpdateStmt{sql: sql, flavor: flavor}
 }
 
 func genLiteral(lcg *common.LCG) string {

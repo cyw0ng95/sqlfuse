@@ -8,11 +8,13 @@ import (
 
 // ExplainStmt represents an EXPLAIN statement.
 type ExplainStmt struct {
-	sql string
+	sql    string
+	flavor FlavorConfig
 }
 
-func (s *ExplainStmt) SQL() string  { return s.sql }
-func (s *ExplainStmt) Type() string { return "explain" }
+func (s *ExplainStmt) SQL() string          { return s.sql }
+func (s *ExplainStmt) Type() string         { return "explain" }
+func (s *ExplainStmt) Flavor() FlavorConfig { return s.flavor }
 
 // GenExplain generates an EXPLAIN or EXPLAIN QUERY PLAN statement
 // wrapping another SQL statement.
@@ -82,7 +84,7 @@ func GenExplain(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	}
 
 	sql := fmt.Sprintf("%s %s;", explainType, innerSQL)
-	return &ExplainStmt{sql: sql}, nil
+	return &ExplainStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
 // GenExplainQueryPlan generates an EXPLAIN QUERY PLAN statement specifically.
@@ -103,5 +105,5 @@ func GenExplainQueryPlan(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	}
 
 	sql := fmt.Sprintf("EXPLAIN QUERY PLAN %s;", innerSQL)
-	return &ExplainStmt{sql: sql}, nil
+	return &ExplainStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
