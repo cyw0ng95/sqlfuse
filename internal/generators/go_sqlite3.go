@@ -77,6 +77,7 @@ func DefaultGoSQLite3StmtWeights() map[stmts.StmtType]uint64 {
 	// Extension functions - go-sqlite3 specific
 	// Note: UUID, Vector functions may not be available by default in go-sqlite3
 	// So we use lower weights than Turso (which has these built-in)
+	w[stmts.StmtSelectJSON] = 50   // JSON1 extension is standard in SQLite builds
 	w[stmts.StmtSelectUUID] = 10   // Lower than Turso's 30
 	w[stmts.StmtSelectRegexp] = 40 // Higher than Turso's 30 - REGEXP is standard SQLite
 	w[stmts.StmtSelectVector] = 5  // Lower than Turso's 20 - not standard in go-sqlite3
