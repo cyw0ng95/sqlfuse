@@ -4,12 +4,11 @@ import (
 	"testing"
 
 	"sqlsmith-go/internal/generators"
-	"sqlsmith-go/internal/generators/turso"
 )
 
 func TestGeneratorInterface(t *testing.T) {
 	// Create a turso generator
-	gen := turso.NewGenerator(12345)
+	gen := generators.NewTursoGenerator(12345)
 
 	// Verify it implements the Generator interface
 	var _ generators.Generator = gen
@@ -45,7 +44,7 @@ func TestGeneratorInterface(t *testing.T) {
 }
 
 func TestBaseGeneratorWeights(t *testing.T) {
-	gen := turso.NewGenerator(54321)
+	gen := generators.NewTursoGenerator(54321)
 
 	// Get initial weights
 	weights := gen.GetWeights()

@@ -8,7 +8,6 @@ import (
 	"sqlsmith-go/internal/common"
 	"sqlsmith-go/internal/executors"
 	"sqlsmith-go/internal/generators"
-	"sqlsmith-go/internal/generators/turso"
 	"sqlsmith-go/internal/stmts/helper"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -26,7 +25,7 @@ func main() {
 				"Starting go_sqlite3_embedded executor",
 				&flags,
 				func(dsn string) (*sql.DB, error) { return sql.Open("sqlite3", dsn) },
-				func(seed uint64) generators.Generator { return turso.NewGenerator(seed) },
+				func(seed uint64) generators.Generator { return generators.NewTursoGenerator(seed) },
 				print_schema,
 			)
 		},
