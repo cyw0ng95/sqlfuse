@@ -42,6 +42,7 @@ const (
 	StmtSelectCTE              StmtType = "select_cte"
 	StmtSelectMultipleCTE      StmtType = "select_multiple_cte"
 	StmtSelectRecursiveCTE     StmtType = "select_recursive_cte"
+	StmtSelectJSON             StmtType = "select_json"
 	StmtSelectUUID             StmtType = "select_uuid"
 	StmtSelectRegexp           StmtType = "select_regexp"
 	StmtSelectVector           StmtType = "select_vector"
@@ -89,6 +90,7 @@ var AllStmtTypes = []StmtType{
 	StmtSelectCTE,
 	StmtSelectMultipleCTE,
 	StmtSelectRecursiveCTE,
+	StmtSelectJSON,
 	StmtSelectUUID,
 	StmtSelectRegexp,
 	StmtSelectVector,

@@ -19,6 +19,9 @@ func ValueForType(typ string, lcg *common.LCG, hint string) string {
 	if contains := func(substr string) bool { return len(t) >= len(substr) && (t == substr || t[:len(substr)] == substr) }; contains("BLOB") {
 		return BlobLiteral(lcg)
 	}
+	if contains := func(substr string) bool { return len(t) >= len(substr) && (t == substr || t[:len(substr)] == substr) }; contains("JSON") {
+		return JSONLiteral(lcg)
+	}
 	// default
 	return StringLiteral(lcg, hint)
 }
