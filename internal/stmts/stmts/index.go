@@ -8,6 +8,32 @@ import (
 	"strings"
 )
 
+// CreateIndexGenerator is a StmtGenerator for CREATE INDEX statements.
+type CreateIndexGenerator struct{}
+
+// Generate implements StmtGenerator for CREATE INDEX statements.
+func (g *CreateIndexGenerator) Generate(ctx *GenContext) (Stmt, error) {
+	return GenCreateIndex(ctx.DB, ctx.LCG)
+}
+
+// CanGenerate implements StmtGenerator. CREATE INDEX can always be generated.
+func (g *CreateIndexGenerator) CanGenerate(ctx *GenContext) bool {
+	return true
+}
+
+// DropIndexGenerator is a StmtGenerator for DROP INDEX statements.
+type DropIndexGenerator struct{}
+
+// Generate implements StmtGenerator for DROP INDEX statements.
+func (g *DropIndexGenerator) Generate(ctx *GenContext) (Stmt, error) {
+	return GenDropIndex(ctx.LCG)
+}
+
+// CanGenerate implements StmtGenerator. DROP INDEX can always be generated.
+func (g *DropIndexGenerator) CanGenerate(ctx *GenContext) bool {
+	return true
+}
+
 // CreateIndexStmt represents a CREATE INDEX statement.
 type CreateIndexStmt struct {
 	sql    string
@@ -35,9 +61,14 @@ func GenCreateIndex(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 		lcg = common.NewLCG(1)
 	}
 
-	// Try to get actual tables from schema
-	tables, err := helper.GetAllTablesAndCols(db)
-	if err != nil || len(tables) == 0 {
+	// Try to get actual tables from schema (only if db is not nil)
+	var tables []helper.TableInfo
+	var err error
+	if db != nil {
+		tables, err = helper.GetAllTablesAndCols(db)
+	}
+	
+	if db == nil || err != nil || len(tables) == 0 {
 		// Fallback to simple index without schema
 		return genCreateIndexFallback(lcg), nil
 	}

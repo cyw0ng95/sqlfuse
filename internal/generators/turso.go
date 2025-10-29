@@ -68,6 +68,38 @@ func DefaultTursoStmtWeights() map[stmts.StmtType]uint64 {
 	w[stmts.StmtCreateTable] = 40
 	w[stmts.StmtDropTable] = 40
 	w[stmts.StmtAlterTable] = 40
+	w[stmts.StmtCreateView] = 25
+	w[stmts.StmtDropView] = 25
+	w[stmts.StmtCreateIndex] = 30
+	w[stmts.StmtDropIndex] = 30
+	w[stmts.StmtCreateVirtualTable] = 20
+	w[stmts.StmtCreateTrigger] = 15
+	w[stmts.StmtDropTrigger] = 15
+	
+	// Transaction control
+	w[stmts.StmtBegin] = 20
+	w[stmts.StmtCommit] = 20
+	w[stmts.StmtRollback] = 20
+	w[stmts.StmtSavepoint] = 10
+	w[stmts.StmtRelease] = 10
+	
+	// Database attachment (Turso: read-only)
+	w[stmts.StmtAttach] = 5
+	w[stmts.StmtDetach] = 5
+	
+	// Query analysis
+	w[stmts.StmtExplain] = 15
+	w[stmts.StmtExplainQueryPlan] = 15
+	
+	// Database maintenance
+	w[stmts.StmtAnalyze] = 10
+	w[stmts.StmtVacuum] = 5
+	w[stmts.StmtReindex] = 10
+	
+	// Compound SELECT statements
+	w[stmts.StmtSelectUnion] = 30
+	w[stmts.StmtSelectIntersect] = 20
+	w[stmts.StmtSelectExcept] = 20
 	
 	// PRAGMA - Turso supports a limited set of pragmas
 	w[stmts.StmtPragma] = 30

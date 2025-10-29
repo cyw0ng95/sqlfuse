@@ -73,6 +73,40 @@ func BuildGeneratorFuncs(lcg *common.LCG, maxRecursionDepth int, flavorConfig Fl
 	m["create_table"] = createGenFunc(StmtCreateTable, "CREATE TABLE IF NOT EXISTS fallback (id INTEGER);")
 	m["drop_table"] = createGenFunc(StmtDropTable, "DROP TABLE IF EXISTS fallback;")
 	m["alter_table"] = createGenFunc(StmtAlterTable, "ALTER TABLE fallback RENAME TO fallback2;")
+	m["create_view"] = createGenFunc(StmtCreateView, "CREATE VIEW IF NOT EXISTS fallback AS SELECT 1;")
+	m["drop_view"] = createGenFunc(StmtDropView, "DROP VIEW IF EXISTS fallback;")
+	m["create_index"] = createGenFunc(StmtCreateIndex, "CREATE INDEX IF NOT EXISTS idx_fallback ON fallback (id);")
+	m["drop_index"] = createGenFunc(StmtDropIndex, "DROP INDEX IF EXISTS idx_fallback;")
+	m["create_virtual_table"] = createGenFunc(StmtCreateVirtualTable, "CREATE VIRTUAL TABLE IF NOT EXISTS fallback USING fts5(content);")
+	
+	// Transaction control
+	m["attach"] = createGenFunc(StmtAttach, "ATTACH DATABASE ':memory:' AS fallback;")
+	m["detach"] = createGenFunc(StmtDetach, "DETACH DATABASE fallback;")
+	m["begin"] = createGenFunc(StmtBegin, "BEGIN;")
+	m["commit"] = createGenFunc(StmtCommit, "COMMIT;")
+	m["rollback"] = createGenFunc(StmtRollback, "ROLLBACK;")
+	
+	// Query analysis
+	m["explain"] = createGenFunc(StmtExplain, "EXPLAIN SELECT 1;")
+	m["explain_query_plan"] = createGenFunc(StmtExplainQueryPlan, "EXPLAIN QUERY PLAN SELECT 1;")
+	
+	// Database maintenance
+	m["analyze"] = createGenFunc(StmtAnalyze, "ANALYZE;")
+	m["vacuum"] = createGenFunc(StmtVacuum, "VACUUM;")
+	m["reindex"] = createGenFunc(StmtReindex, "REINDEX;")
+	
+	// Transaction savepoints
+	m["savepoint"] = createGenFunc(StmtSavepoint, "SAVEPOINT sp_fallback;")
+	m["release"] = createGenFunc(StmtRelease, "RELEASE sp_fallback;")
+	
+	// Triggers
+	m["create_trigger"] = createGenFunc(StmtCreateTrigger, "CREATE TRIGGER IF NOT EXISTS trg_fallback BEFORE INSERT ON fallback BEGIN SELECT 1; END;")
+	m["drop_trigger"] = createGenFunc(StmtDropTrigger, "DROP TRIGGER IF EXISTS trg_fallback;")
+	
+	// Compound SELECT statements
+	m["select_union"] = createGenFunc(StmtSelectUnion, "SELECT 1 UNION SELECT 2;")
+	m["select_intersect"] = createGenFunc(StmtSelectIntersect, "SELECT 1 INTERSECT SELECT 2;")
+	m["select_except"] = createGenFunc(StmtSelectExcept, "SELECT 1 EXCEPT SELECT 2;")
 
 	return m
 }

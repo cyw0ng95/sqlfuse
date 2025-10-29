@@ -50,6 +50,28 @@ const (
 	StmtCreateTable            StmtType = "create_table"
 	StmtDropTable              StmtType = "drop_table"
 	StmtAlterTable             StmtType = "alter_table"
+	StmtCreateView             StmtType = "create_view"
+	StmtDropView               StmtType = "drop_view"
+	StmtCreateIndex            StmtType = "create_index"
+	StmtDropIndex              StmtType = "drop_index"
+	StmtCreateVirtualTable     StmtType = "create_virtual_table"
+	StmtAttach                 StmtType = "attach"
+	StmtDetach                 StmtType = "detach"
+	StmtBegin                  StmtType = "begin"
+	StmtCommit                 StmtType = "commit"
+	StmtRollback               StmtType = "rollback"
+	StmtExplain                StmtType = "explain"
+	StmtExplainQueryPlan       StmtType = "explain_query_plan"
+	StmtAnalyze                StmtType = "analyze"
+	StmtVacuum                 StmtType = "vacuum"
+	StmtReindex                StmtType = "reindex"
+	StmtSavepoint              StmtType = "savepoint"
+	StmtRelease                StmtType = "release"
+	StmtCreateTrigger          StmtType = "create_trigger"
+	StmtDropTrigger            StmtType = "drop_trigger"
+	StmtSelectUnion            StmtType = "select_union"
+	StmtSelectIntersect        StmtType = "select_intersect"
+	StmtSelectExcept           StmtType = "select_except"
 )
 
 // AllStmtTypes defines a deterministic ordering used when selecting by weights.
@@ -98,4 +120,26 @@ var AllStmtTypes = []StmtType{
 	StmtCreateTable,
 	StmtDropTable,
 	StmtAlterTable,
+	StmtCreateView,
+	StmtDropView,
+	StmtCreateIndex,
+	StmtDropIndex,
+	StmtCreateVirtualTable,
+	StmtAttach,
+	StmtDetach,
+	StmtBegin,
+	StmtCommit,
+	StmtRollback,
+	StmtExplain,
+	StmtExplainQueryPlan,
+	StmtAnalyze,
+	StmtVacuum,
+	StmtReindex,
+	StmtSavepoint,
+	StmtRelease,
+	StmtCreateTrigger,
+	StmtDropTrigger,
+	StmtSelectUnion,
+	StmtSelectIntersect,
+	StmtSelectExcept,
 }

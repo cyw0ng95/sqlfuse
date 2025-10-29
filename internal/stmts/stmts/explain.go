@@ -6,6 +6,24 @@ import (
 	"sqlsmith-go/internal/common"
 )
 
+// ExplainGenerator is a StmtGenerator for EXPLAIN statements.
+type ExplainGenerator struct {
+	variant StmtType
+}
+
+// Generate implements StmtGenerator for EXPLAIN statements.
+func (g *ExplainGenerator) Generate(ctx *GenContext) (Stmt, error) {
+	if g.variant == StmtExplainQueryPlan {
+		return GenExplainQueryPlan(ctx.DB, ctx.LCG)
+	}
+	return GenExplain(ctx.DB, ctx.LCG)
+}
+
+// CanGenerate implements StmtGenerator. EXPLAIN can always be generated.
+func (g *ExplainGenerator) CanGenerate(ctx *GenContext) bool {
+	return true
+}
+
 // ExplainStmt represents an EXPLAIN statement.
 // It embeds BaseStmt to avoid boilerplate method implementations.
 type ExplainStmt struct {
@@ -17,6 +35,14 @@ type ExplainStmt struct {
 // According to Turso COMPAT.md: Yes (full support).
 func GenExplain(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	lcg = ensureLCG(lcg)
+
+	// If no db is provided, generate a simple EXPLAIN for fallback
+	if db == nil {
+		sql := "EXPLAIN SELECT 1;"
+		return &ExplainStmt{
+			BaseStmt: NewBaseStmt(sql, "explain", GetDefaultFlavor()),
+		}, nil
+	}
 
 	// Choose between EXPLAIN and EXPLAIN QUERY PLAN
 	explainType := "EXPLAIN"
@@ -86,6 +112,14 @@ func GenExplain(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 // GenExplainQueryPlan generates an EXPLAIN QUERY PLAN statement specifically.
 func GenExplainQueryPlan(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	lcg = ensureLCG(lcg)
+
+	// If no db is provided, generate a simple EXPLAIN for fallback
+	if db == nil {
+		sql := "EXPLAIN QUERY PLAN SELECT 1;"
+		return &ExplainStmt{
+			BaseStmt: NewBaseStmt(sql, "explain", GetDefaultFlavor()),
+		}, nil
+	}
 
 	// Generate a SELECT statement to explain
 	innerStmt, err := GenSelect(db, lcg)

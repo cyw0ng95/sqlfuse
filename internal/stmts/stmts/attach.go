@@ -5,6 +5,32 @@ import (
 	"sqlsmith-go/internal/common"
 )
 
+// AttachGenerator is a StmtGenerator for ATTACH DATABASE statements.
+type AttachGenerator struct{}
+
+// Generate implements StmtGenerator for ATTACH DATABASE statements.
+func (g *AttachGenerator) Generate(ctx *GenContext) (Stmt, error) {
+	return GenAttachDatabase(ctx.LCG), nil
+}
+
+// CanGenerate implements StmtGenerator. ATTACH DATABASE can always be generated.
+func (g *AttachGenerator) CanGenerate(ctx *GenContext) bool {
+	return true
+}
+
+// DetachGenerator is a StmtGenerator for DETACH DATABASE statements.
+type DetachGenerator struct{}
+
+// Generate implements StmtGenerator for DETACH DATABASE statements.
+func (g *DetachGenerator) Generate(ctx *GenContext) (Stmt, error) {
+	return GenDetachDatabase(ctx.LCG), nil
+}
+
+// CanGenerate implements StmtGenerator. DETACH DATABASE can always be generated.
+func (g *DetachGenerator) CanGenerate(ctx *GenContext) bool {
+	return true
+}
+
 // AttachStmt represents an ATTACH DATABASE statement.
 // It embeds BaseStmt to avoid boilerplate method implementations.
 type AttachStmt struct {
