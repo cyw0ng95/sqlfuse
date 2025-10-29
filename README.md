@@ -461,15 +461,50 @@ curl http://localhost:8080/api/jobs/1/output
 
 ## Web Frontend
 
-A Vue.js-based interface for interactive fuzzing:
+A Vue.js-based interface for interactive fuzzing across multiple database flavors:
 
 ### Features
 
-- **Job Management**: Start, stop, and monitor fuzzing jobs
-- **Live Output**: Real-time streaming of SQL queries and results
-- **Executor Selection**: Choose target database flavor
-- **Configuration**: Adjust seeds, query counts, worker counts
-- **History**: View past fuzzing runs and results
+- **Multi-Flavor Support**: Select from different database executors (Turso, go-sqlite3, Chai) with visual flavor indicators
+- **Job Management**: Start, stop, and monitor fuzzing jobs with real-time status updates
+- **Live Output**: View stdout/stderr output from running jobs
+- **Executor Selection**: Dropdown shows both executor name and flavor (e.g., "turso_embedded (turso)")
+- **Configuration**: Adjust seeds, query counts, worker counts via command-line arguments
+- **Job History**: Track job IDs, status, and execution times
+
+### Quick Start
+
+1. **Start the backend server**:
+   ```bash
+   ./server  # or ./output/server
+   ```
+
+2. **Start the frontend dev server**:
+   ```bash
+   cd view
+   pnpm install
+   pnpm run dev
+   ```
+
+3. **Access the UI**: Navigate to `http://localhost:3000` (dev) or `http://localhost:5173` (depending on Vite version)
+
+### Using Different Flavors
+
+The UI displays available executors with their associated flavors:
+
+![Executor Selection](https://github.com/user-attachments/assets/f35d7a04-a271-4195-95ed-af2ca1f973de)
+
+When an executor is selected, its flavor is shown in parentheses:
+
+![Selected Executor](https://github.com/user-attachments/assets/f42cb3b1-6179-49a8-8ea4-9af5407b3937)
+
+**Example workflow**:
+1. Select `turso_embedded (turso)` from the dropdown
+2. Enter arguments: `--workers 4 --queries 100 --init-sql /path/to/schema.sql`
+3. Click "Start Job" to begin fuzzing
+4. Note the job ID and use Status/Info buttons to monitor progress
+
+For detailed usage instructions, see [docs/WEB_UI_USAGE.md](docs/WEB_UI_USAGE.md).
 
 ### Development
 
@@ -478,8 +513,8 @@ cd view
 pnpm install
 pnpm run dev
 
-# Frontend: http://localhost:5173
-# Proxy to backend: http://localhost:8080
+# Frontend: http://localhost:3000
+# Backend API: http://localhost:8080
 ```
 
 ### Production Build
@@ -513,15 +548,24 @@ pnpm run build
 ```json
 [
   {
-    "executor": "turso",
-    "path": "./output/turso_embedded_executor"
+    "executor": "turso_embedded",
+    "path": "./output/turso_embedded",
+    "flavor": "turso"
   },
   {
-    "executor": "go-sqlite3",
-    "path": "./output/go_sqlite3_embedded_executor"
+    "executor": "go_sqlite3_embedded",
+    "path": "./output/go_sqlite3_embedded",
+    "flavor": "go-sqlite3"
+  },
+  {
+    "executor": "chai_embedded",
+    "path": "./output/chai_embedded",
+    "flavor": "chai"
   }
 ]
 ```
+
+The `flavor` field is optional but recommended - it's displayed in the web UI to help users identify which database flavor each executor targets.
 
 ## Documentation
 
@@ -533,6 +577,7 @@ Comprehensive documentation is available in the `docs/` directory:
 - **[DIALECTS_README.md](docs/DIALECTS_README.md)**: Database dialect system
 - **[DESIGN_PATTERNS.md](docs/DESIGN_PATTERNS.md)**: Code organization patterns
 - **[DESIGN_IMPROVEMENTS.md](docs/DESIGN_IMPROVEMENTS.md)**: Planned enhancements
+- **[WEB_UI_USAGE.md](docs/WEB_UI_USAGE.md)**: Web interface usage guide
 
 ## Performance Characteristics
 

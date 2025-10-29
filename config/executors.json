@@ -1,7 +1,17 @@
 [
     {
         "executor": "turso_embedded",
-        "path": "/opt/output/turso_embedded_executor",
+        "path": "./output/turso_embedded",
         "flavor": "turso"
+    },
+    {
+        "executor": "go_sqlite3_embedded",
+        "path": "./output/go_sqlite3_embedded",
+        "flavor": "go-sqlite3"
+    },
+    {
+        "executor": "chai_embedded",
+        "path": "./output/chai_embedded",
+        "flavor": "chai"
     }
 ]
