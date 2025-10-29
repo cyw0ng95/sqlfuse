@@ -929,7 +929,8 @@ func TestGenSelectWithVectorFunction(t *testing.T) {
 	}
 }
 
-// TestGenSelectWithTimeFunction tests time extension function SQL generation
+// TestGenSelectWithTimeFunction tests SQLite date/time function SQL generation.
+// Reference: https://sqlite.org/lang_datefunc.html
 func TestGenSelectWithTimeFunction(t *testing.T) {
 	db := setupTestDB(t)
 	defer db.Close()
@@ -956,13 +957,19 @@ func TestGenSelectWithTimeFunction(t *testing.T) {
 			t.Errorf("Invalid time function SQL on iteration %d: %s\nErrors: %v", i, sql, errors)
 		}
 
-		// Try to execute the SQL
+		// Try to execute the SQL - standard SQLite date/time functions should always work
 		rows, err := db.Query(sql)
 		if err != nil {
-			// Time functions may not be supported in all SQLite builds, log but don't fail
-			t.Logf("Execution failed (may be expected for time extension) on iteration %d: %v\nSQL: %s", i, err, sql)
+			t.Errorf("Execution failed on iteration %d: %v\nSQL: %s", i, err, sql)
 		}
 		if rows != nil {
+			// Verify we can get a result
+			if rows.Next() {
+				var result interface{}
+				if err := rows.Scan(&result); err != nil {
+					t.Errorf("Failed to scan result on iteration %d: %v\nSQL: %s", i, err, sql)
+				}
+			}
 			rows.Close()
 		}
 	}
@@ -999,13 +1006,18 @@ func TestSpecificExtensionFunctions(t *testing.T) {
 		{"vector_distance_cos", "SELECT vector_distance_cos(vector('[1.0,2.0,3.0]'), vector('[4.0,5.0,6.0]'));"},
 		{"vector_distance_l2", "SELECT vector_distance_l2(vector('[1.0,2.0,3.0]'), vector('[4.0,5.0,6.0]'));"},
 
-		// Time functions
-		{"time_now", "SELECT time_now();"},
-		{"time_date", "SELECT time_date(2024, 1, 1);"},
-		{"time_unix", "SELECT time_unix(1609459200);"},
-		{"time_get_year", "SELECT time_get_year(time_now());"},
-		{"time_to_unix", "SELECT time_to_unix(time_now());"},
-		{"time_fmt_iso", "SELECT time_fmt_iso(time_now());"},
+		// SQLite standard date/time functions
+		// Reference: https://sqlite.org/lang_datefunc.html
+		{"date_now", "SELECT date('now');"},
+		{"time_now", "SELECT time('now');"},
+		{"datetime_now", "SELECT datetime('now');"},
+		{"julianday_now", "SELECT julianday('now');"},
+		{"unixepoch_now", "SELECT unixepoch('now');"},
+		{"strftime_date", "SELECT strftime('%Y-%m-%d', 'now');"},
+		{"date_with_modifier", "SELECT date('now', '+1 day');"},
+		{"time_with_modifier", "SELECT time('12:00:00', '+1 hour');"},
+		{"datetime_with_modifiers", "SELECT datetime('now', 'start of month', '+1 day');"},
+		{"strftime_format", "SELECT strftime('%s', 'now');"},
 	}
 
 	for _, tc := range testCases {
