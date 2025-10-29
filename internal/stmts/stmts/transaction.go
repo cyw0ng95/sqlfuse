@@ -5,21 +5,15 @@ import (
 )
 
 // TransactionStmt represents transaction control statements (BEGIN, COMMIT, ROLLBACK).
+// It embeds BaseStmt to avoid boilerplate method implementations.
 type TransactionStmt struct {
-	sql    string
-	flavor FlavorConfig
+	*BaseStmt
 }
-
-func (s *TransactionStmt) SQL() string          { return s.sql }
-func (s *TransactionStmt) Type() string         { return "transaction" }
-func (s *TransactionStmt) Flavor() FlavorConfig { return s.flavor }
 
 // GenBeginTransaction generates a BEGIN TRANSACTION statement.
 // According to Turso COMPAT.md: Partial support (no transaction names).
 func GenBeginTransaction(lcg *common.LCG) Stmt {
-	if lcg == nil {
-		lcg = common.NewLCG(1)
-	}
+	lcg = ensureLCG(lcg)
 
 	// Turso supports BEGIN, BEGIN TRANSACTION, BEGIN DEFERRED, BEGIN IMMEDIATE, BEGIN EXCLUSIVE
 	// but not named transactions
@@ -35,15 +29,15 @@ func GenBeginTransaction(lcg *common.LCG) Stmt {
 	}
 
 	sql := variants[lcg.Intn(len(variants))]
-	return &TransactionStmt{sql: sql, flavor: GetDefaultFlavor()}
+	return &TransactionStmt{
+		BaseStmt: NewBaseStmt(sql, "transaction", GetDefaultFlavor()),
+	}
 }
 
 // GenCommitTransaction generates a COMMIT TRANSACTION statement.
 // According to Turso COMPAT.md: Partial support (no transaction names).
 func GenCommitTransaction(lcg *common.LCG) Stmt {
-	if lcg == nil {
-		lcg = common.NewLCG(1)
-	}
+	lcg = ensureLCG(lcg)
 
 	// Turso supports COMMIT and COMMIT TRANSACTION but not named transactions
 	// END TRANSACTION is an alias for COMMIT TRANSACTION
@@ -55,15 +49,15 @@ func GenCommitTransaction(lcg *common.LCG) Stmt {
 	}
 
 	sql := variants[lcg.Intn(len(variants))]
-	return &TransactionStmt{sql: sql, flavor: GetDefaultFlavor()}
+	return &TransactionStmt{
+		BaseStmt: NewBaseStmt(sql, "transaction", GetDefaultFlavor()),
+	}
 }
 
 // GenRollbackTransaction generates a ROLLBACK TRANSACTION statement.
 // According to Turso COMPAT.md: Yes (full support).
 func GenRollbackTransaction(lcg *common.LCG) Stmt {
-	if lcg == nil {
-		lcg = common.NewLCG(1)
-	}
+	lcg = ensureLCG(lcg)
 
 	// Turso supports ROLLBACK and ROLLBACK TRANSACTION but not named transactions
 	variants := []string{
@@ -72,5 +66,7 @@ func GenRollbackTransaction(lcg *common.LCG) Stmt {
 	}
 
 	sql := variants[lcg.Intn(len(variants))]
-	return &TransactionStmt{sql: sql, flavor: GetDefaultFlavor()}
+	return &TransactionStmt{
+		BaseStmt: NewBaseStmt(sql, "transaction", GetDefaultFlavor()),
+	}
 }
