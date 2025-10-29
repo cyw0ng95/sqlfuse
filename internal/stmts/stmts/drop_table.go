@@ -19,14 +19,10 @@ func (g *DropTableGenerator) CanGenerate(ctx *GenContext) bool {
 }
 
 // DropTableStmt represents a DROP TABLE statement.
+// It embeds BaseStmt to avoid boilerplate method implementations.
 type DropTableStmt struct {
-	sql    string
-	flavor FlavorConfig
+	*BaseStmt
 }
-
-func (s *DropTableStmt) SQL() string          { return s.sql }
-func (s *DropTableStmt) Type() string         { return "drop_table" }
-func (s *DropTableStmt) Flavor() FlavorConfig { return s.flavor }
 
 // GenDropTable generates a DROP TABLE IF EXISTS statement for a pseudo-random
 // table name using the provided LCG.
@@ -42,15 +38,13 @@ func genDropTableInternal(lcg *common.LCG) (Stmt, error) {
 
 // genDropTableWithFlavor creates a DROP TABLE statement with flavor support.
 func genDropTableWithFlavor(lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	if lcg == nil {
-		lcg = common.NewLCG(1)
-	}
-	if flavor == nil {
-		flavor = GetDefaultFlavor()
-	}
+	lcg = ensureLCG(lcg)
+	flavor = ensureFlavor(flavor)
 
 	// Use same naming scheme as GenCreateTable to sometimes target recently created tables.
 	tbl := fmt.Sprintf("tbl_%d", lcg.Uint64()%1000000)
 	sql := fmt.Sprintf("DROP TABLE IF EXISTS \"%s\";", tbl)
-	return &DropTableStmt{sql: sql, flavor: flavor}, nil
+	return &DropTableStmt{
+		BaseStmt: NewBaseStmt(sql, "drop_table", flavor),
+	}, nil
 }
