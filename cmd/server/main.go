@@ -13,13 +13,14 @@ import (
 
 	"sqlsmith-go/internal/common"
 	"sqlsmith-go/internal/executors"
-	"sqlsmith-go/internal/generators/turso"
+	"sqlsmith-go/internal/generators"
 )
 
 // ExecutorConfig describes an executable exposed to the server via config.
 type ExecutorConfig struct {
 	Executor string `json:"executor"`
 	Path     string `json:"path"`
+	Flavor   string `json:"flavor,omitempty"` // Optional: flavor identifier (e.g., "turso", "go-sqlite3")
 }
 
 // ServerConfig holds server-wide configuration
@@ -130,7 +131,8 @@ func main() {
 
 	// Generator metadata endpoint
 	e.GET("/generators/get", func(c echo.Context) error {
-		gen := turso.Info
+		// Create a temporary generator instance to get metadata
+		gen := generators.NewTursoGenerator(0)
 		resp := map[string]interface{}{
 			"generator": gen.Name(),
 			"stmts":     gen.SupportedStmts(),

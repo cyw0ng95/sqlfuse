@@ -11,10 +11,11 @@ run_tests() {
     echo "-- [INFO] Running tests with coverage..."
     mkdir -p .cache
     # Add -v flag when running in GitHub Actions for verbose output
+    # Run tests in the internal module which contains all the tests
     if [ "${GITHUB_ACTIONS:-false}" = "true" ]; then
-        go test -v -coverprofile=.cache/coverage.out ./...
+        (cd internal && go test -v -coverprofile=../.cache/coverage.out ./...)
     else
-        go test -coverprofile=.cache/coverage.out ./...
+        (cd internal && go test -coverprofile=../.cache/coverage.out ./...)
     fi
     go tool cover -html=.cache/coverage.out -o .cache/coverage.html
     echo "-- [INFO] Coverage report generated: .cache/coverage.html"
@@ -31,23 +32,34 @@ build_view() {
     fi
 }
 
+# Unified go build helper: go_build <output> <package>
+# Respects GITHUB_ACTIONS to add -v when running in CI.
+go_build() {
+    local out="$1"
+    local pkg="$2"
+    local flags=()
+    if [ "${GITHUB_ACTIONS:-false}" = "true" ]; then
+        flags=(-v)
+    fi
+    echo "-- [INFO] Building ${pkg} -> ${out}"
+    go build "${flags[@]}" -o "$out" "$pkg"
+}
+
 build_project() {
     echo "-- [INFO] Starting build..."
     mkdir -p output
-    echo "-- [INFO] Running go mod vendor..."
-    go mod vendor
-    
-    # Add -v flag when running in GitHub Actions for verbose output
-    local build_flags=()
-    if [ "${GITHUB_ACTIONS:-false}" = "true" ]; then
-        build_flags=(-v)
-    fi
     
     echo "-- [INFO] Building turso_embedded_executor..."
-    go build "${build_flags[@]}" -o output/turso_embedded_executor cmd/executors/turso_embedded/main.go
-    go build "${build_flags[@]}" -o output/server ./cmd/server
-    echo "-- [INFO] Build complete. Output: output/turso_embedded_executor, output/server"
-    
+    (cd cmd/executors/turso_embedded && go_build ../../../output/turso_embedded_executor .)
+
+    echo "-- [INFO] Building go_sqlite3_embedded_executor..."
+    (cd cmd/executors/go_sqlite3_embedded && go_build ../../../output/go_sqlite3_embedded_executor .)
+
+    echo "-- [INFO] Building server..."
+    (cd cmd/server && go_build ../../output/server .)
+
+    echo "-- [INFO] Build complete. Output: output/turso_embedded_executor, output/go_sqlite3_embedded_executor, output/server"
+
     # Build the frontend view
     build_view
 }

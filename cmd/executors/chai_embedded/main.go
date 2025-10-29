@@ -10,7 +10,7 @@ import (
 
 	"sqlsmith-go/internal/common"
 	"sqlsmith-go/internal/executors"
-	"sqlsmith-go/internal/generators/turso"
+	"sqlsmith-go/internal/generators"
 
 	// _ "github.com/chaisql/chai"
 	"github.com/spf13/cobra"
@@ -80,15 +80,19 @@ func main() {
 			for w := 0; w < workers; w++ {
 				go func(workerID int) {
 					defer wg.Done()
-					gen := turso.NewGenerator(baseSeed + uint64(workerID))
+					var gen generators.Generator = generators.NewTursoGenerator(baseSeed + uint64(workerID))
 					for i := 0; i < queries; i++ {
 						query := gen.GenerateWithDB(db)
 						if _, execErr := db.Exec(query); execErr != nil {
-							common.Logger.Info().Msgf("Worker %d executing query %d: %s", workerID, i+1, query)
-							common.Logger.Info().Msgf("Execution error: %v", execErr)
+							if flags.Verbose {
+								common.Logger.Info().Msgf("Worker %d executing query %d: %s", workerID, i+1, query)
+								common.Logger.Info().Msgf("Execution error: %v", execErr)
+							}
 							continue
 						}
-						common.Logger.Info().Msgf("Worker %d executed query %d", workerID, i+1)
+						if flags.Verbose {
+							common.Logger.Info().Msgf("Worker %d executed query %d", workerID, i+1)
+						}
 					}
 					tokenCh <- gen.TokensUsed()
 				}(w)

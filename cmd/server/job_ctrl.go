@@ -140,34 +140,58 @@ func RegisterJobRoutes(e *echo.Echo) {
 	// load persisted jobs if any
 	loadJobs()
 
-	// POST /job/new { "cmd": "...", "seed": 123 }
+	// POST /job/new accepts either:
+	// { "executor": "turso_embedded", "args": ["--workers", "4"], "seed": 123 }
+	// or legacy: { "cmd": "turso_embedded --workers 4", "seed": 123 }
 	e.POST("/job/new", func(c echo.Context) error {
 		var req struct {
-			Cmd  string `json:"cmd"`
-			Seed *int64 `json:"seed,omitempty"`
+			Cmd      string   `json:"cmd"`
+			Executor string   `json:"executor"`
+			Args     []string `json:"args"`
+			Seed     *int64   `json:"seed,omitempty"`
 		}
 		if err := c.Bind(&req); err != nil {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
 		}
-		if strings.TrimSpace(req.Cmd) == "" {
-			return c.JSON(http.StatusBadRequest, map[string]string{"error": "cmd is required"})
+
+		var execName string
+		var args []string
+
+		// Handle new format: executor + args
+		if req.Executor != "" {
+			execName = req.Executor
+			args = req.Args
+			if args == nil {
+				args = []string{}
+			}
+		} else if strings.TrimSpace(req.Cmd) != "" {
+			// Handle legacy format: cmd string
+			toks := strings.Fields(req.Cmd)
+			if len(toks) == 0 {
+				return c.JSON(http.StatusBadRequest, map[string]string{"error": "empty command"})
+			}
+			execName = toks[0]
+			if len(toks) > 1 {
+				args = toks[1:]
+			} else {
+				args = []string{}
+			}
+		} else {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "either executor or cmd is required"})
 		}
 
-		// Parse command and arguments (simple split)
-		toks := strings.Fields(req.Cmd)
-		if len(toks) == 0 {
-			return c.JSON(http.StatusBadRequest, map[string]string{"error": "empty command"})
-		}
-
-		// Resolve executable path and ensure it resides under ./output
-		absCmdPath, err := executors.ResolveExecPath(outputDir, toks[0])
-		if err != nil {
-			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
-		}
-
-		args := []string{}
-		if len(toks) > 1 {
-			args = toks[1:]
+		// Look up executor in configured executors map
+		var absCmdPath string
+		if exec, ok := executorsByName[execName]; ok {
+			// Use the configured executor path
+			absCmdPath = exec.Path()
+		} else {
+			// Fallback: try to resolve executable path under ./output
+			var err error
+			absCmdPath, err = executors.ResolveExecPath(outputDir, execName)
+			if err != nil {
+				return c.JSON(http.StatusBadRequest, map[string]string{"error": fmt.Sprintf("executor '%s' not found: %v", execName, err)})
+			}
 		}
 
 		// build executor and exec.Cmd (forward optional seed)
