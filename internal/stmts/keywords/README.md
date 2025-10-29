@@ -162,7 +162,13 @@ Valid unquoted identifiers:
 Run tests:
 
 ```bash
-cd /home/runner/work/sqlsmith-go/sqlsmith-go
+cd internal/stmts/keywords
+go test -v
+```
+
+Or from repository root:
+
+```bash
 export SQLSMITH_GO_CONTAINER_TYPE=test
 go test -v ./internal/stmts/keywords/
 ```
