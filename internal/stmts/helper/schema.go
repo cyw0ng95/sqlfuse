@@ -18,7 +18,21 @@ type TableInfo struct {
 }
 
 // GetAllTablesAndCols returns all user tables and their columns in the current database.
+// It supports both SQLite and DuckDB by detecting which system is in use.
 func GetAllTablesAndCols(db *sql.DB) ([]TableInfo, error) {
+	// Try to determine database type by checking for DuckDB-specific tables
+	var dbType string
+	err := db.QueryRow("SELECT 1 FROM information_schema.tables LIMIT 1").Scan(&dbType)
+	isDuckDB := err == nil // If this succeeds, it's likely DuckDB (has information_schema)
+
+	if isDuckDB {
+		return getDuckDBTablesAndCols(db)
+	}
+	return getSQLiteTablesAndCols(db)
+}
+
+// getSQLiteTablesAndCols uses SQLite-specific PRAGMA statements
+func getSQLiteTablesAndCols(db *sql.DB) ([]TableInfo, error) {
 	// serialize concurrent callers
 	rows, err := db.Query(`SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'`)
 	if err != nil {
@@ -65,6 +79,67 @@ func GetAllTablesAndCols(db *sql.DB) ([]TableInfo, error) {
 		colRows.Close()
 		tables = append(tables, TableInfo{Name: tableName, Cols: cols})
 	}
+	if len(tables) == 0 {
+		return nil, fmt.Errorf("no user tables found in database")
+	}
+	return tables, nil
+}
+
+// getDuckDBTablesAndCols uses DuckDB's information_schema
+func getDuckDBTablesAndCols(db *sql.DB) ([]TableInfo, error) {
+	// Query tables from information_schema
+	rows, err := db.Query(`
+		SELECT table_name 
+		FROM information_schema.tables 
+		WHERE table_schema = 'main' 
+		  AND table_type = 'BASE TABLE'
+	`)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error querying information_schema.tables: %v\n", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Collect table names
+	tableNames := []string{}
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			fmt.Fprintf(os.Stderr, "error scanning table name: %v\n", err)
+			continue
+		}
+		tableNames = append(tableNames, name)
+	}
+
+	tables := []TableInfo{}
+	for _, tableName := range tableNames {
+		// Query columns from information_schema
+		colRows, err := db.Query(`
+			SELECT column_name, data_type
+			FROM information_schema.columns
+			WHERE table_schema = 'main'
+			  AND table_name = ?
+			ORDER BY ordinal_position
+		`, tableName)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error querying columns for %s: %v\n", tableName, err)
+			continue
+		}
+		
+		cols := []ColumnInfo{}
+		for colRows.Next() {
+			var name, ctype string
+			if err := colRows.Scan(&name, &ctype); err != nil {
+				fmt.Fprintf(os.Stderr, "error scanning column for %s: %v\n", tableName, err)
+				colRows.Close()
+				break
+			}
+			cols = append(cols, ColumnInfo{Name: name, Type: ctype})
+		}
+		colRows.Close()
+		tables = append(tables, TableInfo{Name: tableName, Cols: cols})
+	}
+	
 	if len(tables) == 0 {
 		return nil, fmt.Errorf("no user tables found in database")
 	}
