@@ -7,335 +7,72 @@ import (
 
 // BuildGeneratorFuncs returns a map[string]generatorFunc for all built-in statement types.
 // Keys match the string values used by turso.StmtType constants.
+// This function uses the Factory pattern to create generators and simplify the code.
 func BuildGeneratorFuncs(lcg *common.LCG, maxRecursionDepth int, flavorConfig FlavorConfig) map[string]func(db *sql.DB) (string, error) {
-	m := make(map[string]func(db *sql.DB) (string, error), 64)
+	factory := NewStmtGeneratorFactory(lcg, maxRecursionDepth, flavorConfig)
+	m := make(map[string]func(db *sql.DB) (string, error), len(AllStmtTypes)+1)
 
-	m["pragma"] = func(db *sql.DB) (string, error) {
-		ctx := NewGenContextWithFlavor(db, lcg, maxRecursionDepth, flavorConfig)
-		gen := &PragmaGenerator{}
-		stmt, err := gen.Generate(ctx)
-		if err != nil {
-			return "PRAGMA integrity_check;", err
+	// Create generator function using factory pattern
+	createGenFunc := func(stmtType StmtType, fallback string) func(db *sql.DB) (string, error) {
+		return func(db *sql.DB) (string, error) {
+			stmt, err := factory.GenerateStmt(db, stmtType)
+			if err != nil {
+				return fallback, err
+			}
+			return stmt.SQL(), nil
 		}
-		return stmt.SQL(), nil
-	}
-
-	m["insert"] = func(db *sql.DB) (string, error) {
-		s, err := GenInsert(db, lcg)
-		if err != nil {
-			return "INSERT INTO sqlite_master DEFAULT VALUES;", err
-		}
-		return s.SQL(), nil
-	}
-	m["insert_multiple"] = func(db *sql.DB) (string, error) {
-		s, err := GenInsertMultiple(db, lcg)
-		if err != nil {
-			return "INSERT INTO sqlite_master DEFAULT VALUES;", err
-		}
-		return s.SQL(), nil
-	}
-	m["insert_bulk"] = func(db *sql.DB) (string, error) {
-		s, err := GenInsertBulk(db, lcg)
-		if err != nil {
-			return "INSERT INTO sqlite_master DEFAULT VALUES;", err
-		}
-		return s.SQL(), nil
-	}
-	m["insert_or_replace"] = func(db *sql.DB) (string, error) {
-		s, err := GenInsertOrReplace(db, lcg)
-		if err != nil {
-			return "INSERT INTO sqlite_master DEFAULT VALUES;", err
-		}
-		return s.SQL(), nil
-	}
-	m["insert_or_ignore"] = func(db *sql.DB) (string, error) {
-		s, err := GenInsertOrIgnore(db, lcg)
-		if err != nil {
-			return "INSERT INTO sqlite_master DEFAULT VALUES;", err
-		}
-		return s.SQL(), nil
-	}
-	m["insert_or_abort"] = func(db *sql.DB) (string, error) {
-		s, err := GenInsertOrAbort(db, lcg)
-		if err != nil {
-			return "INSERT INTO sqlite_master DEFAULT VALUES;", err
-		}
-		return s.SQL(), nil
-	}
-	m["insert_or_rollback"] = func(db *sql.DB) (string, error) {
-		s, err := GenInsertOrRollback(db, lcg)
-		if err != nil {
-			return "INSERT INTO sqlite_master DEFAULT VALUES;", err
-		}
-		return s.SQL(), nil
-	}
-	m["insert_or_fail"] = func(db *sql.DB) (string, error) {
-		s, err := GenInsertOrFail(db, lcg)
-		if err != nil {
-			return "INSERT INTO sqlite_master DEFAULT VALUES;", err
-		}
-		return s.SQL(), nil
 	}
 
-	m["update"] = func(db *sql.DB) (string, error) {
-		s, err := GenUpdate(db, lcg)
-		if err != nil {
-			return "UPDATE sqlite_master SET name = 'fallback';", err
-		}
-		return s.SQL(), nil
-	}
-	m["delete"] = func(db *sql.DB) (string, error) {
-		s, err := GenDelete(db, lcg)
-		if err != nil {
-			return "DELETE FROM sqlite_master WHERE 0;", err
-		}
-		return s.SQL(), nil
-	}
-
-	m["select_basic"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelect(db, lcg)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-	m["select_where"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectWhere(db, lcg)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-	m["select_where_complex"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectWhereComplex(db, lcg)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-	m["select_where_in"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectWhereIn(db, lcg)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-	m["select_subquery"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectSubquery(db, lcg)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-	m["select_case"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectCase(db, lcg)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-	m["select_aggregate_complex"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectAggregateComplex(db, lcg)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-	m["select_like"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectWhereLike(db, lcg)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-	m["select_limit"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectLimit(db, lcg)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-	m["select_order"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectOrderBy(db, lcg)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-	m["select_group"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectGroupBy(db, lcg)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-	m["select_having"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectHaving(db, lcg)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-
-	m["select_join"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectJoin(db, lcg)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-	m["select_crossjoin"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectCrossJoin(db, lcg)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-	m["select_innerjoin"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectInnerJoin(db, lcg)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-	m["select_outerjoin"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectOuterJoin(db, lcg)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-	m["select_joinusing"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectJoinUsing(db, lcg)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-	m["select_naturaljoin"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectNaturalJoin(db, lcg)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-
-	m["select_recursive"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectRecursive(db, lcg, maxRecursionDepth)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-	m["select_nested_case"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectWithNestedCase(db, lcg, maxRecursionDepth)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-	m["select_complex_join"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectWithComplexJoin(db, lcg, maxRecursionDepth)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-
-	m["select_window"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectWithWindowFunction(db, lcg)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-	m["select_multiple_windows"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectWithMultipleWindows(db, lcg)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-	m["select_cte"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectWithCTE(db, lcg)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-	m["select_multiple_cte"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectWithMultipleCTE(db, lcg)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-	m["select_recursive_cte"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectWithRecursiveCTE(db, lcg)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-
-	m["select_json"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectWithJSONFunction(db, lcg)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-
-	m["select_uuid"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectWithUUIDFunction(db, lcg)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-	m["select_regexp"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectWithRegexpFunction(db, lcg)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-	m["select_vector"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectWithVectorFunction(db, lcg)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-	m["select_time"] = func(db *sql.DB) (string, error) {
-		s, err := GenSelectWithTimeFunction(db, lcg)
-		if err != nil {
-			return "SELECT 1", err
-		}
-		return s.SQL(), nil
-	}
-
-	m["create_table"] = func(db *sql.DB) (string, error) {
-		s, err := GenCreateTable(lcg)
-		if err != nil {
-			return "CREATE TABLE IF NOT EXISTS fallback (id INTEGER);", err
-		}
-		return s.SQL(), nil
-	}
-	m["drop_table"] = func(db *sql.DB) (string, error) {
-		s, err := GenDropTable(lcg)
-		if err != nil {
-			return "DROP TABLE IF EXISTS fallback;", err
-		}
-		return s.SQL(), nil
-	}
-	m["alter_table"] = func(db *sql.DB) (string, error) {
-		s, err := GenAlterTable(lcg)
-		if err != nil {
-			return "ALTER TABLE fallback RENAME TO fallback2;", err
-		}
-		return s.SQL(), nil
-	}
+	// Register all statement types using the factory
+	m["pragma"] = createGenFunc(StmtPragma, "PRAGMA integrity_check;")
+	m["insert"] = createGenFunc(StmtInsert, "INSERT INTO sqlite_master DEFAULT VALUES;")
+	m["insert_multiple"] = createGenFunc(StmtInsertMultiple, "INSERT INTO sqlite_master DEFAULT VALUES;")
+	m["insert_bulk"] = createGenFunc(StmtInsertBulk, "INSERT INTO sqlite_master DEFAULT VALUES;")
+	m["insert_or_replace"] = createGenFunc(StmtInsertOrReplace, "INSERT INTO sqlite_master DEFAULT VALUES;")
+	m["insert_or_ignore"] = createGenFunc(StmtInsertOrIgnore, "INSERT INTO sqlite_master DEFAULT VALUES;")
+	m["insert_or_abort"] = createGenFunc(StmtInsertOrAbort, "INSERT INTO sqlite_master DEFAULT VALUES;")
+	m["insert_or_rollback"] = createGenFunc(StmtInsertOrRollback, "INSERT INTO sqlite_master DEFAULT VALUES;")
+	m["insert_or_fail"] = createGenFunc(StmtInsertOrFail, "INSERT INTO sqlite_master DEFAULT VALUES;")
+	m["update"] = createGenFunc(StmtUpdate, "UPDATE sqlite_master SET name = 'fallback';")
+	m["delete"] = createGenFunc(StmtDelete, "DELETE FROM sqlite_master WHERE 0;")
+	
+	// SELECT statements
+	m["select_basic"] = createGenFunc(StmtSelectBasic, "SELECT 1")
+	m["select_where"] = createGenFunc(StmtSelectWhere, "SELECT 1")
+	m["select_where_complex"] = createGenFunc(StmtSelectWhereComplex, "SELECT 1")
+	m["select_where_in"] = createGenFunc(StmtSelectWhereIn, "SELECT 1")
+	m["select_subquery"] = createGenFunc(StmtSelectSubquery, "SELECT 1")
+	m["select_case"] = createGenFunc(StmtSelectCase, "SELECT 1")
+	m["select_aggregate_complex"] = createGenFunc(StmtSelectAggregateComplex, "SELECT 1")
+	m["select_like"] = createGenFunc(StmtSelectLike, "SELECT 1")
+	m["select_limit"] = createGenFunc(StmtSelectLimit, "SELECT 1")
+	m["select_order"] = createGenFunc(StmtSelectOrder, "SELECT 1")
+	m["select_group"] = createGenFunc(StmtSelectGroup, "SELECT 1")
+	m["select_having"] = createGenFunc(StmtSelectHaving, "SELECT 1")
+	m["select_join"] = createGenFunc(StmtSelectJoin, "SELECT 1")
+	m["select_crossjoin"] = createGenFunc(StmtSelectCross, "SELECT 1")
+	m["select_innerjoin"] = createGenFunc(StmtSelectInner, "SELECT 1")
+	m["select_outerjoin"] = createGenFunc(StmtSelectOuter, "SELECT 1")
+	m["select_joinusing"] = createGenFunc(StmtSelectJoinUsing, "SELECT 1")
+	m["select_naturaljoin"] = createGenFunc(StmtSelectNatural, "SELECT 1")
+	m["select_recursive"] = createGenFunc(StmtSelectRecursive, "SELECT 1")
+	m["select_nested_case"] = createGenFunc(StmtSelectNestedCase, "SELECT 1")
+	m["select_complex_join"] = createGenFunc(StmtSelectComplexJoin, "SELECT 1")
+	m["select_window"] = createGenFunc(StmtSelectWindow, "SELECT 1")
+	m["select_multiple_windows"] = createGenFunc(StmtSelectMultipleWindows, "SELECT 1")
+	m["select_cte"] = createGenFunc(StmtSelectCTE, "SELECT 1")
+	m["select_multiple_cte"] = createGenFunc(StmtSelectMultipleCTE, "SELECT 1")
+	m["select_recursive_cte"] = createGenFunc(StmtSelectRecursiveCTE, "SELECT 1")
+	m["select_json"] = createGenFunc(StmtSelectJSON, "SELECT 1")
+	m["select_uuid"] = createGenFunc(StmtSelectUUID, "SELECT 1")
+	m["select_regexp"] = createGenFunc(StmtSelectRegexp, "SELECT 1")
+	m["select_vector"] = createGenFunc(StmtSelectVector, "SELECT 1")
+	m["select_time"] = createGenFunc(StmtSelectTime, "SELECT 1")
+	
+	// DDL statements
+	m["create_table"] = createGenFunc(StmtCreateTable, "CREATE TABLE IF NOT EXISTS fallback (id INTEGER);")
+	m["drop_table"] = createGenFunc(StmtDropTable, "DROP TABLE IF EXISTS fallback;")
+	m["alter_table"] = createGenFunc(StmtAlterTable, "ALTER TABLE fallback RENAME TO fallback2;")
 
 	return m
 }
