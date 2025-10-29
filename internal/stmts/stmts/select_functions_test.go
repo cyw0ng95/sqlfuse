@@ -1117,3 +1117,86 @@ func TestGoSQLite3SpecificFunctionGenerators(t *testing.T) {
 		})
 	}
 }
+
+// TestGenSelectWithGoSQLite3AggregateFunction tests go-sqlite3 specific aggregate functions
+func TestGenSelectWithGoSQLite3AggregateFunction(t *testing.T) {
+	// This test uses Turso which may not support go-sqlite3 specific JSON aggregate functions
+	// We verify that the SQL is generated correctly, not that it executes
+	db := setupTestDB(t)
+	defer db.Close()
+
+	lcg := common.NewLCG(7000)
+
+	for i := 0; i < testIterations; i++ {
+		stmt, err := GenSelectWithGoSQLite3AggregateFunction(db, lcg)
+		if err != nil {
+			t.Fatalf("GenSelectWithGoSQLite3AggregateFunction failed on iteration %d: %v", i, err)
+		}
+
+		sql := stmt.SQL()
+		if sql == "" {
+			t.Error("GenSelectWithGoSQLite3AggregateFunction returned empty SQL")
+		}
+
+		if stmt.Type() != "select" {
+			t.Errorf("Expected type 'select', got '%s'", stmt.Type())
+		}
+
+		// Validate SQL syntax (will pass even if function not supported)
+		valid, errors := ValidateSQL(sql)
+		if !valid {
+			t.Errorf("Invalid go-sqlite3 aggregate function SQL on iteration %d: %s\nErrors: %v", i, sql, errors)
+		}
+
+		// Note: We don't try to execute these functions with Turso as they may not be supported
+		// They should be tested with actual go-sqlite3 database
+		t.Logf("Generated SQL (iteration %d): %s", i, sql)
+	}
+}
+
+// TestGoSQLite3SpecificAggregateFunctionGenerators tests individual go-sqlite3 specific aggregate function generators
+func TestGoSQLite3SpecificAggregateFunctionGenerators(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	lcg := common.NewLCG(8000)
+	
+	// Get tables for testing
+	tables, err := helper.GetAllTablesAndCols(db)
+	if err != nil {
+		t.Fatalf("Failed to get tables: %v", err)
+	}
+
+	tests := []struct {
+		name string
+		gen  func(*common.LCG, []helper.TableInfo) string
+	}{
+		{"json_group_array", genJSONGroupArrayFunction},
+		{"json_group_object", genJSONGroupObjectFunction},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			funcExpr := tt.gen(lcg, tables)
+			if funcExpr == "" {
+				t.Error("Function generator returned empty string")
+				return
+			}
+
+			// Aggregate functions need FROM clause with actual table
+			var sql string
+			if len(tables) > 0 && len(tables[0].Cols) > 0 {
+				sql = fmt.Sprintf("SELECT %s FROM %s;", funcExpr, quoteIdent(tables[0].Name))
+			} else {
+				sql = fmt.Sprintf("SELECT %s;", funcExpr)
+			}
+
+			valid, errors := ValidateSQL(sql)
+			if !valid {
+				t.Errorf("Invalid SQL for %s: %s\nErrors: %v", tt.name, sql, errors)
+			}
+
+			t.Logf("Generated %s: %s", tt.name, funcExpr)
+		})
+	}
+}
