@@ -4,6 +4,45 @@ import (
 	"sqlsmith-go/internal/common"
 )
 
+// BeginTransactionGenerator is a StmtGenerator for BEGIN TRANSACTION statements.
+type BeginTransactionGenerator struct{}
+
+// Generate implements StmtGenerator for BEGIN TRANSACTION statements.
+func (g *BeginTransactionGenerator) Generate(ctx *GenContext) (Stmt, error) {
+	return GenBeginTransaction(ctx.LCG), nil
+}
+
+// CanGenerate implements StmtGenerator. BEGIN TRANSACTION can always be generated.
+func (g *BeginTransactionGenerator) CanGenerate(ctx *GenContext) bool {
+	return true
+}
+
+// CommitTransactionGenerator is a StmtGenerator for COMMIT TRANSACTION statements.
+type CommitTransactionGenerator struct{}
+
+// Generate implements StmtGenerator for COMMIT TRANSACTION statements.
+func (g *CommitTransactionGenerator) Generate(ctx *GenContext) (Stmt, error) {
+	return GenCommitTransaction(ctx.LCG), nil
+}
+
+// CanGenerate implements StmtGenerator. COMMIT TRANSACTION can always be generated.
+func (g *CommitTransactionGenerator) CanGenerate(ctx *GenContext) bool {
+	return true
+}
+
+// RollbackTransactionGenerator is a StmtGenerator for ROLLBACK TRANSACTION statements.
+type RollbackTransactionGenerator struct{}
+
+// Generate implements StmtGenerator for ROLLBACK TRANSACTION statements.
+func (g *RollbackTransactionGenerator) Generate(ctx *GenContext) (Stmt, error) {
+	return GenRollbackTransaction(ctx.LCG), nil
+}
+
+// CanGenerate implements StmtGenerator. ROLLBACK TRANSACTION can always be generated.
+func (g *RollbackTransactionGenerator) CanGenerate(ctx *GenContext) bool {
+	return true
+}
+
 // TransactionStmt represents transaction control statements (BEGIN, COMMIT, ROLLBACK).
 // It embeds BaseStmt to avoid boilerplate method implementations.
 type TransactionStmt struct {

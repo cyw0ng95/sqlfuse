@@ -8,6 +8,32 @@ import (
 	"strings"
 )
 
+// CreateIndexGenerator is a StmtGenerator for CREATE INDEX statements.
+type CreateIndexGenerator struct{}
+
+// Generate implements StmtGenerator for CREATE INDEX statements.
+func (g *CreateIndexGenerator) Generate(ctx *GenContext) (Stmt, error) {
+	return GenCreateIndex(ctx.DB, ctx.LCG)
+}
+
+// CanGenerate implements StmtGenerator. CREATE INDEX can always be generated.
+func (g *CreateIndexGenerator) CanGenerate(ctx *GenContext) bool {
+	return true
+}
+
+// DropIndexGenerator is a StmtGenerator for DROP INDEX statements.
+type DropIndexGenerator struct{}
+
+// Generate implements StmtGenerator for DROP INDEX statements.
+func (g *DropIndexGenerator) Generate(ctx *GenContext) (Stmt, error) {
+	return GenDropIndex(ctx.LCG)
+}
+
+// CanGenerate implements StmtGenerator. DROP INDEX can always be generated.
+func (g *DropIndexGenerator) CanGenerate(ctx *GenContext) bool {
+	return true
+}
+
 // CreateIndexStmt represents a CREATE INDEX statement.
 type CreateIndexStmt struct {
 	sql    string

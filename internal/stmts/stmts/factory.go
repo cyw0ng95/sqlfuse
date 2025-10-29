@@ -58,6 +58,44 @@ func (f *StmtGeneratorFactory) CreateGenerator(stmtType StmtType) StmtGenerator 
 		return &DropTableGenerator{}
 	case StmtAlterTable:
 		return &AlterTableGenerator{}
+	case StmtCreateView:
+		return &CreateViewGenerator{}
+	case StmtDropView:
+		return &DropViewGenerator{}
+	case StmtCreateIndex:
+		return &CreateIndexGenerator{}
+	case StmtDropIndex:
+		return &DropIndexGenerator{}
+	case StmtCreateVirtualTable:
+		return &CreateVirtualTableGenerator{}
+	case StmtAttach:
+		return &AttachGenerator{}
+	case StmtDetach:
+		return &DetachGenerator{}
+	case StmtBegin:
+		return &BeginTransactionGenerator{}
+	case StmtCommit:
+		return &CommitTransactionGenerator{}
+	case StmtRollback:
+		return &RollbackTransactionGenerator{}
+	case StmtExplain, StmtExplainQueryPlan:
+		return &ExplainGenerator{variant: stmtType}
+	case StmtAnalyze:
+		return &AnalyzeGenerator{}
+	case StmtVacuum:
+		return &VacuumGenerator{}
+	case StmtReindex:
+		return &ReindexGenerator{}
+	case StmtSavepoint:
+		return &SavepointGenerator{}
+	case StmtRelease:
+		return &ReleaseGenerator{}
+	case StmtCreateTrigger:
+		return &CreateTriggerGenerator{}
+	case StmtDropTrigger:
+		return &DropTriggerGenerator{}
+	case StmtSelectUnion, StmtSelectIntersect, StmtSelectExcept:
+		return &CompoundSelectGenerator{variant: stmtType}
 	default:
 		return nil
 	}

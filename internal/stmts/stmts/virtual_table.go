@@ -6,6 +6,19 @@ import (
 	"strings"
 )
 
+// CreateVirtualTableGenerator is a StmtGenerator for CREATE VIRTUAL TABLE statements.
+type CreateVirtualTableGenerator struct{}
+
+// Generate implements StmtGenerator for CREATE VIRTUAL TABLE statements.
+func (g *CreateVirtualTableGenerator) Generate(ctx *GenContext) (Stmt, error) {
+	return GenCreateVirtualTable(ctx.LCG)
+}
+
+// CanGenerate implements StmtGenerator. CREATE VIRTUAL TABLE can always be generated.
+func (g *CreateVirtualTableGenerator) CanGenerate(ctx *GenContext) bool {
+	return true
+}
+
 // CreateVirtualTableStmt represents a CREATE VIRTUAL TABLE statement.
 type CreateVirtualTableStmt struct {
 	sql    string
