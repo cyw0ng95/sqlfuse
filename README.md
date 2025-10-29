@@ -1,10 +1,10 @@
 # SQLsmith-Go
 
-A high-performance SQL query generator and fuzzer for testing SQLite-compatible database systems. SQLsmith-Go generates syntactically valid, semantically interesting SQL statements to discover bugs, edge cases, and performance issues in database implementations.
+A high-performance SQL query generator and fuzzer for testing database systems. SQLsmith-Go generates syntactically valid, semantically interesting SQL statements to discover bugs, edge cases, and performance issues in both SQLite-compatible and analytical database implementations.
 
 ## Overview
 
-SQLsmith-Go is a Go implementation of the [SQLsmith](https://github.com/anse1/sqlsmith) approach to database testing through randomized query generation. Unlike traditional fuzzing that generates random bytes, SQLsmith-Go produces valid SQL statements that exercise diverse database features while respecting the constraints and capabilities of different SQLite flavors.
+SQLsmith-Go is a Go implementation of the [SQLsmith](https://github.com/anse1/sqlsmith) approach to database testing through randomized query generation. Unlike traditional fuzzing that generates random bytes, SQLsmith-Go produces valid SQL statements that exercise diverse database features while respecting the constraints and capabilities of different database flavors.
 
 ### Key Features
 
@@ -33,11 +33,11 @@ SQLsmith-Go is a Go implementation of the [SQLsmith](https://github.com/anse1/sq
 │  │ • Chai       │    │ • go-sqlite3 │    │ • INSERT     │  │
 │  │ • DuckDB     │    │ • DuckDB     │    │ • UPDATE     │  │
 │  │ • HTTP API   │    │              │    │ • DELETE     │  │
-│  └──────────────┘    └──────────────┘    │ • DELETE     │  │
-│                                           │ • PRAGMA     │  │
-│  ┌──────────────┐    ┌──────────────┐    │ • CREATE     │  │
-│  │   Dialects   │    │   Frontend   │    │ • ...        │  │
-│  │              │    │              │    └──────────────┘  │
+│  └──────────────┘    └──────────────┘    │ • PRAGMA     │  │
+│                                           │ • CREATE     │  │
+│  ┌──────────────┐    ┌──────────────┐    │ • ...        │  │
+│  │   Dialects   │    │   Frontend   │    └──────────────┘  │
+│  │              │    │              │                      │
 │  │ • Feature    │    │ • Vue.js     │                      │
 │  │   Detection  │    │ • Vuetify    │                      │
 │  │ • SQL        │    │ • Job Ctrl   │                      │
