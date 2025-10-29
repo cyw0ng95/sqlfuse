@@ -9,9 +9,9 @@ Dialect configurations define which SQL features are supported by a specific dat
 ## Structure
 
 Each database flavor has its own file:
-- `turso.go` - Turso LibSQL flavor configuration
-- `go_sqlite3.go` - go-sqlite3 (full SQLite3) flavor configuration
 - `duckdb.go` - DuckDB flavor configuration
+- `go_sqlite3.go` - go-sqlite3 (full SQLite3) flavor configuration
+- `turso.go` - Turso LibSQL flavor configuration
 
 ## Adding a New Dialect
 

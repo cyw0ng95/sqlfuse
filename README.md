@@ -34,8 +34,7 @@ SQLsmith-Go is a Go implementation of the [SQLsmith](https://github.com/anse1/sq
 │  │ • Chai       │    │ • DuckDB     │    │ • UPDATE     │  │
 │  │ • HTTP API   │    │              │    │ • DELETE     │  │
 │  └──────────────┘    └──────────────┘    │ • PRAGMA     │  │
-│                                           │ • PRAGMA     │  │
-│  ┌──────────────┐    ┌──────────────┐    │ • CREATE     │  │
+│                                           │ • CREATE     │  │
 │  │   Dialects   │    │   Frontend   │    │ • ...        │  │
 │  │              │    │              │    └──────────────┘  │
 │  │ • Feature    │    │ • Vue.js     │                      │
