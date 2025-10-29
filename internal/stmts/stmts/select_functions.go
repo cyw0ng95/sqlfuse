@@ -1679,37 +1679,21 @@ func genVectorSliceFunction(lcg *common.LCG) string {
 	return fmt.Sprintf("vector_slice(vector('[1.0,2.0,3.0,4.0]'), %d, %d)", startIdx, endIdx)
 }
 
-// GenSelectWithTimeFunction generates a SELECT statement with time extension functions
+// GenSelectWithTimeFunction generates a SELECT statement with SQLite date/time functions.
+// Supports standard SQLite functions: date(), time(), datetime(), julianday(), strftime(), unixepoch().
+// Reference: https://sqlite.org/lang_datefunc.html
 func GenSelectWithTimeFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	timeFuncs := []func(*common.LCG) string{
-		genTimeNowFunction,
-		genTimeDateFunction,
-		genTimeGetFunction,
-		genTimeUnixFunction,
-		genTimeMilliFunction,
-		genTimeMicroFunction,
-		genTimeNanoFunction,
-		genTimeToUnixFunction,
-		genTimeToMilliFunction,
-		genTimeToMicroFunction,
-		genTimeToNanoFunction,
-		genTimeAfterFunction,
-		genTimeBeforeFunction,
-		genTimeCompareFunction,
-		genTimeEqualFunction,
-		genTimeAddFunction,
-		genTimeAddDateFunction,
-		genTimeSubFunction,
-		genTimeSinceFunction,
-		genTimeUntilFunction,
-		genTimeTruncFunction,
-		genTimeRoundFunction,
-		genTimeFmtIsoFunction,
-		genTimeFmtDatetimeFunction,
-		genTimeFmtDateFunction,
-		genTimeFmtTimeFunction,
-		genTimeParseFunction,
-		genDurFunction,
+		genSQLiteDateFunction,
+		genSQLiteTimeFunction,
+		genSQLiteDatetimeFunction,
+		genSQLiteJuliandayFunction,
+		genSQLiteStrftimeFunction,
+		genSQLiteUnixepochFunction,
+		genSQLiteDateWithModifiers,
+		genSQLiteTimeWithModifiers,
+		genSQLiteDatetimeWithModifiers,
+		genSQLiteStrftimeWithFormat,
 	}
 
 	rnd := lcg.Intn
@@ -1722,199 +1706,170 @@ func GenSelectWithTimeFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) 
 
 // Time function generators
 
-func genTimeNowFunction(lcg *common.LCG) string {
-	return "time_now()"
-}
+// SQLite date/time function generators
+// Reference: https://sqlite.org/lang_datefunc.html
 
-func genTimeDateFunction(lcg *common.LCG) string {
-	year := 2020 + lcg.Intn(5)
-	month := 1 + lcg.Intn(12)
-	day := 1 + lcg.Intn(28)
-
-	if lcg.Intn(2) == 0 {
-		// Just date
-		return fmt.Sprintf("time_date(%d, %d, %d)", year, month, day)
-	}
-	// With time
-	hour := lcg.Intn(24)
-	min := lcg.Intn(60)
-	sec := lcg.Intn(60)
-	return fmt.Sprintf("time_date(%d, %d, %d, %d, %d, %d)", year, month, day, hour, min, sec)
-}
-
-func genTimeGetFunction(lcg *common.LCG) string {
-	fields := []string{"'year'", "'month'", "'day'", "'hour'", "'minute'", "'second'", "'nano'", "'weekday'", "'yearday'"}
-	field := fields[lcg.Intn(len(fields))]
-
-	getFuncs := []string{
-		"time_get_year(time_now())",
-		"time_get_month(time_now())",
-		"time_get_day(time_now())",
-		"time_get_hour(time_now())",
-		"time_get_minute(time_now())",
-		"time_get_second(time_now())",
-		"time_get_nano(time_now())",
-		"time_get_weekday(time_now())",
-		"time_get_yearday(time_now())",
-		"time_get_isoyear(time_now())",
-		"time_get_isoweek(time_now())",
-		fmt.Sprintf("time_get(time_now(), %s)", field),
-	}
-
-	return getFuncs[lcg.Intn(len(getFuncs))]
-}
-
-func genTimeUnixFunction(lcg *common.LCG) string {
-	sec := 1609459200 + lcg.Intn(63072000) // 2021-01-01 to ~2023
-	if lcg.Intn(2) == 0 {
-		return fmt.Sprintf("time_unix(%d)", sec)
-	}
-	nsec := lcg.Intn(1000000000)
-	return fmt.Sprintf("time_unix(%d, %d)", sec, nsec)
-}
-
-func genTimeMilliFunction(lcg *common.LCG) string {
-	// Use a smaller range to avoid integer overflow on 32-bit systems
-	// Add up to ~730 days (2 years) in milliseconds
-	msec := 1609459200000 + int64(lcg.Intn(63072000))*1000
-	return fmt.Sprintf("time_milli(%d)", msec)
-}
-
-func genTimeMicroFunction(lcg *common.LCG) string {
-	// Add up to ~1 day in microseconds for meaningful test coverage
-	usec := 1609459200000000 + int64(lcg.Intn(86400))*1000000
-	return fmt.Sprintf("time_micro(%d)", usec)
-}
-
-func genTimeNanoFunction(lcg *common.LCG) string {
-	// Add up to ~1 hour in nanoseconds for meaningful test coverage
-	nsec := 1609459200000000000 + int64(lcg.Intn(3600))*1000000000
-	return fmt.Sprintf("time_nano(%d)", nsec)
-}
-
-func genTimeToUnixFunction(lcg *common.LCG) string {
-	return "time_to_unix(time_now())"
-}
-
-func genTimeToMilliFunction(lcg *common.LCG) string {
-	return "time_to_milli(time_now())"
-}
-
-func genTimeToMicroFunction(lcg *common.LCG) string {
-	return "time_to_micro(time_now())"
-}
-
-func genTimeToNanoFunction(lcg *common.LCG) string {
-	return "time_to_nano(time_now())"
-}
-
-func genTimeAfterFunction(lcg *common.LCG) string {
-	return "time_after(time_now(), time_unix(1609459200))"
-}
-
-func genTimeBeforeFunction(lcg *common.LCG) string {
-	return "time_before(time_unix(1609459200), time_now())"
-}
-
-func genTimeCompareFunction(lcg *common.LCG) string {
-	return "time_compare(time_now(), time_unix(1609459200))"
-}
-
-func genTimeEqualFunction(lcg *common.LCG) string {
-	return "time_equal(time_now(), time_now())"
-}
-
-func genTimeAddFunction(lcg *common.LCG) string {
-	// Add duration to time
-	duration := lcg.Intn(86400000000000) // up to 1 day in nanoseconds
-	return fmt.Sprintf("time_add(time_now(), %d)", duration)
-}
-
-func genTimeAddDateFunction(lcg *common.LCG) string {
-	years := lcg.Intn(5)
-	if lcg.Intn(2) == 0 {
-		return fmt.Sprintf("time_add_date(time_now(), %d)", years)
-	}
-	months := lcg.Intn(12)
-	days := lcg.Intn(30)
-	return fmt.Sprintf("time_add_date(time_now(), %d, %d, %d)", years, months, days)
-}
-
-func genTimeSubFunction(lcg *common.LCG) string {
-	return "time_sub(time_now(), time_unix(1609459200))"
-}
-
-func genTimeSinceFunction(lcg *common.LCG) string {
-	return "time_since(time_unix(1609459200))"
-}
-
-func genTimeUntilFunction(lcg *common.LCG) string {
-	return "time_until(time_add(time_now(), 3600000000000))"
-}
-
-func genTimeTruncFunction(lcg *common.LCG) string {
-	fields := []string{"'year'", "'month'", "'day'", "'hour'", "'minute'", "'second'"}
-	field := fields[lcg.Intn(len(fields))]
-	return fmt.Sprintf("time_trunc(time_now(), %s)", field)
-}
-
-func genTimeRoundFunction(lcg *common.LCG) string {
-	duration := 3600000000000 // 1 hour in nanoseconds
-	return fmt.Sprintf("time_round(time_now(), %d)", duration)
-}
-
-func genTimeFmtIsoFunction(lcg *common.LCG) string {
-	if lcg.Intn(2) == 0 {
-		return "time_fmt_iso(time_now())"
-	}
-	offset := lcg.Intn(43200) - 21600 // -6 to +6 hours
-	return fmt.Sprintf("time_fmt_iso(time_now(), %d)", offset)
-}
-
-func genTimeFmtDatetimeFunction(lcg *common.LCG) string {
-	if lcg.Intn(2) == 0 {
-		return "time_fmt_datetime(time_now())"
-	}
-	offset := lcg.Intn(43200) - 21600
-	return fmt.Sprintf("time_fmt_datetime(time_now(), %d)", offset)
-}
-
-func genTimeFmtDateFunction(lcg *common.LCG) string {
-	if lcg.Intn(2) == 0 {
-		return "time_fmt_date(time_now())"
-	}
-	offset := lcg.Intn(43200) - 21600
-	return fmt.Sprintf("time_fmt_date(time_now(), %d)", offset)
-}
-
-func genTimeFmtTimeFunction(lcg *common.LCG) string {
-	if lcg.Intn(2) == 0 {
-		return "time_fmt_time(time_now())"
-	}
-	offset := lcg.Intn(43200) - 21600
-	return fmt.Sprintf("time_fmt_time(time_now(), %d)", offset)
-}
-
-func genTimeParseFunction(lcg *common.LCG) string {
-	timestamps := []string{
-		"'2024-01-01T12:00:00Z'",
-		"'2024-01-01 12:00:00'",
+// genSQLiteDateFunction generates date() function calls
+func genSQLiteDateFunction(lcg *common.LCG) string {
+	timeStrings := []string{
+		"'now'",
 		"'2024-01-01'",
+		"'2024-12-31'",
+		"'2025-06-15'",
 	}
-	ts := timestamps[lcg.Intn(len(timestamps))]
-	return fmt.Sprintf("time_parse(%s)", ts)
+	return fmt.Sprintf("date(%s)", timeStrings[lcg.Intn(len(timeStrings))])
 }
 
-func genDurFunction(lcg *common.LCG) string {
-	durFuncs := []string{
-		"dur_ns()",
-		"dur_us()",
-		"dur_ms()",
-		"dur_s()",
-		"dur_m()",
-		"dur_h()",
+// genSQLiteTimeFunction generates time() function calls
+func genSQLiteTimeFunction(lcg *common.LCG) string {
+	timeStrings := []string{
+		"'now'",
+		"'12:00:00'",
+		"'23:59:59'",
+		"'00:00:00'",
+		"'2024-01-01 12:00:00'",
 	}
-	return durFuncs[lcg.Intn(len(durFuncs))]
+	return fmt.Sprintf("time(%s)", timeStrings[lcg.Intn(len(timeStrings))])
+}
+
+// genSQLiteDatetimeFunction generates datetime() function calls
+func genSQLiteDatetimeFunction(lcg *common.LCG) string {
+	timeStrings := []string{
+		"'now'",
+		"'2024-01-01 12:00:00'",
+		"'2024-12-31 23:59:59'",
+		"'2025-06-15 08:30:00'",
+	}
+	return fmt.Sprintf("datetime(%s)", timeStrings[lcg.Intn(len(timeStrings))])
+}
+
+// genSQLiteJuliandayFunction generates julianday() function calls
+func genSQLiteJuliandayFunction(lcg *common.LCG) string {
+	timeStrings := []string{
+		"'now'",
+		"'2024-01-01'",
+		"'2024-01-01 12:00:00'",
+	}
+	return fmt.Sprintf("julianday(%s)", timeStrings[lcg.Intn(len(timeStrings))])
+}
+
+// genSQLiteUnixepochFunction generates unixepoch() function calls
+func genSQLiteUnixepochFunction(lcg *common.LCG) string {
+	timeStrings := []string{
+		"'now'",
+		"'2024-01-01'",
+		"'2024-01-01 12:00:00'",
+	}
+	return fmt.Sprintf("unixepoch(%s)", timeStrings[lcg.Intn(len(timeStrings))])
+}
+
+// genSQLiteStrftimeFunction generates strftime() function calls
+func genSQLiteStrftimeFunction(lcg *common.LCG) string {
+	formats := []string{
+		"'%Y-%m-%d'",
+		"'%H:%M:%S'",
+		"'%Y-%m-%d %H:%M:%S'",
+		"'%s'", // Unix timestamp
+		"'%w'", // Day of week
+		"'%j'", // Day of year
+	}
+	timeStrings := []string{
+		"'now'",
+		"'2024-01-01'",
+		"'2024-01-01 12:00:00'",
+	}
+	format := formats[lcg.Intn(len(formats))]
+	timeStr := timeStrings[lcg.Intn(len(timeStrings))]
+	return fmt.Sprintf("strftime(%s, %s)", format, timeStr)
+}
+
+// genSQLiteDateWithModifiers generates date() with time modifiers
+func genSQLiteDateWithModifiers(lcg *common.LCG) string {
+	modifiers := []string{
+		"'+1 day'",
+		"'-1 day'",
+		"'+1 month'",
+		"'-1 month'",
+		"'+1 year'",
+		"'-1 year'",
+		"'start of month'",
+		"'start of year'",
+		"'start of day'",
+		"'weekday 0'", // Sunday
+		"'weekday 1'", // Monday
+	}
+	
+	// Sometimes use single modifier, sometimes multiple
+	if lcg.Intn(2) == 0 {
+		modifier := modifiers[lcg.Intn(len(modifiers))]
+		return fmt.Sprintf("date('now', %s)", modifier)
+	}
+	
+	// Use multiple modifiers
+	mod1 := modifiers[lcg.Intn(len(modifiers))]
+	mod2 := modifiers[lcg.Intn(len(modifiers))]
+	return fmt.Sprintf("date('now', %s, %s)", mod1, mod2)
+}
+
+// genSQLiteTimeWithModifiers generates time() with time modifiers
+func genSQLiteTimeWithModifiers(lcg *common.LCG) string {
+	modifiers := []string{
+		"'+1 hour'",
+		"'-1 hour'",
+		"'+30 minutes'",
+		"'-30 minutes'",
+		"'+1 second'",
+		"'-1 second'",
+	}
+	
+	modifier := modifiers[lcg.Intn(len(modifiers))]
+	return fmt.Sprintf("time('12:00:00', %s)", modifier)
+}
+
+// genSQLiteDatetimeWithModifiers generates datetime() with time modifiers
+func genSQLiteDatetimeWithModifiers(lcg *common.LCG) string {
+	modifiers := []string{
+		"'+1 day'",
+		"'-1 day'",
+		"'+1 hour'",
+		"'-1 hour'",
+		"'+30 minutes'",
+		"'start of month'",
+		"'start of year'",
+		"'start of day'",
+	}
+	
+	// Sometimes use single modifier, sometimes multiple
+	if lcg.Intn(2) == 0 {
+		modifier := modifiers[lcg.Intn(len(modifiers))]
+		return fmt.Sprintf("datetime('now', %s)", modifier)
+	}
+	
+	// Use multiple modifiers
+	mod1 := modifiers[lcg.Intn(len(modifiers))]
+	mod2 := modifiers[lcg.Intn(len(modifiers))]
+	return fmt.Sprintf("datetime('now', %s, %s)", mod1, mod2)
+}
+
+// genSQLiteStrftimeWithFormat generates strftime() with various format strings
+func genSQLiteStrftimeWithFormat(lcg *common.LCG) string {
+	formats := []string{
+		"'%Y'",       // Year
+		"'%m'",       // Month
+		"'%d'",       // Day
+		"'%H'",       // Hour
+		"'%M'",       // Minute
+		"'%S'",       // Second
+		"'%w'",       // Day of week (0-6)
+		"'%j'",       // Day of year (001-366)
+		"'%W'",       // Week of year
+		"'%s'",       // Unix timestamp
+		"'%Y-%m-%d'", // ISO date
+		"'%H:%M:%S'", // ISO time
+	}
+	
+	format := formats[lcg.Intn(len(formats))]
+	return fmt.Sprintf("strftime(%s, 'now')", format)
 }
 
 // GenSelectWithGoSQLite3ScalarFunction generates a SELECT statement with go-sqlite3 specific core functions.
