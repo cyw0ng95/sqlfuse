@@ -1,14 +1,14 @@
 # SQLsmith-Go
 
-A high-performance SQL query generator and fuzzer for testing SQLite-compatible database systems. SQLsmith-Go generates syntactically valid, semantically interesting SQL statements to discover bugs, edge cases, and performance issues in database implementations.
+A high-performance SQL query generator and fuzzer for testing database systems. SQLsmith-Go generates syntactically valid, semantically interesting SQL statements to discover bugs, edge cases, and performance issues in both SQLite-compatible and analytical database implementations.
 
 ## Overview
 
-SQLsmith-Go is a Go implementation of the [SQLsmith](https://github.com/anse1/sqlsmith) approach to database testing through randomized query generation. Unlike traditional fuzzing that generates random bytes, SQLsmith-Go produces valid SQL statements that exercise diverse database features while respecting the constraints and capabilities of different SQLite flavors.
+SQLsmith-Go is a Go implementation of the [SQLsmith](https://github.com/anse1/sqlsmith) approach to database testing through randomized query generation. Unlike traditional fuzzing that generates random bytes, SQLsmith-Go produces valid SQL statements that exercise diverse database features while respecting the constraints and capabilities of different database flavors.
 
 ### Key Features
 
-- **Multi-Flavor Support**: Generates SQL compatible with different SQLite implementations (Turso LibSQL, go-sqlite3, Chai SQL)
+- **Multi-Flavor Support**: Generates SQL compatible with different database implementations (Turso LibSQL, go-sqlite3, Chai SQL, DuckDB)
 - **Intelligent Generation**: Uses schema awareness to produce meaningful queries with valid table/column references
 - **Comprehensive Coverage**: Supports diverse SQL features including CTEs, window functions, subqueries, and complex expressions
 - **Flavor-Aware**: Adapts generated SQL to match the capabilities and constraints of the target database
@@ -31,12 +31,13 @@ SQLsmith-Go is a Go implementation of the [SQLsmith](https://github.com/anse1/sq
 │  │ • Turso      │    │ • Base       │    │              │  │
 │  │ • go-sqlite3 │    │ • Turso      │    │ • SELECT     │  │
 │  │ • Chai       │    │ • go-sqlite3 │    │ • INSERT     │  │
-│  │ • HTTP API   │    │              │    │ • UPDATE     │  │
-│  └──────────────┘    └──────────────┘    │ • DELETE     │  │
-│                                           │ • PRAGMA     │  │
-│  ┌──────────────┐    ┌──────────────┐    │ • CREATE     │  │
-│  │   Dialects   │    │   Frontend   │    │ • ...        │  │
-│  │              │    │              │    └──────────────┘  │
+│  │ • DuckDB     │    │ • DuckDB     │    │ • UPDATE     │  │
+│  │ • HTTP API   │    │              │    │ • DELETE     │  │
+│  └──────────────┘    └──────────────┘    │ • PRAGMA     │  │
+│                                           │ • CREATE     │  │
+│  ┌──────────────┐    ┌──────────────┐    │ • ...        │  │
+│  │   Dialects   │    │   Frontend   │    └──────────────┘  │
+│  │              │    │              │                      │
 │  │ • Feature    │    │ • Vue.js     │                      │
 │  │   Detection  │    │ • Vuetify    │                      │
 │  │ • SQL        │    │ • Job Ctrl   │                      │
@@ -81,6 +82,7 @@ The project uses Go workspaces to ensure each executor includes only its require
 
 - **turso_embedded**: 155MB (includes turso-go)
 - **go_sqlite3_embedded**: 8.6MB (includes go-sqlite3 + CGo SQLite)
+- **duckdb_embedded**: Varies (includes go-duckdb)
 - **server**: 11MB (no database drivers)
 
 This keeps binaries focused and reduces deployment size.
@@ -105,6 +107,7 @@ bash build.sh
 # Outputs:
 # - output/turso_embedded_executor
 # - output/go_sqlite3_embedded_executor
+# - output/duckdb_embedded_executor
 # - output/server
 ```
 
@@ -133,6 +136,18 @@ bash build.sh
   --seed 12345 \
   --queries 500 \
   --workers 8 \
+  --verbose
+```
+
+**DuckDB Executor:**
+
+```bash
+# Analytical database fuzzing with DuckDB
+./output/duckdb_embedded_executor \
+  --dsn "" \
+  --seed 42 \
+  --queries 1000 \
+  --workers 4 \
   --verbose
 ```
 
@@ -219,6 +234,17 @@ PRAGMA foreign_keys = ON;          -- Extended pragmas
 PRAGMA auto_vacuum = INCREMENTAL;  -- Storage management
 ```
 
+**DuckDB** (Analytical database with extensive SQL features):
+```sql
+-- Rich analytical functions
+SELECT *, ROW_NUMBER() OVER (PARTITION BY category ORDER BY price DESC)
+FROM products;
+
+-- Advanced window functions with FILTER
+SELECT AVG(price) FILTER (WHERE in_stock) OVER (PARTITION BY category)
+FROM products;
+```
+
 ## Project Structure
 
 ```
@@ -227,7 +253,8 @@ sqlsmith-go/
 │   ├── executors/
 │   │   ├── turso_embedded/      # Turso LibSQL executor
 │   │   ├── go_sqlite3_embedded/ # go-sqlite3 executor
-│   │   └── chai_embedded/       # Chai SQL executor
+│   │   ├── chai_embedded/       # Chai SQL executor
+│   │   └── duckdb_embedded/     # DuckDB executor
 │   └── server/                  # HTTP API server
 │
 ├── internal/
@@ -237,14 +264,16 @@ sqlsmith-go/
 │   │   ├── dialects/           # Flavor configurations
 │   │   ├── base_generator.go  # Common generator logic
 │   │   ├── turso.go           # Turso-specific generator
-│   │   └── go_sqlite3.go      # go-sqlite3 generator
+│   │   ├── go_sqlite3.go      # go-sqlite3 generator
+│   │   └── duckdb.go          # DuckDB generator
 │   └── stmts/
 │       ├── stmts/              # Statement builders
 │       └── types/              # SQL type generators
 │
 ├── assets/                      # Database schemas & configs
 │   ├── turso/init.sql
-│   └── go_sqlite3/init.sql
+│   ├── go_sqlite3/init.sql
+│   └── duckdb/init.sql
 │
 ├── config/                      # Server & executor configs
 ├── docs/                        # Architecture documentation
@@ -561,6 +590,11 @@ pnpm run build
     "executor": "chai_embedded",
     "path": "./output/chai_embedded",
     "flavor": "chai"
+  },
+  {
+    "executor": "duckdb_embedded",
+    "path": "./output/duckdb_embedded",
+    "flavor": "duckdb"
   }
 ]
 ```

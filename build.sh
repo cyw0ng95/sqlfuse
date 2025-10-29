@@ -55,10 +55,13 @@ build_project() {
     echo "-- [INFO] Building go_sqlite3_embedded_executor..."
     (cd cmd/executors/go_sqlite3_embedded && go_build ../../../output/go_sqlite3_embedded_executor .)
 
+    echo "-- [INFO] Building duckdb_embedded_executor..."
+    (cd cmd/executors/duckdb_embedded && go_build ../../../output/duckdb_embedded_executor .)
+
     echo "-- [INFO] Building server..."
     (cd cmd/server && go_build ../../output/server .)
 
-    echo "-- [INFO] Build complete. Output: output/turso_embedded_executor, output/go_sqlite3_embedded_executor, output/server"
+    echo "-- [INFO] Build complete. Output: output/turso_embedded_executor, output/go_sqlite3_embedded_executor, output/duckdb_embedded_executor, output/server"
 
     # Build the frontend view
     build_view
