@@ -42,8 +42,8 @@ func GenAnalyze(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	choice := lcg.Intn(10)
 	var sql string
 
-	if choice < 3 {
-		// 30% chance: ANALYZE all tables
+	if choice < 3 || db == nil {
+		// 30% chance: ANALYZE all tables, or fallback if no db
 		sql = "ANALYZE;"
 	} else {
 		// 70% chance: ANALYZE a specific table

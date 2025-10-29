@@ -54,9 +54,14 @@ func GenCreateTrigger(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, e
 		flavor = GetDefaultFlavor()
 	}
 
-	// Get available tables
-	tables, err := helper.GetAllTablesAndCols(db)
-	if err != nil || len(tables) == 0 {
+	// Get available tables (only if db is not nil)
+	var tables []helper.TableInfo
+	var err error
+	if db != nil {
+		tables, err = helper.GetAllTablesAndCols(db)
+	}
+	
+	if db == nil || err != nil || len(tables) == 0 {
 		// Fallback to a simple trigger without schema
 		return genCreateTriggerFallback(lcg, flavor), nil
 	}

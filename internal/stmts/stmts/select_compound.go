@@ -63,27 +63,33 @@ func GenCompoundSelect(db *sql.DB, lcg *common.LCG, variant StmtType, flavor Fla
 
 	// Generate two SELECT statements to combine
 	// Use simple SELECTs to avoid complexity and ensure column compatibility
-	select1, err1 := GenSelect(db, lcg)
-	select2, err2 := GenSelect(db, lcg)
-
 	var sql string
-	if err1 != nil || err2 != nil {
-		// Fallback to simple constant selects that are guaranteed to be compatible
+	
+	// If no db, use simple fallback
+	if db == nil {
 		sql = fmt.Sprintf("SELECT 1, 'a' %s SELECT 2, 'b';", operator)
 	} else {
-		// Remove trailing semicolons from the individual SELECTs
-		sql1 := select1.SQL()
-		sql2 := select2.SQL()
+		select1, err1 := GenSelect(db, lcg)
+		select2, err2 := GenSelect(db, lcg)
 
-		if len(sql1) > 0 && sql1[len(sql1)-1] == ';' {
-			sql1 = sql1[:len(sql1)-1]
-		}
-		if len(sql2) > 0 && sql2[len(sql2)-1] == ';' {
-			sql2 = sql2[:len(sql2)-1]
-		}
+		if err1 != nil || err2 != nil {
+			// Fallback to simple constant selects that are guaranteed to be compatible
+			sql = fmt.Sprintf("SELECT 1, 'a' %s SELECT 2, 'b';", operator)
+		} else {
+			// Remove trailing semicolons from the individual SELECTs
+			sql1 := select1.SQL()
+			sql2 := select2.SQL()
 
-		// Wrap each SELECT in parentheses for clarity (optional but good practice)
-		sql = fmt.Sprintf("(%s) %s (%s);", sql1, operator, sql2)
+			if len(sql1) > 0 && sql1[len(sql1)-1] == ';' {
+				sql1 = sql1[:len(sql1)-1]
+			}
+			if len(sql2) > 0 && sql2[len(sql2)-1] == ';' {
+				sql2 = sql2[:len(sql2)-1]
+			}
+
+			// Wrap each SELECT in parentheses for clarity (optional but good practice)
+			sql = fmt.Sprintf("(%s) %s (%s);", sql1, operator, sql2)
+		}
 	}
 
 	return &CompoundSelectStmt{

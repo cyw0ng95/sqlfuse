@@ -36,6 +36,14 @@ type ExplainStmt struct {
 func GenExplain(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	lcg = ensureLCG(lcg)
 
+	// If no db is provided, generate a simple EXPLAIN for fallback
+	if db == nil {
+		sql := "EXPLAIN SELECT 1;"
+		return &ExplainStmt{
+			BaseStmt: NewBaseStmt(sql, "explain", GetDefaultFlavor()),
+		}, nil
+	}
+
 	// Choose between EXPLAIN and EXPLAIN QUERY PLAN
 	explainType := "EXPLAIN"
 	if lcg.Intn(2) == 0 {
@@ -104,6 +112,14 @@ func GenExplain(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 // GenExplainQueryPlan generates an EXPLAIN QUERY PLAN statement specifically.
 func GenExplainQueryPlan(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	lcg = ensureLCG(lcg)
+
+	// If no db is provided, generate a simple EXPLAIN for fallback
+	if db == nil {
+		sql := "EXPLAIN QUERY PLAN SELECT 1;"
+		return &ExplainStmt{
+			BaseStmt: NewBaseStmt(sql, "explain", GetDefaultFlavor()),
+		}, nil
+	}
 
 	// Generate a SELECT statement to explain
 	innerStmt, err := GenSelect(db, lcg)

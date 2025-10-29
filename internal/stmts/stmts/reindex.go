@@ -42,8 +42,8 @@ func GenReindex(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	choice := lcg.Intn(10)
 	var sql string
 
-	if choice < 2 {
-		// 20% chance: REINDEX all
+	if choice < 2 || db == nil {
+		// 20% chance: REINDEX all, or fallback if no db
 		sql = "REINDEX;"
 	} else if choice < 4 {
 		// 20% chance: REINDEX with collation

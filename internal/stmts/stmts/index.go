@@ -61,9 +61,14 @@ func GenCreateIndex(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 		lcg = common.NewLCG(1)
 	}
 
-	// Try to get actual tables from schema
-	tables, err := helper.GetAllTablesAndCols(db)
-	if err != nil || len(tables) == 0 {
+	// Try to get actual tables from schema (only if db is not nil)
+	var tables []helper.TableInfo
+	var err error
+	if db != nil {
+		tables, err = helper.GetAllTablesAndCols(db)
+	}
+	
+	if db == nil || err != nil || len(tables) == 0 {
 		// Fallback to simple index without schema
 		return genCreateIndexFallback(lcg), nil
 	}
