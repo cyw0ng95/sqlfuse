@@ -1083,6 +1083,42 @@ func genTotalFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 	return "total(1)"
 }
 
+func genJSONGroupArrayFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	// json_group_array(X) - Aggregates values into a JSON array
+	// This is a go-sqlite3 specific aggregate function
+	if len(tbls) == 0 {
+		return "json_group_array(1)"
+	}
+	tbl := tbls[lcg.Intn(len(tbls))]
+	if len(tbl.Cols) == 0 {
+		return "json_group_array(1)"
+	}
+	col := tbl.Cols[lcg.Intn(len(tbl.Cols))]
+	return fmt.Sprintf("json_group_array(%s)", quoteIdent(col.Name))
+}
+
+func genJSONGroupObjectFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
+	// json_group_object(X, Y) - Aggregates key-value pairs into a JSON object
+	// This is a go-sqlite3 specific aggregate function
+	if len(tbls) == 0 {
+		return "json_group_object('key', 'value')"
+	}
+	tbl := tbls[lcg.Intn(len(tbls))]
+	if len(tbl.Cols) < 2 {
+		// Need at least 2 columns for key and value
+		if len(tbl.Cols) == 1 {
+			col := tbl.Cols[0]
+			return fmt.Sprintf("json_group_object(%s, %s)", quoteIdent(col.Name), quoteIdent(col.Name))
+		}
+		return "json_group_object('key', 'value')"
+	}
+	
+	// Use two different columns for key and value
+	keyCol := tbl.Cols[lcg.Intn(len(tbl.Cols))]
+	valueCol := tbl.Cols[lcg.Intn(len(tbl.Cols))]
+	return fmt.Sprintf("json_group_object(%s, %s)", quoteIdent(keyCol.Name), quoteIdent(valueCol.Name))
+}
+
 // GenSelectWithDateTimeFunction generates a SELECT statement with date/time SQL functions
 func GenSelectWithDateTimeFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	datetimeFuncs := []func(*common.LCG) string{
@@ -1906,6 +1942,45 @@ func GenSelectWithGoSQLite3ScalarFunction(db *sql.DB, lcg *common.LCG) (SelectSt
 
 	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;", funcExpr, quoteIdent(tbl.Name), 1+rnd(10))
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
+}
+
+// GenSelectWithGoSQLite3AggregateFunction generates a SELECT statement with go-sqlite3 specific aggregate functions.
+// These functions are only supported by full SQLite3 (via go-sqlite3) and may not be available in Turso LibSQL.
+func GenSelectWithGoSQLite3AggregateFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
+	tables, err := helper.GetAllTablesAndCols(db)
+	if err != nil || len(tables) == 0 {
+		// No tables available, use literal values
+		return genSelectGoSQLite3AggregateFunctionLiteral(lcg), nil
+	}
+
+	rnd := lcg.Intn
+	tbl := tables[rnd(len(tables))]
+
+	// go-sqlite3 specific aggregate functions (JSON aggregates)
+	aggFuncs := []func(*common.LCG, []helper.TableInfo) string{
+		genJSONGroupArrayFunction,
+		genJSONGroupObjectFunction,
+	}
+
+	funcIdx := rnd(len(aggFuncs))
+	funcExpr := aggFuncs[funcIdx](lcg, tables)
+
+	sql := fmt.Sprintf("SELECT %s FROM %s;", funcExpr, quoteIdent(tbl.Name))
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
+}
+
+// genSelectGoSQLite3AggregateFunctionLiteral generates a SELECT with go-sqlite3 specific aggregate functions using literal values
+func genSelectGoSQLite3AggregateFunctionLiteral(lcg *common.LCG) SelectStmt {
+	aggFuncs := []string{
+		"json_group_array(1)",
+		"json_group_array('value')",
+		"json_group_object('key', 'value')",
+		"json_group_object('id', 1)",
+	}
+
+	funcIdx := lcg.Intn(len(aggFuncs))
+	sql := fmt.Sprintf("SELECT %s;", aggFuncs[funcIdx])
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}
 }
 
 // genSelectGoSQLite3ScalarFunctionLiteral generates a SELECT with go-sqlite3 specific scalar functions using literal values
