@@ -1,6 +1,7 @@
 [
     {
         "executor": "turso_embedded",
-        "path": "/opt/output/turso_embedded_executor"
+        "path": "/opt/output/turso_embedded_executor",
+        "flavor": "turso"
     }
 ]

@@ -20,6 +20,7 @@ import (
 type ExecutorConfig struct {
 	Executor string `json:"executor"`
 	Path     string `json:"path"`
+	Flavor   string `json:"flavor,omitempty"` // Optional: flavor identifier (e.g., "turso", "go-sqlite3")
 }
 
 // ServerConfig holds server-wide configuration
