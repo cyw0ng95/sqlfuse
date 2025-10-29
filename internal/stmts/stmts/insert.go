@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sqlsmith-go/internal/common"
 	"sqlsmith-go/internal/stmts/helper"
+	"sqlsmith-go/internal/stmts/keywords"
 	"sqlsmith-go/internal/stmts/types"
 	"strings"
 )
@@ -93,7 +94,9 @@ func genInsertSingleWithFlavor(db *sql.DB, lcg *common.LCG, flavor FlavorConfig)
 }
 
 func quoteIdent(s string) string {
-	return fmt.Sprintf("\"%s\"", strings.ReplaceAll(s, "\"", "\"\""))
+	// Use the keyword-aware quoting function from the keywords package
+	// This ensures all SQLite keywords are properly quoted
+	return keywords.QuoteIdentifier(s)
 }
 
 // GenInsertMultiple generates an INSERT with multiple VALUES rows (2..N rows).
