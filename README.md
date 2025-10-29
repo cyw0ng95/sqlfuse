@@ -8,7 +8,7 @@ SQLsmith-Go is a Go implementation of the [SQLsmith](https://github.com/anse1/sq
 
 ### Key Features
 
-- **Multi-Flavor Support**: Generates SQL compatible with different SQLite implementations (Turso LibSQL, go-sqlite3, Chai SQL)
+- **Multi-Flavor Support**: Generates SQL compatible with different database implementations (Turso LibSQL, go-sqlite3, DuckDB, Chai SQL)
 - **Intelligent Generation**: Uses schema awareness to produce meaningful queries with valid table/column references
 - **Comprehensive Coverage**: Supports diverse SQL features including CTEs, window functions, subqueries, and complex expressions
 - **Flavor-Aware**: Adapts generated SQL to match the capabilities and constraints of the target database
@@ -30,9 +30,10 @@ SQLsmith-Go is a Go implementation of the [SQLsmith](https://github.com/anse1/sq
 │  │              │    │              │    │  Builders    │  │
 │  │ • Turso      │    │ • Base       │    │              │  │
 │  │ • go-sqlite3 │    │ • Turso      │    │ • SELECT     │  │
-│  │ • Chai       │    │ • go-sqlite3 │    │ • INSERT     │  │
-│  │ • HTTP API   │    │              │    │ • UPDATE     │  │
-│  └──────────────┘    └──────────────┘    │ • DELETE     │  │
+│  │ • DuckDB     │    │ • go-sqlite3 │    │ • INSERT     │  │
+│  │ • Chai       │    │ • DuckDB     │    │ • UPDATE     │  │
+│  │ • HTTP API   │    │              │    │ • DELETE     │  │
+│  └──────────────┘    └──────────────┘    │ • PRAGMA     │  │
 │                                           │ • PRAGMA     │  │
 │  ┌──────────────┐    ┌──────────────┐    │ • CREATE     │  │
 │  │   Dialects   │    │   Frontend   │    │ • ...        │  │
@@ -136,6 +137,24 @@ bash build.sh
   --verbose
 ```
 
+**DuckDB Executor:**
+
+```bash
+# In-memory DuckDB fuzzing with analytical queries
+./output/duckdb_embedded_executor \
+  --dsn "" \
+  --init-sql "./assets/duckdb/init.sql" \
+  --queries 1000 \
+  --workers 4 \
+  --verbose
+
+# File-based DuckDB database
+./output/duckdb_embedded_executor \
+  --dsn "test.duckdb" \
+  --seed 42 \
+  --queries 500
+```
+
 **HTTP Server:**
 
 ```bash
@@ -227,6 +246,7 @@ sqlsmith-go/
 │   ├── executors/
 │   │   ├── turso_embedded/      # Turso LibSQL executor
 │   │   ├── go_sqlite3_embedded/ # go-sqlite3 executor
+│   │   ├── duckdb_embedded/     # DuckDB executor
 │   │   └── chai_embedded/       # Chai SQL executor
 │   └── server/                  # HTTP API server
 │
@@ -237,14 +257,16 @@ sqlsmith-go/
 │   │   ├── dialects/           # Flavor configurations
 │   │   ├── base_generator.go  # Common generator logic
 │   │   ├── turso.go           # Turso-specific generator
-│   │   └── go_sqlite3.go      # go-sqlite3 generator
+│   │   ├── go_sqlite3.go      # go-sqlite3 generator
+│   │   └── duckdb.go          # DuckDB generator
 │   └── stmts/
 │       ├── stmts/              # Statement builders
 │       └── types/              # SQL type generators
 │
 ├── assets/                      # Database schemas & configs
 │   ├── turso/init.sql
-│   └── go_sqlite3/init.sql
+│   ├── go_sqlite3/init.sql
+│   └── duckdb/init.sql
 │
 ├── config/                      # Server & executor configs
 ├── docs/                        # Architecture documentation
