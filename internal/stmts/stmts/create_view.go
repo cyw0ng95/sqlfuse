@@ -19,14 +19,10 @@ func (g *CreateViewGenerator) CanGenerate(ctx *GenContext) bool {
 }
 
 // CreateViewStmt represents a CREATE VIEW statement.
+// It embeds BaseStmt to avoid boilerplate method implementations.
 type CreateViewStmt struct {
-	sql    string
-	flavor FlavorConfig
+	*BaseStmt
 }
-
-func (s *CreateViewStmt) SQL() string          { return s.sql }
-func (s *CreateViewStmt) Type() string         { return "create_view" }
-func (s *CreateViewStmt) Flavor() FlavorConfig { return s.flavor }
 
 // GenCreateView generates a simple CREATE VIEW statement that selects a constant.
 // Using a constant SELECT avoids depending on existing tables.
@@ -37,11 +33,11 @@ func GenCreateView(lcg *common.LCG) (Stmt, error) {
 
 // genCreateViewInternal is the internal implementation used by both old and new interfaces.
 func genCreateViewInternal(lcg *common.LCG) (Stmt, error) {
-	if lcg == nil {
-		lcg = common.NewLCG(1)
-	}
+	lcg = ensureLCG(lcg)
 
 	view := fmt.Sprintf("view_%d", lcg.Uint64()%1000000)
 	sql := fmt.Sprintf("CREATE VIEW IF NOT EXISTS \"%s\" AS SELECT 1 AS col1;", view)
-	return &CreateViewStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
+	return &CreateViewStmt{
+		BaseStmt: NewBaseStmt(sql, "create_view", GetDefaultFlavor()),
+	}, nil
 }

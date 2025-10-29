@@ -7,22 +7,16 @@ import (
 )
 
 // ExplainStmt represents an EXPLAIN statement.
+// It embeds BaseStmt to avoid boilerplate method implementations.
 type ExplainStmt struct {
-	sql    string
-	flavor FlavorConfig
+	*BaseStmt
 }
-
-func (s *ExplainStmt) SQL() string          { return s.sql }
-func (s *ExplainStmt) Type() string         { return "explain" }
-func (s *ExplainStmt) Flavor() FlavorConfig { return s.flavor }
 
 // GenExplain generates an EXPLAIN or EXPLAIN QUERY PLAN statement
 // wrapping another SQL statement.
 // According to Turso COMPAT.md: Yes (full support).
 func GenExplain(db *sql.DB, lcg *common.LCG) (Stmt, error) {
-	if lcg == nil {
-		lcg = common.NewLCG(1)
-	}
+	lcg = ensureLCG(lcg)
 
 	// Choose between EXPLAIN and EXPLAIN QUERY PLAN
 	explainType := "EXPLAIN"
@@ -84,14 +78,14 @@ func GenExplain(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	}
 
 	sql := fmt.Sprintf("%s %s;", explainType, innerSQL)
-	return &ExplainStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
+	return &ExplainStmt{
+		BaseStmt: NewBaseStmt(sql, "explain", GetDefaultFlavor()),
+	}, nil
 }
 
 // GenExplainQueryPlan generates an EXPLAIN QUERY PLAN statement specifically.
 func GenExplainQueryPlan(db *sql.DB, lcg *common.LCG) (Stmt, error) {
-	if lcg == nil {
-		lcg = common.NewLCG(1)
-	}
+	lcg = ensureLCG(lcg)
 
 	// Generate a SELECT statement to explain
 	innerStmt, err := GenSelect(db, lcg)
@@ -105,5 +99,7 @@ func GenExplainQueryPlan(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	}
 
 	sql := fmt.Sprintf("EXPLAIN QUERY PLAN %s;", innerSQL)
-	return &ExplainStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
+	return &ExplainStmt{
+		BaseStmt: NewBaseStmt(sql, "explain", GetDefaultFlavor()),
+	}, nil
 }

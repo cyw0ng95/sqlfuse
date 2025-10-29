@@ -19,14 +19,10 @@ func (g *AlterTableGenerator) CanGenerate(ctx *GenContext) bool {
 }
 
 // AlterTableStmt represents an ALTER TABLE statement.
+// It embeds BaseStmt to avoid boilerplate method implementations.
 type AlterTableStmt struct {
-	sql    string
-	flavor FlavorConfig
+	*BaseStmt
 }
-
-func (s *AlterTableStmt) SQL() string          { return s.sql }
-func (s *AlterTableStmt) Type() string         { return "alter_table" }
-func (s *AlterTableStmt) Flavor() FlavorConfig { return s.flavor }
 
 // GenAlterTable generates simple ALTER TABLE statements:
 // - ADD COLUMN
@@ -40,28 +36,29 @@ func GenAlterTable(lcg *common.LCG) (Stmt, error) {
 
 // genAlterTableInternal is the internal implementation used by both old and new interfaces.
 func genAlterTableInternal(lcg *common.LCG) (Stmt, error) {
-	if lcg == nil {
-		lcg = common.NewLCG(1)
-	}
+	lcg = ensureLCG(lcg)
+	flavor := GetDefaultFlavor()
 
 	op := lcg.Intn(3)
 	tbl := fmt.Sprintf("tbl_%d", lcg.Uint64()%1000000)
 	types := []string{"INTEGER", "TEXT", "REAL", "BLOB"}
 
+	var sql string
 	switch op {
 	case 0: // ADD COLUMN
 		col := fmt.Sprintf("col%d", 1+lcg.Intn(100))
 		t := types[lcg.Intn(len(types))]
-		sql := fmt.Sprintf("ALTER TABLE \"%s\" ADD COLUMN \"%s\" %s;", tbl, col, t)
-		return &AlterTableStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
+		sql = fmt.Sprintf("ALTER TABLE \"%s\" ADD COLUMN \"%s\" %s;", tbl, col, t)
 	case 1: // RENAME COLUMN
 		old := fmt.Sprintf("col%d", 1+lcg.Intn(100))
 		new := fmt.Sprintf("col%d", 101+lcg.Intn(100))
-		sql := fmt.Sprintf("ALTER TABLE \"%s\" RENAME COLUMN \"%s\" TO \"%s\";", tbl, old, new)
-		return &AlterTableStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
+		sql = fmt.Sprintf("ALTER TABLE \"%s\" RENAME COLUMN \"%s\" TO \"%s\";", tbl, old, new)
 	default: // RENAME TABLE
 		newTbl := fmt.Sprintf("tbl_%d", lcg.Uint64()%1000000)
-		sql := fmt.Sprintf("ALTER TABLE \"%s\" RENAME TO \"%s\";", tbl, newTbl)
-		return &AlterTableStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
+		sql = fmt.Sprintf("ALTER TABLE \"%s\" RENAME TO \"%s\";", tbl, newTbl)
 	}
+	
+	return &AlterTableStmt{
+		BaseStmt: NewBaseStmt(sql, "alter_table", flavor),
+	}, nil
 }

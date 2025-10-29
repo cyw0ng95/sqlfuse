@@ -23,14 +23,10 @@ func (g *DeleteGenerator) CanGenerate(ctx *GenContext) bool {
 }
 
 // DeleteStmt represents a DELETE statement.
+// It embeds BaseStmt to avoid boilerplate method implementations.
 type DeleteStmt struct {
-	sql    string
-	flavor FlavorConfig
+	*BaseStmt
 }
-
-func (s *DeleteStmt) SQL() string          { return s.sql }
-func (s *DeleteStmt) Type() string         { return "delete" }
-func (s *DeleteStmt) Flavor() FlavorConfig { return s.flavor }
 
 // GenDelete generates a DELETE statement using actual schema information.
 // It supports complex WHERE clauses with multiple conditions.
@@ -40,12 +36,8 @@ func GenDelete(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 
 // genDeleteWithFlavor generates a DELETE statement with flavor support.
 func genDeleteWithFlavor(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	if lcg == nil {
-		lcg = common.NewLCG(1)
-	}
-	if flavor == nil {
-		flavor = GetDefaultFlavor()
-	}
+	lcg = ensureLCG(lcg)
+	flavor = ensureFlavor(flavor)
 
 	// Try to get actual tables from schema
 	tables, err := helper.GetAllTablesAndCols(db)
@@ -191,7 +183,9 @@ func genDeleteWithFlavor(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt
 	}
 
 	sql := fmt.Sprintf("DELETE FROM %s%s%s;", quoteIdent(tbl.Name), where, limitClause)
-	return &DeleteStmt{sql: sql, flavor: flavor}, nil
+	return &DeleteStmt{
+		BaseStmt: NewBaseStmt(sql, "delete", flavor),
+	}, nil
 }
 
 // genDeleteFallback generates a simple DELETE without schema information
@@ -201,9 +195,7 @@ func genDeleteFallback(lcg *common.LCG) *DeleteStmt {
 
 // genDeleteFallbackWithFlavor generates a simple DELETE without schema information with flavor support
 func genDeleteFallbackWithFlavor(lcg *common.LCG, flavor FlavorConfig) *DeleteStmt {
-	if flavor == nil {
-		flavor = GetDefaultFlavor()
-	}
+	flavor = ensureFlavor(flavor)
 	tbl := fmt.Sprintf("tbl_%d", lcg.Uint64()%1000000)
 	where := ""
 	if lcg.Intn(2) == 0 {
@@ -212,5 +204,7 @@ func genDeleteFallbackWithFlavor(lcg *common.LCG, flavor FlavorConfig) *DeleteSt
 	}
 
 	sql := fmt.Sprintf("DELETE FROM \"%s\"%s;", tbl, where)
-	return &DeleteStmt{sql: sql, flavor: flavor}
+	return &DeleteStmt{
+		BaseStmt: NewBaseStmt(sql, "delete", flavor),
+	}
 }

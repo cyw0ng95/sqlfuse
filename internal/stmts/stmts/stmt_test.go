@@ -446,12 +446,12 @@ func TestStmtInterface(t *testing.T) {
 		{"SelectStmt", &SelectStmt{sql: "SELECT 1;"}, "select"},
 		{"InsertStmt", &InsertStmt{sql: "INSERT INTO t DEFAULT VALUES;"}, "insert"},
 		{"UpdateStmt", &UpdateStmt{sql: "UPDATE t SET c1=1;"}, "update"},
-		{"DeleteStmt", &DeleteStmt{sql: "DELETE FROM t;"}, "delete"},
-		{"CreateTableStmt", &CreateTableStmt{sql: "CREATE TABLE t (id INTEGER);"}, "create_table"},
-		{"DropTableStmt", &DropTableStmt{sql: "DROP TABLE t;"}, "drop_table"},
-		{"CreateViewStmt", &CreateViewStmt{sql: "CREATE VIEW v AS SELECT 1;"}, "create_view"},
-		{"DropViewStmt", &DropViewStmt{sql: "DROP VIEW v;"}, "drop_view"},
-		{"AlterTableStmt", &AlterTableStmt{sql: "ALTER TABLE t ADD COLUMN c TEXT;"}, "alter_table"},
+		{"DeleteStmt", &DeleteStmt{BaseStmt: NewBaseStmt("DELETE FROM t;", "delete", nil)}, "delete"},
+		{"CreateTableStmt", &CreateTableStmt{BaseStmt: NewBaseStmt("CREATE TABLE t (id INTEGER);", "create_table", nil)}, "create_table"},
+		{"DropTableStmt", &DropTableStmt{BaseStmt: NewBaseStmt("DROP TABLE t;", "drop_table", nil)}, "drop_table"},
+		{"CreateViewStmt", &CreateViewStmt{BaseStmt: NewBaseStmt("CREATE VIEW v AS SELECT 1;", "create_view", nil)}, "create_view"},
+		{"DropViewStmt", &DropViewStmt{BaseStmt: NewBaseStmt("DROP VIEW v;", "drop_view", nil)}, "drop_view"},
+		{"AlterTableStmt", &AlterTableStmt{BaseStmt: NewBaseStmt("ALTER TABLE t ADD COLUMN c TEXT;", "alter_table", nil)}, "alter_table"},
 	}
 
 	for _, tt := range tests {
