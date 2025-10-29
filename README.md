@@ -219,6 +219,28 @@ PRAGMA foreign_keys = ON;          -- Extended pragmas
 PRAGMA auto_vacuum = INCREMENTAL;  -- Storage management
 ```
 
+### SQLite Keywords Support
+
+SQLsmith-Go includes comprehensive support for all 147 SQLite keywords from [sqlite.org/lang_keywords.html](https://sqlite.org/lang_keywords.html):
+
+- **Automatic keyword detection**: Identifies when identifiers conflict with SQL keywords
+- **Smart quoting**: Properly quotes identifiers to prevent syntax errors
+- **Turso compatibility**: Flags keywords not supported by Turso LibSQL (FILTER, WINDOW, REGEXP, etc.)
+- **Case-insensitive**: Works with any case combination
+
+```go
+// Keywords automatically quoted when used as identifiers
+CREATE TABLE "select" (id INTEGER);  // "select" quoted (keyword)
+INSERT INTO "from" ("where") VALUES (1);  // All quoted (keywords)
+
+// Turso compatibility checking
+if keywords.IsTursoSupported("WINDOW") {
+    // Skip window functions for Turso
+}
+```
+
+See [docs/KEYWORDS_SUPPORT.md](docs/KEYWORDS_SUPPORT.md) for complete documentation.
+
 ## Project Structure
 
 ```
@@ -239,8 +261,9 @@ sqlsmith-go/
 │   │   ├── turso.go           # Turso-specific generator
 │   │   └── go_sqlite3.go      # go-sqlite3 generator
 │   └── stmts/
-│       ├── stmts/              # Statement builders
-│       └── types/              # SQL type generators
+│       ├── keywords/            # SQLite keyword support
+│       ├── stmts/               # Statement builders
+│       └── types/               # SQL type generators
 │
 ├── assets/                      # Database schemas & configs
 │   ├── turso/init.sql
@@ -574,6 +597,7 @@ Comprehensive documentation is available in the `docs/` directory:
 - **[ARCHITECTURE.md](docs/ARCHITECTURE.md)**: Generator architecture and design patterns
 - **[WORKSPACE.md](docs/WORKSPACE.md)**: Go workspace structure and module layout
 - **[PRAGMA_SUPPORT.md](docs/PRAGMA_SUPPORT.md)**: Flavor-specific PRAGMA generation
+- **[KEYWORDS_SUPPORT.md](docs/KEYWORDS_SUPPORT.md)**: SQLite keyword support and identifier quoting
 - **[DIALECTS_README.md](docs/DIALECTS_README.md)**: Database dialect system
 - **[DESIGN_PATTERNS.md](docs/DESIGN_PATTERNS.md)**: Code organization patterns
 - **[DESIGN_IMPROVEMENTS.md](docs/DESIGN_IMPROVEMENTS.md)**: Planned enhancements
