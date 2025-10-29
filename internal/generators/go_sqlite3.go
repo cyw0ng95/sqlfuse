@@ -87,6 +87,38 @@ func DefaultGoSQLite3StmtWeights() map[stmts.StmtType]uint64 {
 	w[stmts.StmtCreateTable] = 40
 	w[stmts.StmtDropTable] = 40
 	w[stmts.StmtAlterTable] = 40
+	w[stmts.StmtCreateView] = 30
+	w[stmts.StmtDropView] = 30
+	w[stmts.StmtCreateIndex] = 35
+	w[stmts.StmtDropIndex] = 35
+	w[stmts.StmtCreateVirtualTable] = 25
+	w[stmts.StmtCreateTrigger] = 20
+	w[stmts.StmtDropTrigger] = 20
+	
+	// Transaction control
+	w[stmts.StmtBegin] = 25
+	w[stmts.StmtCommit] = 25
+	w[stmts.StmtRollback] = 25
+	w[stmts.StmtSavepoint] = 15
+	w[stmts.StmtRelease] = 15
+	
+	// Database attachment (go-sqlite3: full support)
+	w[stmts.StmtAttach] = 15
+	w[stmts.StmtDetach] = 15
+	
+	// Query analysis
+	w[stmts.StmtExplain] = 20
+	w[stmts.StmtExplainQueryPlan] = 20
+	
+	// Database maintenance
+	w[stmts.StmtAnalyze] = 15
+	w[stmts.StmtVacuum] = 10
+	w[stmts.StmtReindex] = 15
+	
+	// Compound SELECT statements
+	w[stmts.StmtSelectUnion] = 40
+	w[stmts.StmtSelectIntersect] = 30
+	w[stmts.StmtSelectExcept] = 30
 	
 	// PRAGMA - go-sqlite3 supports all SQLite3 pragmas
 	w[stmts.StmtPragma] = 50
