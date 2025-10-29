@@ -65,8 +65,8 @@ This PR refactors the `internal/stmts/stmts` package to use proper software desi
 
 ### 7. Comprehensive Documentation
 - **New files:**
-  - `DESIGN_PATTERNS.md`: Detailed explanation of Factory and Strategy patterns
-  - `DESIGN_IMPROVEMENTS.md`: Detailed explanation of Template Method and Null Object patterns
+  - `docs/DESIGN_PATTERNS.md`: Detailed explanation of Factory and Strategy patterns
+  - `docs/DESIGN_IMPROVEMENTS.md`: Detailed explanation of Template Method and Null Object patterns
   - `examples_test.go`: 9 example functions demonstrating usage
 - **Benefits:**
   - Living documentation through examples
@@ -94,8 +94,8 @@ This PR refactors the `internal/stmts/stmts` package to use proper software desi
 4. `internal/stmts/stmts/select_variants.go` (116 lines) - SELECT variant strategies
 5. `internal/stmts/stmts/base_stmt.go` (40 lines) - Template Method pattern for statements
 6. `internal/stmts/stmts/generator_helpers.go` (48 lines) - Null Object pattern helpers
-7. `internal/stmts/stmts/DESIGN_PATTERNS.md` (267 lines) - Factory/Strategy pattern documentation
-8. `internal/stmts/stmts/DESIGN_IMPROVEMENTS.md` (300+ lines) - Template Method/Null Object documentation
+7. `docs/DESIGN_PATTERNS.md` (267 lines) - Factory/Strategy pattern documentation
+8. `docs/DESIGN_IMPROVEMENTS.md` (300+ lines) - Template Method/Null Object documentation
 9. `internal/stmts/stmts/examples_test.go` (205 lines) - Usage examples
 
 ### Modified Files

@@ -154,6 +154,16 @@ podman build -t sqlsmith-go .
 - Default local database: `local.db` (gitignored)
 - Test databases should follow `*.db` pattern (all gitignored)
 
+### Documentation Files
+- All project documentation files should be placed in the `docs/` directory at the repository root
+- This includes:
+  - Project-level documentation (e.g., PRAGMA_SUPPORT.md, WORKSPACE.md, REFACTORING_SUMMARY.md)
+  - Architecture and design documentation (e.g., ARCHITECTURE.md, DESIGN_PATTERNS.md)
+  - Component-specific documentation that describes cross-cutting concerns
+- Exception: READMEs that are part of specific component scaffolding (e.g., view/src/*/README.md) remain in their respective directories
+- When creating new documentation, always place it in the `docs/` directory
+- When referencing documentation in code or other docs, use paths relative to repository root (e.g., `docs/ARCHITECTURE.md`)
+
 ## Key Integration Points
 
 ### SQL Generation
