@@ -12,7 +12,22 @@
             label="Executor"
             :disabled="executors.length === 0"
             hide-details
-          />
+          >
+            <template v-slot:item="{ props, item }">
+              <v-list-item v-bind="props">
+                <template v-slot:title>
+                  {{ item.raw.executor }}
+                </template>
+                <template v-slot:subtitle v-if="item.raw.flavor">
+                  Flavor: {{ item.raw.flavor }}
+                </template>
+              </v-list-item>
+            </template>
+            <template v-slot:selection="{ item }">
+              <span>{{ item.raw.executor }}</span>
+              <span v-if="item.raw.flavor" class="text-caption ml-2">({{ item.raw.flavor }})</span>
+            </template>
+          </v-select>
           <v-text-field v-model="args" label="Arguments (separated by space)" placeholder="--workers 4 --queries 100" class="mt-2" />
         </v-col>
         <v-col cols="12" sm="4" class="d-flex align-center">
