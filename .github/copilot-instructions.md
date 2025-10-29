@@ -163,7 +163,7 @@ podman build -t sqlsmith-go .
 - Exception: READMEs that are part of specific component scaffolding (e.g., view/src/*/README.md) remain in their respective directories
 - When creating new documentation, always place it in the `docs/` directory
 - When referencing documentation in code or other docs, use paths relative to repository root (e.g., `docs/ARCHITECTURE.md`)
-- **Do NOT write detailed documentation** - keep documentation concise and focused on essential information only
+- **Do not write detailed documentation** - keep documentation concise and focused on essential information only
 
 ## Key Integration Points
 
