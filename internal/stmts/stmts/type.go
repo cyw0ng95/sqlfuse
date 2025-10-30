@@ -34,11 +34,11 @@ func GenCreateType(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, erro
 	}
 
 	typeName := fmt.Sprintf("type_%d", lcg.Uint64()%10000)
-	
+
 	// DuckDB supports ENUM types
 	choice := lcg.Intn(3)
 	var sql string
-	
+
 	if choice == 0 {
 		// Simple ENUM with a few values
 		sql = fmt.Sprintf("CREATE TYPE %s AS ENUM ('value1', 'value2', 'value3');", typeName)

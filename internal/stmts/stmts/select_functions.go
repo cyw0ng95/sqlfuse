@@ -1112,7 +1112,7 @@ func genJSONGroupObjectFunction(lcg *common.LCG, tbls []helper.TableInfo) string
 		}
 		return "json_group_object('key', 'value')"
 	}
-	
+
 	// Use two different columns for key and value
 	keyCol := tbl.Cols[lcg.Intn(len(tbl.Cols))]
 	valueCol := tbl.Cols[lcg.Intn(len(tbl.Cols))]
@@ -1798,13 +1798,13 @@ func genSQLiteDateWithModifiers(lcg *common.LCG) string {
 		"'weekday 0'", // Sunday
 		"'weekday 1'", // Monday
 	}
-	
+
 	// Sometimes use single modifier, sometimes multiple
 	if lcg.Intn(2) == 0 {
 		modifier := modifiers[lcg.Intn(len(modifiers))]
 		return fmt.Sprintf("date('now', %s)", modifier)
 	}
-	
+
 	// Use multiple modifiers
 	mod1 := modifiers[lcg.Intn(len(modifiers))]
 	mod2 := modifiers[lcg.Intn(len(modifiers))]
@@ -1821,7 +1821,7 @@ func genSQLiteTimeWithModifiers(lcg *common.LCG) string {
 		"'+1 second'",
 		"'-1 second'",
 	}
-	
+
 	modifier := modifiers[lcg.Intn(len(modifiers))]
 	return fmt.Sprintf("time('12:00:00', %s)", modifier)
 }
@@ -1838,13 +1838,13 @@ func genSQLiteDatetimeWithModifiers(lcg *common.LCG) string {
 		"'start of year'",
 		"'start of day'",
 	}
-	
+
 	// Sometimes use single modifier, sometimes multiple
 	if lcg.Intn(2) == 0 {
 		modifier := modifiers[lcg.Intn(len(modifiers))]
 		return fmt.Sprintf("datetime('now', %s)", modifier)
 	}
-	
+
 	// Use multiple modifiers
 	mod1 := modifiers[lcg.Intn(len(modifiers))]
 	mod2 := modifiers[lcg.Intn(len(modifiers))]
@@ -1867,7 +1867,7 @@ func genSQLiteStrftimeWithFormat(lcg *common.LCG) string {
 		"'%Y-%m-%d'", // ISO date
 		"'%H:%M:%S'", // ISO time
 	}
-	
+
 	format := formats[lcg.Intn(len(formats))]
 	return fmt.Sprintf("strftime(%s, 'now')", format)
 }

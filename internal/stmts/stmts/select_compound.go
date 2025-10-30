@@ -64,7 +64,7 @@ func GenCompoundSelect(db *sql.DB, lcg *common.LCG, variant StmtType, flavor Fla
 	// Generate two SELECT statements to combine
 	// Use simple SELECTs to avoid complexity and ensure column compatibility
 	var sql string
-	
+
 	// If no db, use simple fallback
 	if db == nil {
 		sql = fmt.Sprintf("SELECT 1, 'a' %s SELECT 2, 'b';", operator)

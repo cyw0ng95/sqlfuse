@@ -12,7 +12,7 @@ func (g *SelectVariantGenerator) Generate(ctx *GenContext) (Stmt, error) {
 	db := ctx.DB
 	lcg := ctx.LCG
 	flavor := ctx.Flavor
-	
+
 	// Route to appropriate generator based on variant
 	// Return as pointer to implement Stmt interface properly
 	switch g.variant {

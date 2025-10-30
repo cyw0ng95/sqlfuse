@@ -202,4 +202,3 @@ func ExampleStmtGeneratorFactory_CreateGenerator() {
 	// INSERT generator created
 	// Invalid generator returned nil
 }
-

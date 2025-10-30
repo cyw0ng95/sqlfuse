@@ -122,7 +122,7 @@ func TestDuckDBVsOtherGenerators(t *testing.T) {
 		if _, exists := duckdbStmts[stmt]; !exists {
 			t.Errorf("DuckDB generator missing DuckDB-specific statement '%s'", stmt)
 		}
-		
+
 		// These might exist in Turso with 0 weight or not exist at all
 		tursoWeight := tursoStmts[stmt]
 		if tursoWeight > 0 {
@@ -134,7 +134,7 @@ func TestDuckDBVsOtherGenerators(t *testing.T) {
 // TestDuckDBStatementGeneration tests that DuckDB generator includes all statement types
 func TestDuckDBStatementGeneration(t *testing.T) {
 	gen := NewDuckDBGenerator(99999)
-	
+
 	// List of DuckDB-specific statements
 	stmtsToCheck := []string{
 		"copy",
@@ -153,7 +153,7 @@ func TestDuckDBStatementGeneration(t *testing.T) {
 	}
 
 	supportedStmts := gen.SupportedStmts()
-	
+
 	for _, stmtName := range stmtsToCheck {
 		if _, exists := supportedStmts[stmtName]; !exists {
 			t.Errorf("Statement '%s' not in supported statements", stmtName)
@@ -169,11 +169,11 @@ func TestDuckDBGeneratorWeightDistribution(t *testing.T) {
 
 	// High-priority DuckDB statements should have reasonable weights
 	highPriorityStmts := map[string]uint64{
-		"copy":      60,  // Essential for data import/export
-		"describe":  45,  // Very useful metadata
-		"show":      45,  // Very useful metadata
-		"summarize": 40,  // DuckDB's data profiling feature
-		"set":       40,  // DuckDB's config mechanism
+		"copy":      60, // Essential for data import/export
+		"describe":  45, // Very useful metadata
+		"show":      45, // Very useful metadata
+		"summarize": 40, // DuckDB's data profiling feature
+		"set":       40, // DuckDB's config mechanism
 	}
 
 	for stmt, expectedMin := range highPriorityStmts {

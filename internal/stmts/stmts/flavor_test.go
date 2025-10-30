@@ -306,4 +306,3 @@ func TestStmtFlavorPropagation(t *testing.T) {
 		}
 	}
 }
-

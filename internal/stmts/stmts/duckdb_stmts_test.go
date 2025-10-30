@@ -44,7 +44,7 @@ func TestDuckDBStatementGenerators(t *testing.T) {
 
 			// Test CanGenerate
 			canGenerate := tt.generator.CanGenerate(ctx)
-			
+
 			// Some generators may require tables/data, so CanGenerate might return false
 			// We'll still try to generate and just log if it can't
 			if !canGenerate {
@@ -389,6 +389,6 @@ type mockFlavorConfig struct {
 	name string
 }
 
-func (m *mockFlavorConfig) Name() string                     { return m.name }
+func (m *mockFlavorConfig) Name() string                        { return m.name }
 func (m *mockFlavorConfig) SupportsFeature(feature string) bool { return true }
-func (m *mockFlavorConfig) ValidateSQL(sql string) error     { return nil }
+func (m *mockFlavorConfig) ValidateSQL(sql string) error        { return nil }

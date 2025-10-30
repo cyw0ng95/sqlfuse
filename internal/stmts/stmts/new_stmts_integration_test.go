@@ -26,7 +26,7 @@ func TestAnalyzeGeneration(t *testing.T) {
 // TestVacuumGeneration tests the VACUUM statement generation.
 func TestVacuumGeneration(t *testing.T) {
 	lcg := common.NewLCG(42)
-	
+
 	// Test default flavor (Turso)
 	stmt, err := GenVacuum(nil, lcg, nil)
 	if err != nil {

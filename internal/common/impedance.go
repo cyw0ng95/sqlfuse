@@ -10,14 +10,14 @@ import (
 // problematic productions. This is inspired by the original SQLsmith's
 // impedance mismatch detection.
 type ImpedanceMatcher struct {
-	mu                   sync.RWMutex
-	failedQueries        map[string]int64 // production name -> failure count
-	okQueries            map[string]int64 // production name -> success count
-	retries              map[string]int64 // production name -> retry count
-	limited              map[string]int64 // production name -> limit hit count
-	blacklistThreshold   float64          // error rate threshold for blacklisting (default 0.99)
-	minObservations      int64            // minimum observations before blacklisting (default 100)
-	enabled              bool
+	mu                 sync.RWMutex
+	failedQueries      map[string]int64 // production name -> failure count
+	okQueries          map[string]int64 // production name -> success count
+	retries            map[string]int64 // production name -> retry count
+	limited            map[string]int64 // production name -> limit hit count
+	blacklistThreshold float64          // error rate threshold for blacklisting (default 0.99)
+	minObservations    int64            // minimum observations before blacklisting (default 100)
+	enabled            bool
 }
 
 // NewImpedanceMatcher creates a new impedance matcher with default settings.

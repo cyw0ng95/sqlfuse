@@ -60,7 +60,7 @@ func GenCreateTrigger(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, e
 	if db != nil {
 		tables, err = helper.GetAllTablesAndCols(db, "sqlite")
 	}
-	
+
 	if db == nil || err != nil || len(tables) == 0 {
 		// Fallback to a simple trigger without schema
 		return genCreateTriggerFallback(lcg, flavor), nil

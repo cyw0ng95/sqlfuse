@@ -58,9 +58,9 @@ func GenCopy(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
 		} else {
 			tbl := tables[lcg.Intn(len(tables))]
 			format := []string{"CSV", "PARQUET", "JSON"}[lcg.Intn(3)]
-			filename := fmt.Sprintf("/tmp/export_%s.%s", tbl.Name, 
+			filename := fmt.Sprintf("/tmp/export_%s.%s", tbl.Name,
 				map[string]string{"CSV": "csv", "PARQUET": "parquet", "JSON": "json"}[format])
-			
+
 			if format == "CSV" {
 				sql = fmt.Sprintf("COPY \"%s\" TO '%s' (FORMAT CSV, HEADER);", tbl.Name, filename)
 			} else {
@@ -72,7 +72,7 @@ func GenCopy(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
 		format := []string{"CSV", "PARQUET", "JSON"}[lcg.Intn(3)]
 		filename := fmt.Sprintf("/tmp/query_export.%s",
 			map[string]string{"CSV": "csv", "PARQUET": "parquet", "JSON": "json"}[format])
-		
+
 		if format == "CSV" {
 			sql = fmt.Sprintf("COPY (SELECT 1 AS id, 'test' AS name) TO '%s' (FORMAT CSV, HEADER);", filename)
 		} else {
@@ -93,7 +93,7 @@ func GenCopy(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
 			format := []string{"CSV", "PARQUET", "JSON"}[lcg.Intn(3)]
 			filename := fmt.Sprintf("/tmp/import.%s",
 				map[string]string{"CSV": "csv", "PARQUET": "parquet", "JSON": "json"}[format])
-			
+
 			if format == "CSV" {
 				sql = fmt.Sprintf("COPY \"%s\" FROM '%s' (FORMAT CSV, HEADER);", tbl.Name, filename)
 			} else {

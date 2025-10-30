@@ -131,9 +131,9 @@ type PragmaStmt struct {
 	flavor FlavorConfig
 }
 
-func (p *PragmaStmt) SQL() string           { return p.sql }
-func (p *PragmaStmt) Type() string          { return "pragma" }
-func (p *PragmaStmt) Flavor() FlavorConfig  { return p.flavor }
+func (p *PragmaStmt) SQL() string          { return p.sql }
+func (p *PragmaStmt) Type() string         { return "pragma" }
+func (p *PragmaStmt) Flavor() FlavorConfig { return p.flavor }
 
 // Helper function to check if database has tables (used by generators that need tables).
 func hasTables(db *sql.DB) bool {

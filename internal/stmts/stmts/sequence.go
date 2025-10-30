@@ -33,10 +33,10 @@ func GenCreateSequence(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, 
 	}
 
 	seqName := fmt.Sprintf("seq_%d", lcg.Uint64()%10000)
-	
+
 	var sql string
 	choice := lcg.Intn(5)
-	
+
 	if choice == 0 {
 		// Basic CREATE SEQUENCE
 		sql = fmt.Sprintf("CREATE SEQUENCE IF NOT EXISTS \"%s\";", seqName)

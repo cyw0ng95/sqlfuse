@@ -36,7 +36,7 @@ func GenUse(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
 	// Common schema names
 	schemas := []string{"main", "temp", fmt.Sprintf("schema_%d", lcg.Uint64()%100)}
 	schema := schemas[lcg.Intn(len(schemas))]
-	
+
 	sql := fmt.Sprintf("USE %s;", schema)
 
 	return &UseStmt{
@@ -74,7 +74,7 @@ func GenCheckpoint(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, erro
 	// CHECKPOINT can optionally specify a database name
 	choice := lcg.Intn(3)
 	var sql string
-	
+
 	if choice == 0 {
 		// Simple CHECKPOINT
 		sql = "CHECKPOINT;"
@@ -119,10 +119,10 @@ func GenExportDatabase(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, 
 	}
 
 	exportPath := fmt.Sprintf("/tmp/export_%d", lcg.Uint64()%10000)
-	
+
 	var sql string
 	choice := lcg.Intn(2)
-	
+
 	if choice == 0 {
 		// Export to directory
 		sql = fmt.Sprintf("EXPORT DATABASE '%s';", exportPath)
@@ -197,10 +197,10 @@ func GenPrepare(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) 
 	}
 
 	stmtName := fmt.Sprintf("stmt_%d", lcg.Uint64()%10000)
-	
+
 	var sql string
 	choice := lcg.Intn(3)
-	
+
 	if choice == 0 {
 		// Simple SELECT
 		sql = fmt.Sprintf("PREPARE %s AS SELECT $1;", stmtName)
@@ -244,10 +244,10 @@ func GenExecute(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) 
 	}
 
 	stmtName := fmt.Sprintf("stmt_%d", lcg.Uint64()%100)
-	
+
 	var sql string
 	choice := lcg.Intn(3)
-	
+
 	if choice == 0 {
 		// Execute with one parameter
 		sql = fmt.Sprintf("EXECUTE %s(%d);", stmtName, lcg.Intn(1000))

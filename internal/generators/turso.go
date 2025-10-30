@@ -32,9 +32,9 @@ func DefaultTursoStmtWeights() map[stmts.StmtType]uint64 {
 	// Basic SELECT variants
 	w[stmts.StmtSelectBasic] = 120
 	w[stmts.StmtSelectWhere] = 100
-	w[stmts.StmtSelectWhereComplex] = 80   // Increased from 60
-	w[stmts.StmtSelectWhereIn] = 70        // Increased from 50
-	w[stmts.StmtSelectSubquery] = 60       // Increased from 40
+	w[stmts.StmtSelectWhereComplex] = 80 // Increased from 60
+	w[stmts.StmtSelectWhereIn] = 70      // Increased from 50
+	w[stmts.StmtSelectSubquery] = 60     // Increased from 40
 	w[stmts.StmtSelectCase] = 40
 	w[stmts.StmtSelectAggregateComplex] = 30
 	w[stmts.StmtSelectLike] = 80
@@ -50,16 +50,16 @@ func DefaultTursoStmtWeights() map[stmts.StmtType]uint64 {
 	w[stmts.StmtSelectJoinUsing] = 20
 	w[stmts.StmtSelectNatural] = 20
 	// Advanced SELECT with recursion/nesting - increased for more complexity
-	w[stmts.StmtSelectRecursive] = 50      // Increased from 30
-	w[stmts.StmtSelectNestedCase] = 40     // Increased from 25
-	w[stmts.StmtSelectComplexJoin] = 40    // Increased from 25
-	w[stmts.StmtSelectDeeplyNested] = 45   // New: deeply nested subqueries
+	w[stmts.StmtSelectRecursive] = 50    // Increased from 30
+	w[stmts.StmtSelectNestedCase] = 40   // Increased from 25
+	w[stmts.StmtSelectComplexJoin] = 40  // Increased from 25
+	w[stmts.StmtSelectDeeplyNested] = 45 // New: deeply nested subqueries
 	// Window functions and CTEs - increased for more complexity
-	w[stmts.StmtSelectWindow] = 50         // Increased from 35
+	w[stmts.StmtSelectWindow] = 50          // Increased from 35
 	w[stmts.StmtSelectMultipleWindows] = 35 // Increased from 20
-	w[stmts.StmtSelectCTE] = 50            // Increased from 30
-	w[stmts.StmtSelectMultipleCTE] = 35    // Increased from 20
-	w[stmts.StmtSelectRecursiveCTE] = 25   // Increased from 15
+	w[stmts.StmtSelectCTE] = 50             // Increased from 30
+	w[stmts.StmtSelectMultipleCTE] = 35     // Increased from 20
+	w[stmts.StmtSelectRecursiveCTE] = 25    // Increased from 15
 	// new: Turso extension functions
 	w[stmts.StmtSelectUUID] = 30
 	w[stmts.StmtSelectRegexp] = 30
@@ -76,35 +76,35 @@ func DefaultTursoStmtWeights() map[stmts.StmtType]uint64 {
 	w[stmts.StmtCreateVirtualTable] = 20
 	w[stmts.StmtCreateTrigger] = 15
 	w[stmts.StmtDropTrigger] = 15
-	
+
 	// Transaction control
 	w[stmts.StmtBegin] = 20
 	w[stmts.StmtCommit] = 20
 	w[stmts.StmtRollback] = 20
 	w[stmts.StmtSavepoint] = 10
 	w[stmts.StmtRelease] = 10
-	
+
 	// Database attachment (Turso: read-only)
 	w[stmts.StmtAttach] = 5
 	w[stmts.StmtDetach] = 5
-	
+
 	// Query analysis
 	w[stmts.StmtExplain] = 15
 	w[stmts.StmtExplainQueryPlan] = 15
-	
+
 	// Database maintenance
 	w[stmts.StmtAnalyze] = 10
 	w[stmts.StmtVacuum] = 5
 	w[stmts.StmtReindex] = 10
-	
+
 	// Compound SELECT statements
 	w[stmts.StmtSelectUnion] = 30
 	w[stmts.StmtSelectIntersect] = 20
 	w[stmts.StmtSelectExcept] = 20
-	
+
 	// PRAGMA - Turso supports a limited set of pragmas
 	w[stmts.StmtPragma] = 30
-	
+
 	return w
 }
 

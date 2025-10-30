@@ -35,7 +35,7 @@ func BuildGeneratorFuncs(lcg *common.LCG, maxRecursionDepth int, flavorConfig Fl
 	m["insert_or_fail"] = createGenFunc(StmtInsertOrFail, "INSERT INTO sqlite_master DEFAULT VALUES;")
 	m["update"] = createGenFunc(StmtUpdate, "UPDATE sqlite_master SET name = 'fallback';")
 	m["delete"] = createGenFunc(StmtDelete, "DELETE FROM sqlite_master WHERE 0;")
-	
+
 	// SELECT statements
 	m["select_basic"] = createGenFunc(StmtSelectBasic, "SELECT 1")
 	m["select_where"] = createGenFunc(StmtSelectWhere, "SELECT 1")
@@ -69,7 +69,7 @@ func BuildGeneratorFuncs(lcg *common.LCG, maxRecursionDepth int, flavorConfig Fl
 	m["select_regexp"] = createGenFunc(StmtSelectRegexp, "SELECT 1")
 	m["select_vector"] = createGenFunc(StmtSelectVector, "SELECT 1")
 	m["select_time"] = createGenFunc(StmtSelectTime, "SELECT 1")
-	
+
 	// DDL statements
 	m["create_table"] = createGenFunc(StmtCreateTable, "CREATE TABLE IF NOT EXISTS fallback (id INTEGER);")
 	m["drop_table"] = createGenFunc(StmtDropTable, "DROP TABLE IF EXISTS fallback;")
@@ -79,31 +79,31 @@ func BuildGeneratorFuncs(lcg *common.LCG, maxRecursionDepth int, flavorConfig Fl
 	m["create_index"] = createGenFunc(StmtCreateIndex, "CREATE INDEX IF NOT EXISTS idx_fallback ON fallback (id);")
 	m["drop_index"] = createGenFunc(StmtDropIndex, "DROP INDEX IF EXISTS idx_fallback;")
 	m["create_virtual_table"] = createGenFunc(StmtCreateVirtualTable, "CREATE VIRTUAL TABLE IF NOT EXISTS fallback USING fts5(content);")
-	
+
 	// Transaction control
 	m["attach"] = createGenFunc(StmtAttach, "ATTACH DATABASE ':memory:' AS fallback;")
 	m["detach"] = createGenFunc(StmtDetach, "DETACH DATABASE fallback;")
 	m["begin"] = createGenFunc(StmtBegin, "BEGIN;")
 	m["commit"] = createGenFunc(StmtCommit, "COMMIT;")
 	m["rollback"] = createGenFunc(StmtRollback, "ROLLBACK;")
-	
+
 	// Query analysis
 	m["explain"] = createGenFunc(StmtExplain, "EXPLAIN SELECT 1;")
 	m["explain_query_plan"] = createGenFunc(StmtExplainQueryPlan, "EXPLAIN QUERY PLAN SELECT 1;")
-	
+
 	// Database maintenance
 	m["analyze"] = createGenFunc(StmtAnalyze, "ANALYZE;")
 	m["vacuum"] = createGenFunc(StmtVacuum, "VACUUM;")
 	m["reindex"] = createGenFunc(StmtReindex, "REINDEX;")
-	
+
 	// Transaction savepoints
 	m["savepoint"] = createGenFunc(StmtSavepoint, "SAVEPOINT sp_fallback;")
 	m["release"] = createGenFunc(StmtRelease, "RELEASE sp_fallback;")
-	
+
 	// Triggers
 	m["create_trigger"] = createGenFunc(StmtCreateTrigger, "CREATE TRIGGER IF NOT EXISTS trg_fallback BEFORE INSERT ON fallback BEGIN SELECT 1; END;")
 	m["drop_trigger"] = createGenFunc(StmtDropTrigger, "DROP TRIGGER IF EXISTS trg_fallback;")
-	
+
 	// Compound SELECT statements
 	m["select_union"] = createGenFunc(StmtSelectUnion, "SELECT 1 UNION SELECT 2;")
 	m["select_intersect"] = createGenFunc(StmtSelectIntersect, "SELECT 1 INTERSECT SELECT 2;")

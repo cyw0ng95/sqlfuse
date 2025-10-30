@@ -1092,7 +1092,7 @@ func TestGoSQLite3SpecificFunctionGenerators(t *testing.T) {
 	defer db.Close()
 
 	lcg := common.NewLCG(6000)
-	
+
 	// Get tables for testing
 	tables, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil {
@@ -1172,7 +1172,7 @@ func TestGoSQLite3SpecificAggregateFunctionGenerators(t *testing.T) {
 	defer db.Close()
 
 	lcg := common.NewLCG(8000)
-	
+
 	// Get tables for testing
 	tables, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil {

@@ -96,7 +96,7 @@ func (f *StmtGeneratorFactory) CreateGenerator(stmtType StmtType) StmtGenerator 
 		return &DropTriggerGenerator{}
 	case StmtSelectUnion, StmtSelectIntersect, StmtSelectExcept:
 		return &CompoundSelectGenerator{variant: stmtType}
-	
+
 	// DuckDB-specific statements
 	case StmtCopy:
 		return &CopyGenerator{}
@@ -140,7 +140,7 @@ func (f *StmtGeneratorFactory) CreateGenerator(stmtType StmtType) StmtGenerator 
 		return &PrepareGenerator{}
 	case StmtExecute:
 		return &ExecuteGenerator{}
-	
+
 	default:
 		return nil
 	}
@@ -157,12 +157,12 @@ func (f *StmtGeneratorFactory) GenerateStmt(db *sql.DB, stmtType StmtType) (Stmt
 	if gen == nil {
 		return nil, &UnsupportedStmtTypeError{StmtType: stmtType}
 	}
-	
+
 	ctx := f.CreateContext(db)
 	if !gen.CanGenerate(ctx) {
 		return nil, &CannotGenerateError{StmtType: stmtType, Reason: "generator conditions not met"}
 	}
-	
+
 	return gen.Generate(ctx)
 }
 

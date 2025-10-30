@@ -49,7 +49,7 @@ func GetAllTablesAndColsWithFlavor(db *sql.DB, flavor FlavorConfig) ([]TableInfo
 	if flavor == nil {
 		return getSQLiteTablesAndCols(db)
 	}
-	
+
 	dbType := flavor.Name()
 
 	// Route to appropriate implementation based on database type
@@ -154,7 +154,7 @@ func getDuckDBTablesAndCols(db *sql.DB) ([]TableInfo, error) {
 			fmt.Fprintf(os.Stderr, "error querying columns for %s: %v\n", tableName, err)
 			continue
 		}
-		
+
 		cols := []ColumnInfo{}
 		for colRows.Next() {
 			var name, ctype string
@@ -168,7 +168,7 @@ func getDuckDBTablesAndCols(db *sql.DB) ([]TableInfo, error) {
 		colRows.Close()
 		tables = append(tables, TableInfo{Name: tableName, Cols: cols})
 	}
-	
+
 	if len(tables) == 0 {
 		return nil, fmt.Errorf("no user tables found in database")
 	}

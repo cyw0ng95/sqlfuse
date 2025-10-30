@@ -33,7 +33,7 @@ func GenCreateSchema(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, er
 	}
 
 	schemaName := fmt.Sprintf("schema_%d", lcg.Uint64()%10000)
-	
+
 	var sql string
 	if lcg.Intn(2) == 0 {
 		// 50% chance: with IF NOT EXISTS
@@ -74,10 +74,10 @@ func GenDropSchema(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, erro
 	}
 
 	schemaName := fmt.Sprintf("schema_%d", lcg.Uint64()%10000)
-	
+
 	var sql string
 	choice := lcg.Intn(4)
-	
+
 	if choice == 0 {
 		// 25% chance: with IF EXISTS
 		sql = fmt.Sprintf("DROP SCHEMA IF EXISTS \"%s\";", schemaName)

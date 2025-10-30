@@ -36,7 +36,7 @@ func GenDescribe(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error)
 	// DESCRIBE can be used on tables or queries
 	choice := lcg.Intn(3)
 	var sql string
-	
+
 	if choice == 0 {
 		// DESCRIBE a SELECT query
 		sql = "DESCRIBE SELECT 1 AS id, 'test' AS name;"
@@ -126,7 +126,7 @@ func GenSummarize(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error
 	// SUMMARIZE can be used on tables or queries
 	choice := lcg.Intn(3)
 	var sql string
-	
+
 	if choice == 0 {
 		// SUMMARIZE a SELECT query
 		sql = "SUMMARIZE SELECT 1 AS id, 2.5 AS value, 'test' AS name;"

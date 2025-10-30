@@ -34,10 +34,10 @@ func GenCreateMacro(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, err
 	}
 
 	macroName := fmt.Sprintf("macro_%d", lcg.Uint64()%10000)
-	
+
 	var sql string
 	choice := lcg.Intn(4)
-	
+
 	if choice == 0 {
 		// Simple scalar macro
 		sql = fmt.Sprintf("CREATE OR REPLACE MACRO %s(x) AS x + 1;", macroName)
@@ -121,7 +121,7 @@ func GenCall(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
 	// Call a built-in or user-defined macro/function
 	choice := lcg.Intn(3)
 	var sql string
-	
+
 	if choice == 0 {
 		// Call a hypothetical user macro
 		macroName := fmt.Sprintf("macro_%d", lcg.Uint64()%100)

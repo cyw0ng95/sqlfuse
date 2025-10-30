@@ -57,7 +57,7 @@ func genAlterTableInternal(lcg *common.LCG) (Stmt, error) {
 		newTbl := fmt.Sprintf("tbl_%d", lcg.Uint64()%1000000)
 		sql = fmt.Sprintf("ALTER TABLE \"%s\" RENAME TO \"%s\";", tbl, newTbl)
 	}
-	
+
 	return &AlterTableStmt{
 		BaseStmt: NewBaseStmt(sql, "alter_table", flavor),
 	}, nil

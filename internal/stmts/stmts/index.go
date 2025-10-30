@@ -67,7 +67,7 @@ func GenCreateIndex(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	if db != nil {
 		tables, err = helper.GetAllTablesAndCols(db, "sqlite")
 	}
-	
+
 	if db == nil || err != nil || len(tables) == 0 {
 		// Fallback to simple index without schema
 		return genCreateIndexFallback(lcg), nil

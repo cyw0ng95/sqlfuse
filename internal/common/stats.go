@@ -12,13 +12,13 @@ type GenerationStats struct {
 	mu sync.RWMutex
 
 	// Generation metrics
-	queriesGenerated   int64
-	queriesExecuted    int64
-	syntaxErrors       int64
-	executionErrors    int64
-	timeouts           int64
-	brokenConnections  int64
-	successfulQueries  int64
+	queriesGenerated  int64
+	queriesExecuted   int64
+	syntaxErrors      int64
+	executionErrors   int64
+	timeouts          int64
+	brokenConnections int64
+	successfulQueries int64
 
 	// AST metrics (moving averages)
 	totalASTHeight int64
@@ -26,9 +26,9 @@ type GenerationStats struct {
 	astSamples     int64
 
 	// Timing
-	startTime        time.Time
-	totalGenTime     time.Duration
-	totalExecTime    time.Duration
+	startTime     time.Time
+	totalGenTime  time.Duration
+	totalExecTime time.Duration
 
 	// Error tracking by message
 	errorMessages    map[string]int64
