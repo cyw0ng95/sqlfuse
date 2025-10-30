@@ -150,6 +150,20 @@ func DefaultDuckDBStmtWeights() map[stmts.StmtType]uint64 {
 	w[stmts.StmtPrepare] = 20        // Prepared statements
 	w[stmts.StmtExecute] = 15        // Execute prepared statements
 
+	// Additional DuckDB-specific statements
+	w[stmts.StmtPivot] = 50          // Table reshaping - very useful for analytics
+	w[stmts.StmtUnpivot] = 45        // Table reshaping - very useful for analytics
+	w[stmts.StmtMergeInto] = 55      // UPSERT operations - important for data merging
+	w[stmts.StmtQualify] = 65        // Window function filtering - unique to DuckDB
+	w[stmts.StmtAlterDatabase] = 10  // Database operations
+	w[stmts.StmtAlterView] = 15      // View operations
+	w[stmts.StmtCreateSecret] = 20   // Credential management
+	w[stmts.StmtDropSecret] = 15     // Credential management
+	w[stmts.StmtLoadInstall] = 25    // Extension management
+	w[stmts.StmtCommentOn] = 20      // Documentation
+	w[stmts.StmtProfiling] = 30      // Query profiling
+	w[stmts.StmtSetVariable] = 35    // User-defined variables
+
 	return w
 }
 

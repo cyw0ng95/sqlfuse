@@ -140,6 +140,30 @@ func (f *StmtGeneratorFactory) CreateGenerator(stmtType StmtType) StmtGenerator 
 		return &PrepareGenerator{}
 	case StmtExecute:
 		return &ExecuteGenerator{}
+	case StmtPivot:
+		return &PivotGenerator{}
+	case StmtUnpivot:
+		return &UnpivotGenerator{}
+	case StmtMergeInto:
+		return &MergeIntoGenerator{}
+	case StmtQualify:
+		return &QualifyGenerator{}
+	case StmtAlterDatabase:
+		return &AlterDatabaseGenerator{}
+	case StmtAlterView:
+		return &AlterViewGenerator{}
+	case StmtCreateSecret:
+		return &CreateSecretGenerator{}
+	case StmtDropSecret:
+		return &DropSecretGenerator{}
+	case StmtLoadInstall:
+		return &LoadInstallGenerator{}
+	case StmtCommentOn:
+		return &CommentOnGenerator{}
+	case StmtProfiling:
+		return &ProfilingGenerator{}
+	case StmtSetVariable:
+		return &SetVariableGenerator{}
 
 	default:
 		return nil
