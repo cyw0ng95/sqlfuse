@@ -9,54 +9,54 @@
         <v-col cols="12" md="8">
           <v-select
             v-model="selectedExecutor"
-            :items="executors"
+            density="comfortable"
+            :disabled="executors.length === 0"
+            hide-details
             item-title="executor"
             item-value="executor"
+            :items="executors"
             label="Executor"
-            :disabled="executors.length === 0"
-            variant="outlined"
-            density="comfortable"
             prepend-inner-icon="mdi-cog"
-            hide-details
+            variant="outlined"
           >
-            <template v-slot:item="{ props, item }">
+            <template #item="{ props, item }">
               <v-list-item v-bind="props">
-                <template v-slot:prepend>
+                <template #prepend>
                   <v-icon>mdi-engine</v-icon>
                 </template>
-                <template v-slot:title>
+                <template #title>
                   {{ item.raw.executor }}
                 </template>
-                <template v-slot:subtitle v-if="item.raw.flavor">
+                <template v-if="item.raw.flavor" #subtitle>
                   Flavor: {{ item.raw.flavor }}
                 </template>
               </v-list-item>
             </template>
-            <template v-slot:selection="{ item }">
+            <template #selection="{ item }">
               <span>{{ item.raw.executor }}</span>
               <span v-if="item.raw.flavor" class="text-caption ml-2 text-primary">({{ item.raw.flavor }})</span>
             </template>
           </v-select>
-          <v-text-field 
-            v-model="args" 
-            label="Arguments (separated by space)" 
-            placeholder="--workers 4 --queries 100" 
+          <v-text-field
+            v-model="args"
             class="mt-3"
-            variant="outlined"
             density="comfortable"
-            prepend-inner-icon="mdi-code-tags"
             hide-details
+            label="Arguments (separated by space)"
+            placeholder="--workers 4 --queries 100"
+            prepend-inner-icon="mdi-code-tags"
+            variant="outlined"
           />
         </v-col>
-        <v-col cols="12" md="4" class="d-flex align-center">
-          <v-btn 
-            @click="createJob" 
-            :loading="creating" 
-            color="primary"
-            size="large"
+        <v-col class="d-flex align-center" cols="12" md="4">
+          <v-btn
             block
-            prepend-icon="mdi-play-circle"
+            color="primary"
             elevation="2"
+            :loading="creating"
+            prepend-icon="mdi-play-circle"
+            size="large"
+            @click="createJob"
           >
             Start Job
           </v-btn>
@@ -64,47 +64,47 @@
       </v-row>
 
       <div v-if="createError" class="error-alert mt-3">
-        <v-icon color="error" class="mr-2">mdi-alert-circle</v-icon>
+        <v-icon class="mr-2" color="error">mdi-alert-circle</v-icon>
         {{ createError }}
       </div>
       <div v-if="lastID" class="success-alert mt-3">
-        <v-icon color="success" class="mr-2">mdi-check-circle</v-icon>
+        <v-icon class="mr-2" color="success">mdi-check-circle</v-icon>
         Started job ID: <strong>{{ lastID }}</strong>
       </div>
 
-      <v-divider class="my-6"></v-divider>
+      <v-divider class="my-6" />
 
       <div class="text-subtitle-1 font-weight-bold mb-3">
         <v-icon class="mr-2">mdi-magnify</v-icon>
         Query Job Status
       </div>
-      
+
       <v-row>
         <v-col cols="12" md="6">
-          <v-text-field 
-            v-model="queryID" 
-            label="Job ID" 
-            variant="outlined"
+          <v-text-field
+            v-model="queryID"
             density="comfortable"
-            prepend-inner-icon="mdi-identifier"
             hide-details
+            label="Job ID"
+            prepend-inner-icon="mdi-identifier"
+            variant="outlined"
           />
         </v-col>
-        <v-col cols="12" md="6" class="d-flex align-center gap-2">
-          <v-btn @click="fetchStatus" color="info" variant="tonal" prepend-icon="mdi-information">
+        <v-col class="d-flex align-center gap-2" cols="12" md="6">
+          <v-btn color="info" prepend-icon="mdi-information" variant="tonal" @click="fetchStatus">
             Status
           </v-btn>
-          <v-btn @click="fetchInfo" color="info" variant="tonal" prepend-icon="mdi-text-box">
+          <v-btn color="info" prepend-icon="mdi-text-box" variant="tonal" @click="fetchInfo">
             Info
           </v-btn>
-          <v-btn @click="stopJob" color="error" variant="tonal" prepend-icon="mdi-stop-circle">
+          <v-btn color="error" prepend-icon="mdi-stop-circle" variant="tonal" @click="stopJob">
             Stop
           </v-btn>
         </v-col>
       </v-row>
 
       <div v-if="status" class="status-box mt-4">
-        <v-chip color="info" class="mb-2" prepend-icon="mdi-information">
+        <v-chip class="mb-2" color="info" prepend-icon="mdi-information">
           {{ status.status }}
           <span v-if="status.pid" class="ml-2">(PID: {{ status.pid }})</span>
         </v-chip>
@@ -144,7 +144,7 @@
 
     </v-card-text>
     <v-card-actions class="pa-4 pt-0">
-      <v-btn @click="clear" color="secondary" variant="text" prepend-icon="mdi-broom">
+      <v-btn color="secondary" prepend-icon="mdi-broom" variant="text" @click="clear">
         Clear
       </v-btn>
     </v-card-actions>
@@ -152,109 +152,109 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+  import { onMounted, ref } from 'vue'
 
-const API_BASE = 'http://localhost:8080'
+  const API_BASE = 'http://localhost:8080'
 
-const executors = ref([])
-const selectedExecutor = ref('')
-const args = ref('')
-const creating = ref(false)
-const createError = ref('')
-const lastID = ref('')
+  const executors = ref([])
+  const selectedExecutor = ref('')
+  const args = ref('')
+  const creating = ref(false)
+  const createError = ref('')
+  const lastID = ref('')
 
-const queryID = ref('')
-const status = ref(null)
-const infoData = ref(null)
+  const queryID = ref('')
+  const status = ref(null)
+  const infoData = ref(null)
 
-async function fetchJson(path, opts) {
-  const url = path.startsWith('http://') || path.startsWith('https://') ? path : `${API_BASE}${path}`
-  try {
-    const res = await fetch(url, opts)
-    if (!res.ok) {
-      const text = await res.text()
-      return { error: `HTTP ${res.status} ${res.statusText}: ${text}` }
+  async function fetchJson (path, opts) {
+    const url = path.startsWith('http://') || path.startsWith('https://') ? path : `${API_BASE}${path}`
+    try {
+      const res = await fetch(url, opts)
+      if (!res.ok) {
+        const text = await res.text()
+        return { error: `HTTP ${res.status} ${res.statusText}: ${text}` }
+      }
+      return await res.json()
+    } catch (error) {
+      return { error: error.message || String(error) }
     }
-    return await res.json()
-  } catch (err) {
-    return { error: err.message || String(err) }
   }
-}
 
-async function getExecutors() {
-  const data = await fetchJson('/executors')
-  if (data && data.error) {
-    executors.value = []
-    return
+  async function getExecutors () {
+    const data = await fetchJson('/executors')
+    if (data && data.error) {
+      executors.value = []
+      return
+    }
+    // data expected to be an array of { executor, path }
+    executors.value = Array.isArray(data) ? data : []
   }
-  // data expected to be an array of { executor, path }
-  executors.value = Array.isArray(data) ? data : []
-}
 
-onMounted(() => {
-  getExecutors()
-})
+  onMounted(() => {
+    getExecutors()
+  })
 
-async function createJob() {
-  createError.value = ''
-  if (!selectedExecutor.value) {
-    createError.value = 'executor is required'
-    return
+  async function createJob () {
+    createError.value = ''
+    if (!selectedExecutor.value) {
+      createError.value = 'executor is required'
+      return
+    }
+    creating.value = true
+    // split args by whitespace
+    const argsList = args.value.trim() === '' ? [] : (args.value.trim().match(/\S+/g) || [])
+    const payload = { executor: selectedExecutor.value, args: argsList }
+    const data = await fetchJson('/job/new', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+    creating.value = false
+    if (data.error) {
+      createError.value = data.error
+      return
+    }
+    lastID.value = data.id || ''
+    queryID.value = lastID.value
   }
-  creating.value = true
-  // split args by whitespace
-  const argsList = args.value.trim() === '' ? [] : (args.value.trim().match(/\S+/g) || [])
-  const payload = { executor: selectedExecutor.value, args: argsList }
-  const data = await fetchJson('/job/new', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-  creating.value = false
-  if (data.error) {
-    createError.value = data.error
-    return
-  }
-  lastID.value = data.id || ''
-  queryID.value = lastID.value
-}
 
-async function fetchStatus() {
-  if (!queryID.value) return
-  const data = await fetchJson(`/job/status?id=${encodeURIComponent(queryID.value)}`)
-  if (data.error) {
-    status.value = { error: data.error }
-    return
+  async function fetchStatus () {
+    if (!queryID.value) return
+    const data = await fetchJson(`/job/status?id=${encodeURIComponent(queryID.value)}`)
+    if (data.error) {
+      status.value = { error: data.error }
+      return
+    }
+    status.value = data
   }
-  status.value = data
-}
 
-async function fetchInfo() {
-  if (!queryID.value) return
-  const data = await fetchJson(`/job/info?id=${encodeURIComponent(queryID.value)}`)
-  if (data.error) {
-    infoData.value = { error: data.error }
-    return
+  async function fetchInfo () {
+    if (!queryID.value) return
+    const data = await fetchJson(`/job/info?id=${encodeURIComponent(queryID.value)}`)
+    if (data.error) {
+      infoData.value = { error: data.error }
+      return
+    }
+    infoData.value = data
   }
-  infoData.value = data
-}
 
-async function stopJob() {
-  if (!queryID.value) return
-  const data = await fetchJson(`/job/stop?id=${encodeURIComponent(queryID.value)}`, { method: 'POST' })
-  if (data.error) {
-    status.value = { error: data.error }
-    return
+  async function stopJob () {
+    if (!queryID.value) return
+    const data = await fetchJson(`/job/stop?id=${encodeURIComponent(queryID.value)}`, { method: 'POST' })
+    if (data.error) {
+      status.value = { error: data.error }
+      return
+    }
+    // refresh status
+    await fetchStatus()
   }
-  // refresh status
-  await fetchStatus()
-}
 
-function clear() {
-  selectedExecutor.value = ''
-  args.value = ''
-  lastID.value = ''
-  queryID.value = ''
-  status.value = null
-  infoData.value = null
-  createError.value = ''
-}
+  function clear () {
+    selectedExecutor.value = ''
+    args.value = ''
+    lastID.value = ''
+    queryID.value = ''
+    status.value = null
+    infoData.value = null
+    createError.value = ''
+  }
 </script>
 
 <style scoped>

@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <v-app-bar color="primary" elevation="4" dark>
+    <v-app-bar color="primary" dark elevation="4">
       <v-app-bar-title class="font-weight-bold">
         <v-icon class="mr-2">mdi-database-search</v-icon>
         SQLsmith-Go
@@ -18,21 +18,21 @@
               </v-card-title>
               <v-card-text class="pa-4">
                 <div v-if="health.error" class="text-error">
-                  <v-icon color="error" class="mr-2">mdi-alert-circle</v-icon>
+                  <v-icon class="mr-2" color="error">mdi-alert-circle</v-icon>
                   {{ health.error }}
                 </div>
                 <div v-else>
-                  <v-chip color="success" class="mb-2" prepend-icon="mdi-check-circle">
+                  <v-chip class="mb-2" color="success" prepend-icon="mdi-check-circle">
                     {{ health.status || 'unknown' }}
                   </v-chip>
                   <div v-if="health.timestamp" class="text-caption text-medium-emphasis mt-2">
-                    <v-icon size="small" class="mr-1">mdi-clock-outline</v-icon>
+                    <v-icon class="mr-1" size="small">mdi-clock-outline</v-icon>
                     {{ health.timestamp }}
                   </div>
                 </div>
               </v-card-text>
               <v-card-actions class="pa-4 pt-0">
-                <v-btn @click="getHealth" color="primary" variant="tonal" prepend-icon="mdi-refresh">
+                <v-btn color="primary" prepend-icon="mdi-refresh" variant="tonal" @click="getHealth">
                   Refresh
                 </v-btn>
               </v-card-actions>
@@ -45,7 +45,7 @@
               </v-card-title>
               <v-card-text class="pa-4">
                 <div v-if="info.error" class="text-error">
-                  <v-icon color="error" class="mr-2">mdi-alert-circle</v-icon>
+                  <v-icon class="mr-2" color="error">mdi-alert-circle</v-icon>
                   {{ info.error }}
                 </div>
                 <div v-else>
@@ -53,7 +53,7 @@
                 </div>
               </v-card-text>
               <v-card-actions class="pa-4 pt-0">
-                <v-btn @click="getInfo" color="info" variant="tonal" prepend-icon="mdi-refresh">
+                <v-btn color="info" prepend-icon="mdi-refresh" variant="tonal" @click="getInfo">
                   Refresh
                 </v-btn>
               </v-card-actions>
@@ -69,12 +69,12 @@
               </v-card-title>
               <v-card-text class="pa-4">
                 <div v-if="generators.error" class="text-error">
-                  <v-icon color="error" class="mr-2">mdi-alert-circle</v-icon>
+                  <v-icon class="mr-2" color="error">mdi-alert-circle</v-icon>
                   {{ generators.error }}
                 </div>
                 <div v-else>
                   <div class="mb-3">
-                    <v-chip color="primary" variant="outlined" prepend-icon="mdi-cog">
+                    <v-chip color="primary" prepend-icon="mdi-cog" variant="outlined">
                       {{ generators.generator || 'n/a' }}
                     </v-chip>
                   </div>
@@ -85,7 +85,7 @@
                 </div>
               </v-card-text>
               <v-card-actions class="pa-4 pt-0">
-                <v-btn @click="getGenerators" color="secondary" variant="tonal" prepend-icon="mdi-refresh">
+                <v-btn color="secondary" prepend-icon="mdi-refresh" variant="tonal" @click="getGenerators">
                   Refresh
                 </v-btn>
               </v-card-actions>
@@ -99,80 +99,80 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import JobManager from './components/JobManager.vue'
+  import { computed, onMounted, ref } from 'vue'
+  import JobManager from './components/JobManager.vue'
 
-const health = ref({})
-const info = ref({})
-const generators = ref({})
+  const health = ref({})
+  const info = ref({})
+  const generators = ref({})
 
-async function fetchJson(path) {
-  const API_BASE = 'http://localhost:8080'
-  const url = path.startsWith('http://') || path.startsWith('https://') ? path : `${API_BASE}${path}`
-  try {
-    const res = await fetch(url, { cache: 'no-store' })
-    if (!res.ok) {
-      return { error: `HTTP ${res.status} ${res.statusText}` }
+  async function fetchJson (path) {
+    const API_BASE = 'http://localhost:8080'
+    const url = path.startsWith('http://') || path.startsWith('https://') ? path : `${API_BASE}${path}`
+    try {
+      const res = await fetch(url, { cache: 'no-store' })
+      if (!res.ok) {
+        return { error: `HTTP ${res.status} ${res.statusText}` }
+      }
+      return await res.json()
+    } catch (error) {
+      return { error: error.message || String(error) }
     }
-    return await res.json()
-  } catch (err) {
-    return { error: err.message || String(err) }
   }
-}
 
-async function getHealth() {
-  const data = await fetchJson('/health')
-  health.value = data
-}
-
-async function getInfo() {
-  const data = await fetchJson('/info')
-  info.value = data
-}
-
-async function getGenerators() {
-  const data = await fetchJson('/generators/get')
-  generators.value = data
-}
-
-const formattedInfo = computed(() => {
-  try {
-    return JSON.stringify(info.value, null, 2)
-  } catch {
-    return String(info.value)
+  async function getHealth () {
+    const data = await fetchJson('/health')
+    health.value = data
   }
-})
 
-// Render the generators.stmts map (stmt -> weight) into a readable string
-const formattedGenerators = computed(() => {
-  const stmts = generators.value && generators.value.stmts ? generators.value.stmts : null
-  if (!stmts) return ''
+  async function getInfo () {
+    const data = await fetchJson('/info')
+    info.value = data
+  }
 
-  // Convert to entries and ensure numeric weights
-  const entries = Object.entries(stmts).map(([k, v]) => [k, Number(v || 0)])
-  const total = entries.reduce((s, [, w]) => s + w, 0)
+  async function getGenerators () {
+    const data = await fetchJson('/generators/get')
+    generators.value = data
+  }
 
-  // Sort by weight desc, then name
-  entries.sort((a, b) => {
-    const wdiff = b[1] - a[1]
-    if (wdiff !== 0) return wdiff
-    return a[0].localeCompare(b[0])
+  const formattedInfo = computed(() => {
+    try {
+      return JSON.stringify(info.value, null, 2)
+    } catch {
+      return String(info.value)
+    }
   })
 
-  const lines = entries.map(([k, w]) => {
-    const pct = total > 0 ? ((w / total) * 100).toFixed(1) : '0.0'
-    return `${k}: ${w} (${pct}%)`
+  // Render the generators.stmts map (stmt -> weight) into a readable string
+  const formattedGenerators = computed(() => {
+    const stmts = generators.value && generators.value.stmts ? generators.value.stmts : null
+    if (!stmts) return ''
+
+    // Convert to entries and ensure numeric weights
+    const entries = Object.entries(stmts).map(([k, v]) => [k, Number(v || 0)])
+    const total = entries.reduce((s, [, w]) => s + w, 0)
+
+    // Sort by weight desc, then name
+    entries.sort((a, b) => {
+      const wdiff = b[1] - a[1]
+      if (wdiff !== 0) return wdiff
+      return a[0].localeCompare(b[0])
+    })
+
+    const lines = entries.map(([k, w]) => {
+      const pct = total > 0 ? ((w / total) * 100).toFixed(1) : '0.0'
+      return `${k}: ${w} (${pct}%)`
+    })
+
+    lines.unshift(`Total tokens: ${total}`)
+    return lines.join('\n')
   })
 
-  lines.unshift(`Total tokens: ${total}`)
-  return lines.join('\n')
-})
-
-onMounted(() => {
-  getHealth()
-  getInfo()
-  getGenerators()
-})
+  onMounted(() => {
+    getHealth()
+    getInfo()
+    getGenerators()
+  })
 </script>
 
 <style scoped>
