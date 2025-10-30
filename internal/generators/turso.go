@@ -32,9 +32,9 @@ func DefaultTursoStmtWeights() map[stmts.StmtType]uint64 {
 	// Basic SELECT variants
 	w[stmts.StmtSelectBasic] = 120
 	w[stmts.StmtSelectWhere] = 100
-	w[stmts.StmtSelectWhereComplex] = 60
-	w[stmts.StmtSelectWhereIn] = 50
-	w[stmts.StmtSelectSubquery] = 40
+	w[stmts.StmtSelectWhereComplex] = 80   // Increased from 60
+	w[stmts.StmtSelectWhereIn] = 70        // Increased from 50
+	w[stmts.StmtSelectSubquery] = 60       // Increased from 40
 	w[stmts.StmtSelectCase] = 40
 	w[stmts.StmtSelectAggregateComplex] = 30
 	w[stmts.StmtSelectLike] = 80
@@ -49,16 +49,17 @@ func DefaultTursoStmtWeights() map[stmts.StmtType]uint64 {
 	w[stmts.StmtSelectOuter] = 20
 	w[stmts.StmtSelectJoinUsing] = 20
 	w[stmts.StmtSelectNatural] = 20
-	// Advanced SELECT with recursion/nesting
-	w[stmts.StmtSelectRecursive] = 30
-	w[stmts.StmtSelectNestedCase] = 25
-	w[stmts.StmtSelectComplexJoin] = 25
-	// Window functions and CTEs (new)
-	w[stmts.StmtSelectWindow] = 35
-	w[stmts.StmtSelectMultipleWindows] = 20
-	w[stmts.StmtSelectCTE] = 30
-	w[stmts.StmtSelectMultipleCTE] = 20
-	w[stmts.StmtSelectRecursiveCTE] = 15
+	// Advanced SELECT with recursion/nesting - increased for more complexity
+	w[stmts.StmtSelectRecursive] = 50      // Increased from 30
+	w[stmts.StmtSelectNestedCase] = 40     // Increased from 25
+	w[stmts.StmtSelectComplexJoin] = 40    // Increased from 25
+	w[stmts.StmtSelectDeeplyNested] = 45   // New: deeply nested subqueries
+	// Window functions and CTEs - increased for more complexity
+	w[stmts.StmtSelectWindow] = 50         // Increased from 35
+	w[stmts.StmtSelectMultipleWindows] = 35 // Increased from 20
+	w[stmts.StmtSelectCTE] = 50            // Increased from 30
+	w[stmts.StmtSelectMultipleCTE] = 35    // Increased from 20
+	w[stmts.StmtSelectRecursiveCTE] = 25   // Increased from 15
 	// new: Turso extension functions
 	w[stmts.StmtSelectUUID] = 30
 	w[stmts.StmtSelectRegexp] = 30

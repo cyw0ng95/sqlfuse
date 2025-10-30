@@ -37,6 +37,7 @@ const (
 	StmtSelectRecursive        StmtType = "select_recursive"
 	StmtSelectNestedCase       StmtType = "select_nested_case"
 	StmtSelectComplexJoin      StmtType = "select_complex_join"
+	StmtSelectDeeplyNested     StmtType = "select_deeply_nested"
 	StmtSelectWindow           StmtType = "select_window"
 	StmtSelectMultipleWindows  StmtType = "select_multiple_windows"
 	StmtSelectCTE              StmtType = "select_cte"
@@ -130,6 +131,7 @@ var AllStmtTypes = []StmtType{
 	StmtSelectRecursive,
 	StmtSelectNestedCase,
 	StmtSelectComplexJoin,
+	StmtSelectDeeplyNested,
 	StmtSelectWindow,
 	StmtSelectMultipleWindows,
 	StmtSelectCTE,

@@ -46,9 +46,9 @@ func DefaultDuckDBStmtWeights() map[stmts.StmtType]uint64 {
 	// Basic SELECT variants
 	w[stmts.StmtSelectBasic] = 120
 	w[stmts.StmtSelectWhere] = 100
-	w[stmts.StmtSelectWhereComplex] = 60
-	w[stmts.StmtSelectWhereIn] = 50
-	w[stmts.StmtSelectSubquery] = 40
+	w[stmts.StmtSelectWhereComplex] = 80   // Increased from 60
+	w[stmts.StmtSelectWhereIn] = 70        // Increased from 50
+	w[stmts.StmtSelectSubquery] = 60       // Increased from 40
 	w[stmts.StmtSelectCase] = 40
 	w[stmts.StmtSelectAggregateComplex] = 30
 	w[stmts.StmtSelectLike] = 80
@@ -65,18 +65,19 @@ func DefaultDuckDBStmtWeights() map[stmts.StmtType]uint64 {
 	w[stmts.StmtSelectJoinUsing] = 20
 	w[stmts.StmtSelectNatural] = 20
 	
-	// Advanced SELECT with recursion/nesting
-	w[stmts.StmtSelectRecursive] = 30
-	w[stmts.StmtSelectNestedCase] = 25
-	w[stmts.StmtSelectComplexJoin] = 25
+	// Advanced SELECT with recursion/nesting - increased for more complexity
+	w[stmts.StmtSelectRecursive] = 50      // Increased from 30
+	w[stmts.StmtSelectNestedCase] = 40     // Increased from 25
+	w[stmts.StmtSelectComplexJoin] = 40    // Increased from 25
+	w[stmts.StmtSelectDeeplyNested] = 50   // New: deeply nested subqueries
 	
 	// Window functions and CTEs - Higher weights for DuckDB
 	// DuckDB has excellent analytical query support
-	w[stmts.StmtSelectWindow] = 80          // Significantly higher than Turso
-	w[stmts.StmtSelectMultipleWindows] = 60 // Higher than other flavors
-	w[stmts.StmtSelectCTE] = 60             // Higher than other flavors
-	w[stmts.StmtSelectMultipleCTE] = 45     // Higher than other flavors
-	w[stmts.StmtSelectRecursiveCTE] = 40    // Fully supported, high weight
+	w[stmts.StmtSelectWindow] = 100         // Increased from 80
+	w[stmts.StmtSelectMultipleWindows] = 80 // Increased from 60
+	w[stmts.StmtSelectCTE] = 80             // Increased from 60
+	w[stmts.StmtSelectMultipleCTE] = 60     // Increased from 45
+	w[stmts.StmtSelectRecursiveCTE] = 55    // Increased from 40 - fully supported, high weight
 	
 	// Extension functions - DuckDB specific
 	// DuckDB has rich built-in functions but may not have all SQLite extensions

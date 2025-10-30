@@ -22,7 +22,7 @@ type BaseGenerator struct {
 func NewBaseGenerator(seed uint64) *BaseGenerator {
 	return &BaseGenerator{
 		lcg:               common.NewLCG(seed),
-		maxRecursionDepth: 2, // Default recursion depth
+		maxRecursionDepth: 4, // Default recursion depth - increased for more complex SQL
 		firstGeneration:   true,
 	}
 }

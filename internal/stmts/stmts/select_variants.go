@@ -78,6 +78,9 @@ func (g *SelectVariantGenerator) Generate(ctx *GenContext) (Stmt, error) {
 	case StmtSelectComplexJoin:
 		s, err := GenSelectWithComplexJoin(db, lcg, g.maxDepth)
 		return &s, err
+	case StmtSelectDeeplyNested:
+		s, err := GenSelectDeeplyNested(db, lcg, g.maxDepth)
+		return &s, err
 	case StmtSelectWindow:
 		s, err := GenSelectWithWindowFunction(db, lcg)
 		return &s, err
