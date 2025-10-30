@@ -96,6 +96,20 @@ const (
 	StmtImportDatabase StmtType = "import_database"
 	StmtPrepare        StmtType = "prepare"
 	StmtExecute        StmtType = "execute"
+
+	// Additional DuckDB-specific statements
+	StmtPivot          StmtType = "pivot"
+	StmtUnpivot        StmtType = "unpivot"
+	StmtMergeInto      StmtType = "merge_into"
+	StmtQualify        StmtType = "select_qualify"
+	StmtAlterDatabase  StmtType = "alter_database"
+	StmtAlterView      StmtType = "alter_view"
+	StmtCreateSecret   StmtType = "create_secret"
+	StmtDropSecret     StmtType = "drop_secret"
+	StmtLoadInstall    StmtType = "load_install"
+	StmtCommentOn      StmtType = "comment_on"
+	StmtProfiling      StmtType = "profiling"
+	StmtSetVariable    StmtType = "set_variable"
 )
 
 // AllStmtTypes defines a deterministic ordering used when selecting by weights.
@@ -190,4 +204,16 @@ var AllStmtTypes = []StmtType{
 	StmtImportDatabase,
 	StmtPrepare,
 	StmtExecute,
+	StmtPivot,
+	StmtUnpivot,
+	StmtMergeInto,
+	StmtQualify,
+	StmtAlterDatabase,
+	StmtAlterView,
+	StmtCreateSecret,
+	StmtDropSecret,
+	StmtLoadInstall,
+	StmtCommentOn,
+	StmtProfiling,
+	StmtSetVariable,
 }
