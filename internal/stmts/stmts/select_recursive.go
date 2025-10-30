@@ -49,8 +49,8 @@ func GenSelectRecursive(db *sql.DB, lcg *common.LCG, maxDepth int) (SelectStmt, 
 
 // genFromClause generates a FROM clause, possibly with a subquery.
 func genFromClause(ctx *GenContext, tbls []helper.TableInfo, defaultTbl helper.TableInfo) string {
-	// Use subquery in FROM clause for recursion
-	if ctx.CanRecurse() && ctx.Intn(3) == 0 && len(tbls) > 0 {
+	// Use subquery in FROM clause for recursion more frequently
+	if ctx.CanRecurse() && ctx.Intn(2) == 0 && len(tbls) > 0 {
 		subCtx := ctx.Descend()
 		exprGen := NewExprGenerator(subCtx)
 		subquery := exprGen.GenSubquery(tbls)
@@ -174,4 +174,58 @@ func GenSelectWithComplexJoin(db *sql.DB, lcg *common.LCG, maxDepth int) (Select
 		limit)
 
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
+}
+
+// GenSelectDeeplyNested generates a SELECT with deeply nested subqueries.
+// This creates complex queries with multiple levels of nesting for stress testing.
+func GenSelectDeeplyNested(db *sql.DB, lcg *common.LCG, maxDepth int) (SelectStmt, error) {
+	tbls, err := helper.GetAllTablesAndCols(db)
+	if err != nil || len(tbls) == 0 {
+		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
+	}
+
+	ctx := NewGenContext(db, lcg, maxDepth)
+	
+	// Build a deeply nested query recursively
+	sql := genDeeplyNestedQuery(ctx, tbls, 0)
+	
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
+}
+
+// genDeeplyNestedQuery recursively builds nested subqueries.
+func genDeeplyNestedQuery(ctx *GenContext, tbls []helper.TableInfo, currentDepth int) string {
+	if !ctx.CanRecurse() || len(tbls) == 0 {
+		// Base case: simple SELECT
+		tbl := tbls[ctx.Intn(len(tbls))]
+		if len(tbl.Cols) == 0 {
+			return "SELECT 1"
+		}
+		col := tbl.Cols[ctx.Intn(len(tbl.Cols))]
+		limit := 1 + ctx.Intn(10)
+		return fmt.Sprintf("SELECT %s FROM %s LIMIT %d", 
+			quoteIdent(col.Name), quoteIdent(tbl.Name), limit)
+	}
+	
+	// Recursive case: build a subquery
+	tbl := tbls[ctx.Intn(len(tbls))]
+	if len(tbl.Cols) == 0 {
+		return "SELECT 1"
+	}
+	
+	// Descend to build the inner query
+	subCtx := ctx.Descend()
+	innerQuery := genDeeplyNestedQuery(subCtx, tbls, currentDepth+1)
+	
+	// Wrap it with an outer query
+	col := tbl.Cols[ctx.Intn(len(tbl.Cols))]
+	limit := 1 + ctx.Intn(20)
+	
+	// Optionally add WHERE clause
+	whereClause := ""
+	if ctx.Intn(2) == 0 {
+		whereClause = fmt.Sprintf(" WHERE %s IS NOT NULL", quoteIdent(col.Name))
+	}
+	
+	return fmt.Sprintf("SELECT * FROM (%s) AS nested_%d%s LIMIT %d", 
+		innerQuery, currentDepth, whereClause, limit)
 }

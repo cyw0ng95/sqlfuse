@@ -58,6 +58,7 @@ func BuildGeneratorFuncs(lcg *common.LCG, maxRecursionDepth int, flavorConfig Fl
 	m["select_recursive"] = createGenFunc(StmtSelectRecursive, "SELECT 1")
 	m["select_nested_case"] = createGenFunc(StmtSelectNestedCase, "SELECT 1")
 	m["select_complex_join"] = createGenFunc(StmtSelectComplexJoin, "SELECT 1")
+	m["select_deeply_nested"] = createGenFunc(StmtSelectDeeplyNested, "SELECT 1")
 	m["select_window"] = createGenFunc(StmtSelectWindow, "SELECT 1")
 	m["select_multiple_windows"] = createGenFunc(StmtSelectMultipleWindows, "SELECT 1")
 	m["select_cte"] = createGenFunc(StmtSelectCTE, "SELECT 1")

@@ -47,7 +47,7 @@ func (f *StmtGeneratorFactory) CreateGenerator(stmtType StmtType) StmtGenerator 
 		StmtSelectLimit, StmtSelectOrder, StmtSelectGroup, StmtSelectHaving,
 		StmtSelectJoin, StmtSelectCross, StmtSelectInner, StmtSelectOuter,
 		StmtSelectJoinUsing, StmtSelectNatural, StmtSelectRecursive,
-		StmtSelectNestedCase, StmtSelectComplexJoin, StmtSelectWindow,
+		StmtSelectNestedCase, StmtSelectComplexJoin, StmtSelectDeeplyNested, StmtSelectWindow,
 		StmtSelectMultipleWindows, StmtSelectCTE, StmtSelectMultipleCTE,
 		StmtSelectRecursiveCTE, StmtSelectJSON, StmtSelectUUID,
 		StmtSelectRegexp, StmtSelectVector, StmtSelectTime:

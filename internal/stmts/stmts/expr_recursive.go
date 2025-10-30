@@ -25,17 +25,18 @@ func (eg *ExprGenerator) GenWhereExpr(tbls []helper.TableInfo) string {
 	}
 
 	// Choose whether to generate a simple or complex expression
-	if !eg.ctx.CanRecurse() || eg.ctx.Intn(3) == 0 {
+	// With increased recursion depth, we generate complex expressions more frequently
+	if !eg.ctx.CanRecurse() || eg.ctx.Intn(4) == 0 {
 		// Generate simple condition
 		return eg.genSimpleCondition(tbls)
 	}
 
 	// Generate complex condition with AND/OR
-	numConditions := 2 + eg.ctx.Intn(2) // 2-3 conditions
+	numConditions := 2 + eg.ctx.Intn(3) // 2-4 conditions (increased from 2-3)
 	conditions := make([]string, 0, numConditions)
 
 	for i := 0; i < numConditions; i++ {
-		if eg.ctx.CanRecurse() && eg.ctx.Intn(4) == 0 {
+		if eg.ctx.CanRecurse() && eg.ctx.Intn(3) == 0 {
 			// Occasionally nest deeper
 			subCtx := eg.ctx.Descend()
 			subGen := NewExprGenerator(subCtx)
@@ -99,7 +100,8 @@ func (eg *ExprGenerator) GenSelectExpr(tbls []helper.TableInfo, maxExprs int) []
 	numExprs := 1 + eg.ctx.Intn(maxExprs)
 
 	for i := 0; i < numExprs; i++ {
-		if eg.ctx.CanRecurse() && eg.ctx.Intn(3) == 0 {
+		// Increased probability of complex expressions for more complexity
+		if eg.ctx.CanRecurse() && eg.ctx.Intn(2) == 0 {
 			// Generate a complex expression (CASE, arithmetic, etc.)
 			expr := eg.genComplexExpr(tbls)
 			if expr != "" {
