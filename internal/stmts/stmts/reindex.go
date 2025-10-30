@@ -52,7 +52,7 @@ func GenReindex(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 		sql = fmt.Sprintf("REINDEX %s;", collation)
 	} else {
 		// 60% chance: REINDEX a specific table
-		tables, err := helper.GetAllTablesAndCols(db, "")
+		tables, err := helper.GetAllTablesAndCols(db, "sqlite")
 		if err != nil || len(tables) == 0 {
 			// Fallback to reindexing everything
 			sql = "REINDEX;"

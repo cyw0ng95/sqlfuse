@@ -11,7 +11,7 @@ import (
 
 // GenSelectWhereComplex generates a SELECT with complex WHERE clause using AND/OR combinations.
 func GenSelectWhereComplex(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db, "")
+	tbls, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tbls) == 0 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
