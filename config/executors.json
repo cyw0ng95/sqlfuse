@@ -13,5 +13,10 @@
         "executor": "chai_embedded",
         "path": "./output/chai_embedded",
         "flavor": "chai"
+    },
+    {
+        "executor": "duckdb_embedded",
+        "path": "./output/duckdb_embedded",
+        "flavor": "duckdb"
     }
 ]

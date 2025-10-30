@@ -1,10 +1,10 @@
 # SQLsmith-Go
 
-A high-performance SQL query generator and fuzzer for testing SQLite-compatible database systems. SQLsmith-Go generates syntactically valid, semantically interesting SQL statements to discover bugs, edge cases, and performance issues in database implementations.
+A high-performance SQL query generator and fuzzer for testing database systems. SQLsmith-Go generates syntactically valid, semantically interesting SQL statements to discover bugs, edge cases, and performance issues in both SQLite-compatible and analytical database implementations.
 
 ## Overview
 
-SQLsmith-Go is a Go implementation of the [SQLsmith](https://github.com/anse1/sqlsmith) approach to database testing through randomized query generation. Unlike traditional fuzzing that generates random bytes, SQLsmith-Go produces valid SQL statements that exercise diverse database features while respecting the constraints and capabilities of different SQLite flavors.
+SQLsmith-Go is a Go implementation of the [SQLsmith](https://github.com/anse1/sqlsmith) approach to database testing through randomized query generation. Unlike traditional fuzzing that generates random bytes, SQLsmith-Go produces valid SQL statements that exercise diverse database features while respecting the constraints and capabilities of different database flavors.
 
 ### Key Features
 
@@ -139,19 +139,13 @@ bash build.sh
 **DuckDB Executor:**
 
 ```bash
-# In-memory DuckDB fuzzing with analytical queries
+# Analytical database fuzzing with DuckDB
 ./output/duckdb_embedded_executor \
   --dsn "" \
-  --init-sql "./assets/duckdb/init.sql" \
+  --seed 42 \
   --queries 1000 \
   --workers 4 \
   --verbose
-
-# File-based DuckDB database
-./output/duckdb_embedded_executor \
-  --dsn "test.duckdb" \
-  --seed 42 \
-  --queries 500
 ```
 
 **HTTP Server:**
@@ -235,6 +229,17 @@ PRAGMA synchronous = NORMAL;       -- All modes available
 PRAGMA table_info(users);          -- Parameterized
 PRAGMA foreign_keys = ON;          -- Extended pragmas
 PRAGMA auto_vacuum = INCREMENTAL;  -- Storage management
+```
+
+**DuckDB** (Analytical database with extensive SQL features):
+```sql
+-- Rich analytical functions
+SELECT *, ROW_NUMBER() OVER (PARTITION BY category ORDER BY price DESC)
+FROM products;
+
+-- Advanced window functions with FILTER
+SELECT AVG(price) FILTER (WHERE in_stock) OVER (PARTITION BY category)
+FROM products;
 ```
 
 ## Project Structure
