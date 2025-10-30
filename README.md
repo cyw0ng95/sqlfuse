@@ -15,6 +15,9 @@ SQLsmith-Go is a Go implementation of the [SQLsmith](https://github.com/anse1/sq
 - **Parallel Execution**: Multi-worker architecture for high-throughput fuzzing
 - **Web Interface**: Vue.js-based frontend for monitoring and controlling fuzzing jobs
 - **Modular Architecture**: Clean separation between generators, executors, and statement builders
+- **Impedance Matching**: Automatically blacklists problematic statement types based on error rates (inspired by original SQLsmith)
+- **Statistics Tracking**: Comprehensive metrics on generation/execution rates, error patterns, and AST complexity
+- **Depth-Based Generation**: Probabilistic recursion control for varied query complexity
 
 ## Architecture
 
@@ -607,6 +610,15 @@ Comprehensive documentation is available in the `docs/` directory:
 - **[DESIGN_PATTERNS.md](docs/DESIGN_PATTERNS.md)**: Code organization patterns
 - **[DESIGN_IMPROVEMENTS.md](docs/DESIGN_IMPROVEMENTS.md)**: Planned enhancements
 - **[WEB_UI_USAGE.md](docs/WEB_UI_USAGE.md)**: Web interface usage guide
+- **[SQLSMITH_COMPARISON.md](docs/SQLSMITH_COMPARISON.md)**: Comparison with original SQLsmith and implementation of key ideas
+
+## Examples
+
+Example programs demonstrating various features are available in the `examples/` directory:
+
+- **[impedance_example.go](examples/impedance_example.go)**: Demonstrates impedance matching and statistics tracking
+
+See [examples/README.md](examples/README.md) for more information.
 
 ## Performance Characteristics
 
