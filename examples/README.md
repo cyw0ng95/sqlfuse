@@ -8,6 +8,8 @@ This directory contains examples demonstrating various features of sqlsmith-go.
 
 Demonstrates the impedance matching and statistics tracking features inspired by the original SQLsmith.
 
+**Note**: This example uses internal packages for demonstration purposes. In a production setting, these features would be integrated into the executors or exposed through public APIs.
+
 **Features shown:**
 - Enabling impedance matching to automatically blacklist problematic statement types
 - Configuring error rate thresholds and minimum observations

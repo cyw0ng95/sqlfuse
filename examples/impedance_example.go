@@ -1,5 +1,13 @@
 // Example demonstrating impedance matching and statistics tracking
 // inspired by the original SQLsmith's approach to adaptive fuzzing.
+//
+// Note: This example uses internal packages which are normally not accessible
+// from outside the module. To run this example, you would need to:
+// 1. Move it to an internal directory, or
+// 2. Export the necessary APIs from public packages
+//
+// This is a demonstration of the API design - in production, these features
+// would be integrated into the executors.
 package main
 
 import (
@@ -58,10 +66,11 @@ func main() {
 
 	// Generate and execute queries
 	totalQueries := 100
-	for i := 0; i < totalQueries; i++ {
+	executed := 0
+	for executed < totalQueries {
 		stmtType := gen.Direction()
 		
-		// Skip blacklisted types
+		// Skip blacklisted types, but don't count them towards our quota
 		if gen.IsBlacklisted(stmtType) {
 			continue
 		}
@@ -87,11 +96,13 @@ func main() {
 			stats.RecordExecution(execTime)
 		}
 
+		executed++
+
 		// Print progress every 20 queries
-		if (i+1)%20 == 0 {
+		if executed%20 == 0 {
 			snapshot := stats.GetStats()
 			fmt.Printf("Progress: %d queries | Gen: %.1f/s | Exec: %.1f/s | Errors: %.2f%%\n",
-				i+1, snapshot.GenPerSec, snapshot.ExecPerSec, snapshot.ErrorRate*100)
+				executed, snapshot.GenPerSec, snapshot.ExecPerSec, snapshot.ErrorRate*100)
 		}
 	}
 
