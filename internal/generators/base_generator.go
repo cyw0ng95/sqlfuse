@@ -16,7 +16,6 @@ type BaseGenerator struct {
 	weights           map[stmts.StmtType]uint64
 	totalWeight       uint64
 	maxRecursionDepth int
-	firstGeneration   bool
 	genMap            map[stmts.StmtType]func(db *sql.DB) (string, error)
 
 	// Impedance matching and statistics
@@ -31,7 +30,6 @@ func NewBaseGenerator(seed uint64) *BaseGenerator {
 	return &BaseGenerator{
 		lcg:               common.NewLCG(seed),
 		maxRecursionDepth: 4, // Default recursion depth - increased for more complex SQL
-		firstGeneration:   true,
 		impedanceMatcher:  common.NewImpedanceMatcher(),
 		stats:             common.NewGenerationStats(),
 		enableImpedance:   false, // Disabled by default for backward compatibility
@@ -96,11 +94,6 @@ func (g *BaseGenerator) GetLCG() *common.LCG {
 // to pick proportionally based on weights.
 // When impedance matching is enabled, blacklisted statement types are skipped.
 func (g *BaseGenerator) Direction() stmts.StmtType {
-	if g.firstGeneration {
-		g.firstGeneration = false
-		return stmts.StmtPragma
-	}
-
 	if g.totalWeight > 0 {
 		// Try up to 100 times to find a non-blacklisted statement type
 		const maxAttempts = 100
