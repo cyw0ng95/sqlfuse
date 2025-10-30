@@ -126,6 +126,29 @@ func DefaultDuckDBStmtWeights() map[stmts.StmtType]uint64 {
 	// PRAGMA - DuckDB has different pragma support than SQLite
 	w[stmts.StmtPragma] = 30
 	
+	// DuckDB-specific statements
+	w[stmts.StmtCopy] = 60              // Very important for DuckDB data import/export
+	w[stmts.StmtSet] = 40               // DuckDB's configuration mechanism
+	w[stmts.StmtReset] = 20             // Reset configuration
+	w[stmts.StmtCreateSchema] = 30      // Schema management
+	w[stmts.StmtDropSchema] = 25        // Schema management
+	w[stmts.StmtCreateSequence] = 25    // Sequence support
+	w[stmts.StmtDropSequence] = 20      // Sequence support
+	w[stmts.StmtCreateMacro] = 35       // DuckDB macros
+	w[stmts.StmtDropMacro] = 30         // DuckDB macros
+	w[stmts.StmtCreateType] = 20        // Custom types (ENUM)
+	w[stmts.StmtDropType] = 15          // Custom types
+	w[stmts.StmtDescribe] = 45          // Metadata queries - very useful
+	w[stmts.StmtShow] = 45              // Metadata queries - very useful
+	w[stmts.StmtSummarize] = 40         // DuckDB's data profiling feature
+	w[stmts.StmtUse] = 15               // Schema switching
+	w[stmts.StmtCall] = 25              // Call macros/procedures
+	w[stmts.StmtCheckpoint] = 15        // Persistence control
+	w[stmts.StmtExportDatabase] = 10    // Database export
+	w[stmts.StmtImportDatabase] = 10    // Database import
+	w[stmts.StmtPrepare] = 20           // Prepared statements
+	w[stmts.StmtExecute] = 15           // Execute prepared statements
+	
 	return w
 }
 

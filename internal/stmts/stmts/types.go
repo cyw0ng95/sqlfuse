@@ -72,6 +72,29 @@ const (
 	StmtSelectUnion            StmtType = "select_union"
 	StmtSelectIntersect        StmtType = "select_intersect"
 	StmtSelectExcept           StmtType = "select_except"
+	
+	// DuckDB-specific statements
+	StmtCopy                   StmtType = "copy"
+	StmtSet                    StmtType = "set"
+	StmtReset                  StmtType = "reset"
+	StmtCreateSchema           StmtType = "create_schema"
+	StmtDropSchema             StmtType = "drop_schema"
+	StmtCreateSequence         StmtType = "create_sequence"
+	StmtDropSequence           StmtType = "drop_sequence"
+	StmtCreateMacro            StmtType = "create_macro"
+	StmtDropMacro              StmtType = "drop_macro"
+	StmtCreateType             StmtType = "create_type"
+	StmtDropType               StmtType = "drop_type"
+	StmtDescribe               StmtType = "describe"
+	StmtShow                   StmtType = "show"
+	StmtSummarize              StmtType = "summarize"
+	StmtUse                    StmtType = "use"
+	StmtCall                   StmtType = "call"
+	StmtCheckpoint             StmtType = "checkpoint"
+	StmtExportDatabase         StmtType = "export_database"
+	StmtImportDatabase         StmtType = "import_database"
+	StmtPrepare                StmtType = "prepare"
+	StmtExecute                StmtType = "execute"
 )
 
 // AllStmtTypes defines a deterministic ordering used when selecting by weights.
@@ -142,4 +165,27 @@ var AllStmtTypes = []StmtType{
 	StmtSelectUnion,
 	StmtSelectIntersect,
 	StmtSelectExcept,
+	
+	// DuckDB-specific statements
+	StmtCopy,
+	StmtSet,
+	StmtReset,
+	StmtCreateSchema,
+	StmtDropSchema,
+	StmtCreateSequence,
+	StmtDropSequence,
+	StmtCreateMacro,
+	StmtDropMacro,
+	StmtCreateType,
+	StmtDropType,
+	StmtDescribe,
+	StmtShow,
+	StmtSummarize,
+	StmtUse,
+	StmtCall,
+	StmtCheckpoint,
+	StmtExportDatabase,
+	StmtImportDatabase,
+	StmtPrepare,
+	StmtExecute,
 }
