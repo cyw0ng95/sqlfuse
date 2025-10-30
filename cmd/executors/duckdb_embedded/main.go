@@ -24,7 +24,12 @@ func main() {
 			return executors.Run(
 				"Starting duckdb_embedded executor",
 				&flags,
-				func(dsn string) (*sql.DB, error) { return sql.Open("duckdb", dsn) },
+				func(dsn string) (*sql.DB, error) {
+					if dsn == ":memory:" {
+						dsn = ""
+					}
+					return sql.Open("duckdb", dsn)
+				},
 				func(seed uint64) generators.Generator { return generators.NewDuckDBGenerator(seed) },
 				print_schema,
 			)
