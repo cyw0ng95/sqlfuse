@@ -11,108 +11,109 @@ type SelectVariantGenerator struct {
 func (g *SelectVariantGenerator) Generate(ctx *GenContext) (Stmt, error) {
 	db := ctx.DB
 	lcg := ctx.LCG
+	flavor := ctx.Flavor
 	
 	// Route to appropriate generator based on variant
 	// Return as pointer to implement Stmt interface properly
 	switch g.variant {
 	case StmtSelectBasic:
-		s, err := GenSelect(db, lcg)
+		s, err := GenSelectWithFlavor(db, lcg, flavor)
 		return &s, err
 	case StmtSelectWhere:
-		s, err := GenSelectWhere(db, lcg)
+		s, err := GenSelectWhereWithFlavor(db, lcg, flavor)
 		return &s, err
 	case StmtSelectWhereComplex:
-		s, err := GenSelectWhereComplex(db, lcg)
+		s, err := GenSelectWhereComplexWithFlavor(db, lcg, flavor)
 		return &s, err
 	case StmtSelectWhereIn:
-		s, err := GenSelectWhereIn(db, lcg)
+		s, err := GenSelectWhereInWithFlavor(db, lcg, flavor)
 		return &s, err
 	case StmtSelectSubquery:
-		s, err := GenSelectSubquery(db, lcg)
+		s, err := GenSelectSubqueryWithFlavor(db, lcg, flavor)
 		return &s, err
 	case StmtSelectCase:
-		s, err := GenSelectCase(db, lcg)
+		s, err := GenSelectCaseWithFlavor(db, lcg, flavor)
 		return &s, err
 	case StmtSelectAggregateComplex:
-		s, err := GenSelectAggregateComplex(db, lcg)
+		s, err := GenSelectAggregateComplexWithFlavor(db, lcg, flavor)
 		return &s, err
 	case StmtSelectLike:
-		s, err := GenSelectWhereLike(db, lcg)
+		s, err := GenSelectWhereLikeWithFlavor(db, lcg, flavor)
 		return &s, err
 	case StmtSelectLimit:
-		s, err := GenSelectLimit(db, lcg)
+		s, err := GenSelectLimitWithFlavor(db, lcg, flavor)
 		return &s, err
 	case StmtSelectOrder:
-		s, err := GenSelectOrderBy(db, lcg)
+		s, err := GenSelectOrderByWithFlavor(db, lcg, flavor)
 		return &s, err
 	case StmtSelectGroup:
-		s, err := GenSelectGroupBy(db, lcg)
+		s, err := GenSelectGroupByWithFlavor(db, lcg, flavor)
 		return &s, err
 	case StmtSelectHaving:
-		s, err := GenSelectHaving(db, lcg)
+		s, err := GenSelectHavingWithFlavor(db, lcg, flavor)
 		return &s, err
 	case StmtSelectJoin:
-		s, err := GenSelectJoin(db, lcg)
+		s, err := GenSelectJoinWithFlavor(db, lcg, flavor)
 		return &s, err
 	case StmtSelectCross:
-		s, err := GenSelectCrossJoin(db, lcg)
+		s, err := GenSelectCrossJoinWithFlavor(db, lcg, flavor)
 		return &s, err
 	case StmtSelectInner:
-		s, err := GenSelectInnerJoin(db, lcg)
+		s, err := GenSelectInnerJoinWithFlavor(db, lcg, flavor)
 		return &s, err
 	case StmtSelectOuter:
-		s, err := GenSelectOuterJoin(db, lcg)
+		s, err := GenSelectOuterJoinWithFlavor(db, lcg, flavor)
 		return &s, err
 	case StmtSelectJoinUsing:
-		s, err := GenSelectJoinUsing(db, lcg)
+		s, err := GenSelectJoinUsingWithFlavor(db, lcg, flavor)
 		return &s, err
 	case StmtSelectNatural:
-		s, err := GenSelectNaturalJoin(db, lcg)
+		s, err := GenSelectNaturalJoinWithFlavor(db, lcg, flavor)
 		return &s, err
 	case StmtSelectRecursive:
-		s, err := GenSelectRecursive(db, lcg, g.maxDepth)
+		s, err := GenSelectRecursiveWithFlavor(db, lcg, g.maxDepth, flavor)
 		return &s, err
 	case StmtSelectNestedCase:
-		s, err := GenSelectWithNestedCase(db, lcg, g.maxDepth)
+		s, err := GenSelectWithNestedCaseWithFlavor(db, lcg, g.maxDepth, flavor)
 		return &s, err
 	case StmtSelectComplexJoin:
-		s, err := GenSelectWithComplexJoin(db, lcg, g.maxDepth)
+		s, err := GenSelectWithComplexJoinWithFlavor(db, lcg, g.maxDepth, flavor)
 		return &s, err
 	case StmtSelectDeeplyNested:
-		s, err := GenSelectDeeplyNested(db, lcg, g.maxDepth)
+		s, err := GenSelectDeeplyNestedWithFlavor(db, lcg, g.maxDepth, flavor)
 		return &s, err
 	case StmtSelectWindow:
-		s, err := GenSelectWithWindowFunction(db, lcg)
+		s, err := GenSelectWithWindowFunctionWithFlavor(db, lcg, flavor)
 		return &s, err
 	case StmtSelectMultipleWindows:
-		s, err := GenSelectWithMultipleWindows(db, lcg)
+		s, err := GenSelectWithMultipleWindowsWithFlavor(db, lcg, flavor)
 		return &s, err
 	case StmtSelectCTE:
-		s, err := GenSelectWithCTE(db, lcg)
+		s, err := GenSelectWithCTEWithFlavor(db, lcg, flavor)
 		return &s, err
 	case StmtSelectMultipleCTE:
-		s, err := GenSelectWithMultipleCTE(db, lcg)
+		s, err := GenSelectWithMultipleCTEWithFlavor(db, lcg, flavor)
 		return &s, err
 	case StmtSelectRecursiveCTE:
-		s, err := GenSelectWithRecursiveCTE(db, lcg)
+		s, err := GenSelectWithRecursiveCTEWithFlavor(db, lcg, flavor)
 		return &s, err
 	case StmtSelectJSON:
-		s, err := GenSelectWithJSONFunction(db, lcg)
+		s, err := GenSelectWithJSONFunctionWithFlavor(db, lcg, flavor)
 		return &s, err
 	case StmtSelectUUID:
-		s, err := GenSelectWithUUIDFunction(db, lcg)
+		s, err := GenSelectWithUUIDFunctionWithFlavor(db, lcg, flavor)
 		return &s, err
 	case StmtSelectRegexp:
-		s, err := GenSelectWithRegexpFunction(db, lcg)
+		s, err := GenSelectWithRegexpFunctionWithFlavor(db, lcg, flavor)
 		return &s, err
 	case StmtSelectVector:
-		s, err := GenSelectWithVectorFunction(db, lcg)
+		s, err := GenSelectWithVectorFunctionWithFlavor(db, lcg, flavor)
 		return &s, err
 	case StmtSelectTime:
-		s, err := GenSelectWithTimeFunction(db, lcg)
+		s, err := GenSelectWithTimeFunctionWithFlavor(db, lcg, flavor)
 		return &s, err
 	default:
-		s, err := GenSelect(db, lcg)
+		s, err := GenSelectWithFlavor(db, lcg, flavor)
 		return &s, err
 	}
 }

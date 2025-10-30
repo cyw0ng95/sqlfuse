@@ -50,7 +50,7 @@ func GenCopy(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
 		var tables []helper.TableInfo
 		var err error
 		if db != nil {
-			tables, err = helper.GetAllTablesAndCols(db, "")
+			tables, err = helper.GetAllTablesAndCols(db, "sqlite")
 		}
 		if err != nil || len(tables) == 0 {
 			// Fallback to a simple CSV export
@@ -83,7 +83,7 @@ func GenCopy(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
 		var tables []helper.TableInfo
 		var err error
 		if db != nil {
-			tables, err = helper.GetAllTablesAndCols(db, "")
+			tables, err = helper.GetAllTablesAndCols(db, "sqlite")
 		}
 		if err != nil || len(tables) == 0 {
 			// Fallback to creating a temporary table name

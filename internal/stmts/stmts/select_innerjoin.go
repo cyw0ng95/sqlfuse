@@ -9,7 +9,7 @@ import (
 
 // GenSelectInnerJoin generates a SELECT using INNER JOIN with a simple ON clause.
 func GenSelectInnerJoin(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db, "")
+	tbls, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tbls) < 2 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}

@@ -9,7 +9,7 @@ import (
 
 // GenSelectNaturalJoin generates a SELECT with NATURAL JOIN between two tables.
 func GenSelectNaturalJoin(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db, "")
+	tbls, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tbls) < 2 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
