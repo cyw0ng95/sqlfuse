@@ -1,182 +1,317 @@
 <template>
-  <v-card outlined class="mb-4">
-    <v-card-title>Jobs</v-card-title>
-    <v-card-text>
+  <v-card class="mb-6 modern-card" elevation="8">
+    <v-card-title class="d-flex align-center bg-gradient-jobs">
+      <v-icon class="mr-2">mdi-briefcase</v-icon>
+      Job Management
+    </v-card-title>
+    <v-card-text class="pa-4">
       <v-row>
-        <v-col cols="12" sm="8">
+        <v-col cols="12" md="8">
           <v-select
             v-model="selectedExecutor"
-            :items="executors"
-            item-title="executor"
-            item-value="executor"
-            label="Executor"
+            density="comfortable"
             :disabled="executors.length === 0"
             hide-details
+            item-title="executor"
+            item-value="executor"
+            :items="executors"
+            label="Executor"
+            prepend-inner-icon="mdi-cog"
+            variant="outlined"
           >
-            <template v-slot:item="{ props, item }">
+            <template #item="{ props, item }">
               <v-list-item v-bind="props">
-                <template v-slot:title>
+                <template #prepend>
+                  <v-icon>mdi-engine</v-icon>
+                </template>
+                <template #title>
                   {{ item.raw.executor }}
                 </template>
-                <template v-slot:subtitle v-if="item.raw.flavor">
+                <template v-if="item.raw.flavor" #subtitle>
                   Flavor: {{ item.raw.flavor }}
                 </template>
               </v-list-item>
             </template>
-            <template v-slot:selection="{ item }">
+            <template #selection="{ item }">
               <span>{{ item.raw.executor }}</span>
-              <span v-if="item.raw.flavor" class="text-caption ml-2">({{ item.raw.flavor }})</span>
+              <span v-if="item.raw.flavor" class="text-caption ml-2 text-primary">({{ item.raw.flavor }})</span>
             </template>
           </v-select>
-          <v-text-field v-model="args" label="Arguments (separated by space)" placeholder="--workers 4 --queries 100" class="mt-2" />
+          <v-text-field
+            v-model="args"
+            class="mt-3"
+            density="comfortable"
+            hide-details
+            label="Arguments (separated by space)"
+            placeholder="--workers 4 --queries 100"
+            prepend-inner-icon="mdi-code-tags"
+            variant="outlined"
+          />
         </v-col>
-        <v-col cols="12" sm="4" class="d-flex align-center">
-          <v-btn @click="createJob" :loading="creating" variant="contained">Start Job</v-btn>
+        <v-col class="d-flex align-center" cols="12" md="4">
+          <v-btn
+            block
+            color="primary"
+            elevation="2"
+            :loading="creating"
+            prepend-icon="mdi-play-circle"
+            size="large"
+            @click="createJob"
+          >
+            Start Job
+          </v-btn>
         </v-col>
       </v-row>
 
-      <div v-if="createError" class="text-error">Error: {{ createError }}</div>
-      <div v-if="lastID">Started job id: <strong>{{ lastID }}</strong></div>
+      <div v-if="createError" class="error-alert mt-3">
+        <v-icon class="mr-2" color="error">mdi-alert-circle</v-icon>
+        {{ createError }}
+      </div>
+      <div v-if="lastID" class="success-alert mt-3">
+        <v-icon class="mr-2" color="success">mdi-check-circle</v-icon>
+        Started job ID: <strong>{{ lastID }}</strong>
+      </div>
 
-      <v-divider class="my-4"></v-divider>
+      <v-divider class="my-6" />
+
+      <div class="text-subtitle-1 font-weight-bold mb-3">
+        <v-icon class="mr-2">mdi-magnify</v-icon>
+        Query Job Status
+      </div>
 
       <v-row>
-        <v-col cols="12" sm="6">
-          <v-text-field v-model="queryID" label="Job ID" />
+        <v-col cols="12" md="6">
+          <v-text-field
+            v-model="queryID"
+            density="comfortable"
+            hide-details
+            label="Job ID"
+            prepend-inner-icon="mdi-identifier"
+            variant="outlined"
+          />
         </v-col>
-        <v-col cols="12" sm="6" class="d-flex align-center">
-          <v-btn @click="fetchStatus" variant="outlined">Status</v-btn>
-          <v-btn @click="fetchInfo" class="ml-2" variant="outlined">Info</v-btn>
-          <v-btn @click="stopJob" class="ml-2" color="error" variant="outlined">Stop</v-btn>
+        <v-col class="d-flex align-center gap-2" cols="12" md="6">
+          <v-btn color="info" prepend-icon="mdi-information" variant="tonal" @click="fetchStatus">
+            Status
+          </v-btn>
+          <v-btn color="info" prepend-icon="mdi-text-box" variant="tonal" @click="fetchInfo">
+            Info
+          </v-btn>
+          <v-btn color="error" prepend-icon="mdi-stop-circle" variant="tonal" @click="stopJob">
+            Stop
+          </v-btn>
         </v-col>
       </v-row>
 
-      <div v-if="status"> <strong>Status:</strong> {{ status.status }} <span v-if="status.pid">(pid: {{ status.pid }})</span></div>
-      <div v-if="status && status.started_at">Started: {{ status.started_at }}</div>
-      <div v-if="status && status.ended_at">Ended: {{ status.ended_at }}</div>
-      <div v-if="status && status.exit_code != null">Exit: {{ status.exit_code }}</div>
+      <div v-if="status" class="status-box mt-4">
+        <v-chip class="mb-2" color="info" prepend-icon="mdi-information">
+          {{ status.status }}
+          <span v-if="status.pid" class="ml-2">(PID: {{ status.pid }})</span>
+        </v-chip>
+        <div v-if="status.started_at" class="text-caption">
+          <v-icon size="small">mdi-clock-start</v-icon> Started: {{ status.started_at }}
+        </div>
+        <div v-if="status.ended_at" class="text-caption">
+          <v-icon size="small">mdi-clock-end</v-icon> Ended: {{ status.ended_at }}
+        </div>
+        <div v-if="status.exit_code != null" class="text-caption">
+          <v-icon size="small">mdi-exit-to-app</v-icon> Exit Code: {{ status.exit_code }}
+        </div>
+      </div>
 
-      <div v-if="infoData" class="mt-3">
-        <strong>Stdout:</strong>
-        <pre style="white-space:pre-wrap">{{ infoData.stdout }}</pre>
-        <strong>Stderr:</strong>
-        <pre style="white-space:pre-wrap">{{ infoData.stderr }}</pre>
+      <div v-if="infoData" class="mt-4">
+        <v-expansion-panels>
+          <v-expansion-panel>
+            <v-expansion-panel-title>
+              <v-icon class="mr-2">mdi-console</v-icon>
+              Standard Output
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <pre class="output-pre">{{ infoData.stdout || '(empty)' }}</pre>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+          <v-expansion-panel>
+            <v-expansion-panel-title>
+              <v-icon class="mr-2">mdi-alert</v-icon>
+              Standard Error
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <pre class="output-pre error-output">{{ infoData.stderr || '(empty)' }}</pre>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
       </div>
 
     </v-card-text>
-    <v-card-actions>
-      <v-btn @click="clear" variant="text">Clear</v-btn>
+    <v-card-actions class="pa-4 pt-0">
+      <v-btn color="secondary" prepend-icon="mdi-broom" variant="text" @click="clear">
+        Clear
+      </v-btn>
     </v-card-actions>
   </v-card>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+  import { onMounted, ref } from 'vue'
 
-const API_BASE = 'http://localhost:8080'
+  const API_BASE = 'http://localhost:8080'
 
-const executors = ref([])
-const selectedExecutor = ref('')
-const args = ref('')
-const creating = ref(false)
-const createError = ref('')
-const lastID = ref('')
+  const executors = ref([])
+  const selectedExecutor = ref('')
+  const args = ref('')
+  const creating = ref(false)
+  const createError = ref('')
+  const lastID = ref('')
 
-const queryID = ref('')
-const status = ref(null)
-const infoData = ref(null)
+  const queryID = ref('')
+  const status = ref(null)
+  const infoData = ref(null)
 
-async function fetchJson(path, opts) {
-  const url = path.startsWith('http://') || path.startsWith('https://') ? path : `${API_BASE}${path}`
-  try {
-    const res = await fetch(url, opts)
-    if (!res.ok) {
-      const text = await res.text()
-      return { error: `HTTP ${res.status} ${res.statusText}: ${text}` }
+  async function fetchJson (path, opts) {
+    const url = path.startsWith('http://') || path.startsWith('https://') ? path : `${API_BASE}${path}`
+    try {
+      const res = await fetch(url, opts)
+      if (!res.ok) {
+        const text = await res.text()
+        return { error: `HTTP ${res.status} ${res.statusText}: ${text}` }
+      }
+      return await res.json()
+    } catch (error) {
+      return { error: error.message || String(error) }
     }
-    return await res.json()
-  } catch (err) {
-    return { error: err.message || String(err) }
   }
-}
 
-async function getExecutors() {
-  const data = await fetchJson('/executors')
-  if (data && data.error) {
-    executors.value = []
-    return
+  async function getExecutors () {
+    const data = await fetchJson('/executors')
+    if (data && data.error) {
+      executors.value = []
+      return
+    }
+    // data expected to be an array of { executor, path }
+    executors.value = Array.isArray(data) ? data : []
   }
-  // data expected to be an array of { executor, path }
-  executors.value = Array.isArray(data) ? data : []
-}
 
-onMounted(() => {
-  getExecutors()
-})
+  onMounted(() => {
+    getExecutors()
+  })
 
-async function createJob() {
-  createError.value = ''
-  if (!selectedExecutor.value) {
-    createError.value = 'executor is required'
-    return
+  async function createJob () {
+    createError.value = ''
+    if (!selectedExecutor.value) {
+      createError.value = 'executor is required'
+      return
+    }
+    creating.value = true
+    // split args by whitespace
+    const argsList = args.value.trim() === '' ? [] : (args.value.trim().match(/\S+/g) || [])
+    const payload = { executor: selectedExecutor.value, args: argsList }
+    const data = await fetchJson('/job/new', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+    creating.value = false
+    if (data.error) {
+      createError.value = data.error
+      return
+    }
+    lastID.value = data.id || ''
+    queryID.value = lastID.value
   }
-  creating.value = true
-  // split args by whitespace
-  const argsList = args.value.trim() === '' ? [] : (args.value.trim().match(/\S+/g) || [])
-  const payload = { executor: selectedExecutor.value, args: argsList }
-  const data = await fetchJson('/job/new', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-  creating.value = false
-  if (data.error) {
-    createError.value = data.error
-    return
-  }
-  lastID.value = data.id || ''
-  queryID.value = lastID.value
-}
 
-async function fetchStatus() {
-  if (!queryID.value) return
-  const data = await fetchJson(`/job/status?id=${encodeURIComponent(queryID.value)}`)
-  if (data.error) {
-    status.value = { error: data.error }
-    return
+  async function fetchStatus () {
+    if (!queryID.value) return
+    const data = await fetchJson(`/job/status?id=${encodeURIComponent(queryID.value)}`)
+    if (data.error) {
+      status.value = { error: data.error }
+      return
+    }
+    status.value = data
   }
-  status.value = data
-}
 
-async function fetchInfo() {
-  if (!queryID.value) return
-  const data = await fetchJson(`/job/info?id=${encodeURIComponent(queryID.value)}`)
-  if (data.error) {
-    infoData.value = { error: data.error }
-    return
+  async function fetchInfo () {
+    if (!queryID.value) return
+    const data = await fetchJson(`/job/info?id=${encodeURIComponent(queryID.value)}`)
+    if (data.error) {
+      infoData.value = { error: data.error }
+      return
+    }
+    infoData.value = data
   }
-  infoData.value = data
-}
 
-async function stopJob() {
-  if (!queryID.value) return
-  const data = await fetchJson(`/job/stop?id=${encodeURIComponent(queryID.value)}`, { method: 'POST' })
-  if (data.error) {
-    status.value = { error: data.error }
-    return
+  async function stopJob () {
+    if (!queryID.value) return
+    const data = await fetchJson(`/job/stop?id=${encodeURIComponent(queryID.value)}`, { method: 'POST' })
+    if (data.error) {
+      status.value = { error: data.error }
+      return
+    }
+    // refresh status
+    await fetchStatus()
   }
-  // refresh status
-  await fetchStatus()
-}
 
-function clear() {
-  selectedExecutor.value = ''
-  args.value = ''
-  lastID.value = ''
-  queryID.value = ''
-  status.value = null
-  infoData.value = null
-  createError.value = ''
-}
+  function clear () {
+    selectedExecutor.value = ''
+    args.value = ''
+    lastID.value = ''
+    queryID.value = ''
+    status.value = null
+    infoData.value = null
+    createError.value = ''
+  }
 </script>
 
 <style scoped>
-.text-error { color: #b00020; }
-pre { margin: 0; }
+.modern-card {
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+.bg-gradient-jobs {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white !important;
+}
+
+.error-alert {
+  color: #d32f2f;
+  background-color: #ffebee;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border-left: 4px solid #d32f2f;
+  display: flex;
+  align-items: center;
+}
+
+.success-alert {
+  color: #2e7d32;
+  background-color: #e8f5e9;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border-left: 4px solid #4caf50;
+  display: flex;
+  align-items: center;
+}
+
+.status-box {
+  background-color: #f5f5f5;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.output-pre {
+  background-color: #263238;
+  color: #aed581;
+  border-radius: 8px;
+  padding: 16px;
+  overflow-x: auto;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.error-output {
+  color: #ef9a9a;
+}
+
+.gap-2 {
+  gap: 8px;
+}
 </style>
