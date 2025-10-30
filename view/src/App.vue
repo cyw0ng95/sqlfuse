@@ -1,55 +1,93 @@
 <template>
   <v-app>
-    <v-main>
-      <v-container class="pa-4">
-        <v-row>
-          <v-col>
-            <h1>SQLsmith-Go</h1>
+    <v-app-bar color="primary" elevation="4" dark>
+      <v-app-bar-title class="font-weight-bold">
+        <v-icon class="mr-2">mdi-database-search</v-icon>
+        SQLsmith-Go
+      </v-app-bar-title>
+    </v-app-bar>
 
-            <v-card class="mb-4" outlined>
-              <v-card-title>Health</v-card-title>
-              <v-card-text>
-                <div v-if="health.error" class="text-error">Error: {{ health.error }}</div>
+    <v-main class="main-gradient">
+      <v-container class="pa-6" fluid>
+        <v-row>
+          <v-col cols="12">
+            <v-card class="mb-6 modern-card" elevation="8">
+              <v-card-title class="d-flex align-center bg-gradient-primary">
+                <v-icon class="mr-2">mdi-heart-pulse</v-icon>
+                Health Status
+              </v-card-title>
+              <v-card-text class="pa-4">
+                <div v-if="health.error" class="text-error">
+                  <v-icon color="error" class="mr-2">mdi-alert-circle</v-icon>
+                  {{ health.error }}
+                </div>
                 <div v-else>
-                  <div><strong>Status:</strong> {{ health.status || 'unknown' }}</div>
-                  <div v-if="health.timestamp"><strong>Timestamp:</strong> {{ health.timestamp }}</div>
+                  <v-chip color="success" class="mb-2" prepend-icon="mdi-check-circle">
+                    {{ health.status || 'unknown' }}
+                  </v-chip>
+                  <div v-if="health.timestamp" class="text-caption text-medium-emphasis mt-2">
+                    <v-icon size="small" class="mr-1">mdi-clock-outline</v-icon>
+                    {{ health.timestamp }}
+                  </div>
                 </div>
               </v-card-text>
-              <v-card-actions>
-                <v-btn @click="getHealth" variant="outlined">Refresh</v-btn>
+              <v-card-actions class="pa-4 pt-0">
+                <v-btn @click="getHealth" color="primary" variant="tonal" prepend-icon="mdi-refresh">
+                  Refresh
+                </v-btn>
               </v-card-actions>
             </v-card>
 
-            <v-card outlined class="mb-4">
-              <v-card-title>Info</v-card-title>
-              <v-card-text>
-                <div v-if="info.error" class="text-error">Error: {{ info.error }}</div>
+            <v-card class="mb-6 modern-card" elevation="8">
+              <v-card-title class="d-flex align-center bg-gradient-info">
+                <v-icon class="mr-2">mdi-information</v-icon>
+                System Information
+              </v-card-title>
+              <v-card-text class="pa-4">
+                <div v-if="info.error" class="text-error">
+                  <v-icon color="error" class="mr-2">mdi-alert-circle</v-icon>
+                  {{ info.error }}
+                </div>
                 <div v-else>
-                  <pre style="white-space:pre-wrap">{{ formattedInfo }}</pre>
+                  <pre class="info-pre">{{ formattedInfo }}</pre>
                 </div>
               </v-card-text>
-              <v-card-actions>
-                <v-btn @click="getInfo" variant="outlined">Refresh</v-btn>
+              <v-card-actions class="pa-4 pt-0">
+                <v-btn @click="getInfo" color="info" variant="tonal" prepend-icon="mdi-refresh">
+                  Refresh
+                </v-btn>
               </v-card-actions>
             </v-card>
 
             <!-- Job manager component -->
             <JobManager />
 
-            <v-card outlined>
-              <v-card-title>Generators</v-card-title>
-              <v-card-text>
-                <div v-if="generators.error" class="text-error">Error: {{ generators.error }}</div>
+            <v-card class="modern-card" elevation="8">
+              <v-card-title class="d-flex align-center bg-gradient-secondary">
+                <v-icon class="mr-2">mdi-code-braces</v-icon>
+                SQL Generators
+              </v-card-title>
+              <v-card-text class="pa-4">
+                <div v-if="generators.error" class="text-error">
+                  <v-icon color="error" class="mr-2">mdi-alert-circle</v-icon>
+                  {{ generators.error }}
+                </div>
                 <div v-else>
-                  <div><strong>Generator:</strong> {{ generators.generator || 'n/a' }}</div>
+                  <div class="mb-3">
+                    <v-chip color="primary" variant="outlined" prepend-icon="mdi-cog">
+                      {{ generators.generator || 'n/a' }}
+                    </v-chip>
+                  </div>
                   <div v-if="generators.stmts">
-                    <strong>Supported Statements:</strong>
-                    <pre style="white-space:pre-wrap">{{ formattedGenerators }}</pre>
+                    <div class="text-subtitle-2 mb-2 font-weight-bold">Supported Statements:</div>
+                    <pre class="info-pre">{{ formattedGenerators }}</pre>
                   </div>
                 </div>
               </v-card-text>
-              <v-card-actions>
-                <v-btn @click="getGenerators" variant="outlined">Refresh</v-btn>
+              <v-card-actions class="pa-4 pt-0">
+                <v-btn @click="getGenerators" color="secondary" variant="tonal" prepend-icon="mdi-refresh">
+                  Refresh
+                </v-btn>
               </v-card-actions>
             </v-card>
 
@@ -138,6 +176,50 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.text-error { color: #b00020; }
-pre { margin: 0; }
+.main-gradient {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
+}
+
+.modern-card {
+  border-radius: 12px !important;
+  overflow: hidden;
+  transition: transform 0.2s ease-in-out;
+}
+
+.modern-card:hover {
+  transform: translateY(-2px);
+}
+
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white !important;
+}
+
+.bg-gradient-info {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white !important;
+}
+
+.bg-gradient-secondary {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  color: white !important;
+}
+
+.info-pre {
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  padding: 16px;
+  overflow-x: auto;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  white-space: pre-wrap;
+  border: 1px solid #e0e0e0;
+}
+
+.text-error {
+  color: #d32f2f;
+  display: flex;
+  align-items: center;
+}
 </style>
