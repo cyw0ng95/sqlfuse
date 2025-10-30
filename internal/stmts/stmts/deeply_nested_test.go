@@ -2,6 +2,7 @@ package stmts
 
 import (
 	"database/sql"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -43,7 +44,7 @@ func TestGenSelectDeeplyNested(t *testing.T) {
 	// Test with different recursion depths
 	depths := []int{0, 1, 2, 3, 4}
 	for _, depth := range depths {
-		t.Run(t.Name()+"_depth_"+string(rune('0'+depth)), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%s_depth_%d", t.Name(), depth), func(t *testing.T) {
 			lcg := common.NewLCG(42)
 			stmt, err := GenSelectDeeplyNested(db, lcg, depth)
 			if err != nil {
