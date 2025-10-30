@@ -1,5 +1,4 @@
 -- DuckDB initialization schema
--- DuckDB supports standard SQL with some differences from SQLite
 
 -- Table with various column types and constraints
 CREATE TABLE IF NOT EXISTS users (
