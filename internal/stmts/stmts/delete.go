@@ -40,7 +40,7 @@ func genDeleteWithFlavor(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt
 	flavor = ensureFlavor(flavor)
 
 	// Try to get actual tables from schema
-	tables, err := helper.GetAllTablesAndCols(db)
+	tables, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil || len(tables) == 0 {
 		// Fallback to simple delete without schema
 		return genDeleteFallbackWithFlavor(lcg, flavor), nil

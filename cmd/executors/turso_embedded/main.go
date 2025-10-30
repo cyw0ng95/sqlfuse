@@ -40,7 +40,7 @@ func main() {
 }
 
 func print_schema(db *sql.DB) {
-	tables, err := helper.GetAllTablesAndCols(db)
+	tables, err := helper.GetAllTablesAndCols(db, "turso")
 	if err != nil {
 		common.Logger.Error().Err(err).Msg("Failed to get tables")
 		os.Exit(1)

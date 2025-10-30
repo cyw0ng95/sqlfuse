@@ -10,7 +10,7 @@ import (
 
 // GenSelectWithExpressions generates a SELECT statement with various expression types in SELECT list
 func GenSelectWithExpressions(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil || len(tbls) == 0 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
@@ -46,7 +46,7 @@ func GenSelectWithExpressions(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 // GenSelectWhereCast generates a SELECT with CAST in WHERE clause
 func GenSelectWhereCast(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil || len(tbls) == 0 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
@@ -77,7 +77,7 @@ func GenSelectWhereCast(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 // GenSelectWhereBetween generates a SELECT with BETWEEN in WHERE clause
 func GenSelectWhereBetween(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil || len(tbls) == 0 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
@@ -108,7 +108,7 @@ func GenSelectWhereBetween(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 // GenSelectWhereGlob generates a SELECT with GLOB in WHERE clause
 func GenSelectWhereGlob(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil || len(tbls) == 0 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
@@ -139,7 +139,7 @@ func GenSelectWhereGlob(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 // GenSelectWithCollate generates a SELECT with COLLATE in ORDER BY clause
 func GenSelectWithCollate(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil || len(tbls) == 0 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
@@ -182,7 +182,7 @@ func GenSelectWithCollate(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 // GenSelectWithUnaryOp generates a SELECT with unary operators in expressions
 func GenSelectWithUnaryOp(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil || len(tbls) == 0 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
@@ -212,7 +212,7 @@ func GenSelectWithUnaryOp(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 // GenSelectWithBinaryOp generates a SELECT with binary operators in expressions
 func GenSelectWithBinaryOp(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil || len(tbls) == 0 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}

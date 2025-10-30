@@ -48,7 +48,7 @@ func genUpdateWithFlavor(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt
 	}
 
 	// Try to get actual tables from schema
-	tables, err := helper.GetAllTablesAndCols(db)
+	tables, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil || len(tables) == 0 {
 		// Fallback to simple update without schema
 		return genUpdateFallbackWithFlavor(lcg, flavor), nil
