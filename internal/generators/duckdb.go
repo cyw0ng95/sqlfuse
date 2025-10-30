@@ -124,8 +124,8 @@ func DefaultDuckDBStmtWeights() map[stmts.StmtType]uint64 {
 	w[stmts.StmtSelectIntersect] = 40
 	w[stmts.StmtSelectExcept] = 40
 	
-	// PRAGMA - DuckDB has different pragma support than SQLite
-	w[stmts.StmtPragma] = 30
+	// PRAGMA - DuckDB uses SET instead of PRAGMA, so weight is 0
+	w[stmts.StmtPragma] = 0
 	
 	// DuckDB-specific statements
 	w[stmts.StmtCopy] = 60              // Very important for DuckDB data import/export

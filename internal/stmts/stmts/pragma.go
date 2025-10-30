@@ -457,6 +457,7 @@ var pragmaDefinitions = map[string]PragmaDefinition{
 
 // getSupportedPragmas returns a list of pragma names supported by the given flavor.
 // For unknown flavors, it returns the conservative set (sqlite/turso pragmas).
+// For DuckDB, it returns an empty list since DuckDB uses SET instead of PRAGMA.
 // The returned list is sorted to ensure deterministic behavior.
 func getSupportedPragmas(flavor FlavorConfig) []string {
 	if flavor == nil {
@@ -464,6 +465,13 @@ func getSupportedPragmas(flavor FlavorConfig) []string {
 	}
 	
 	flavorName := flavor.Name()
+	
+	// DuckDB uses SET for configuration, not PRAGMA
+	// Return empty list to avoid executing SQLite-style PRAGMA statements
+	if flavorName == "duckdb" {
+		return []string{}
+	}
+	
 	var supported []string
 	
 	// Collect supported pragmas
@@ -532,6 +540,7 @@ func GenPragma(lcg *common.LCG) Stmt {
 
 // genPragmaWithFlavor generates a PRAGMA statement with flavor support.
 // It generates different sets of pragmas based on the database flavor (Turso vs go-sqlite3).
+// For flavors that don't support PRAGMA (like DuckDB), returns a no-op statement.
 func genPragmaWithFlavor(lcg *common.LCG, flavor FlavorConfig) Stmt {
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
@@ -539,6 +548,11 @@ func genPragmaWithFlavor(lcg *common.LCG, flavor FlavorConfig) Stmt {
 
 	// Get pragmas supported by this flavor
 	pragmas := getSupportedPragmas(flavor)
+	
+	// If no pragmas are supported (e.g., DuckDB), return a no-op comment
+	if len(pragmas) == 0 {
+		return &PragmaStmt{sql: "-- PRAGMA not supported for this flavor", flavor: flavor}
+	}
 	
 	// Select a random pragma from the supported list
 	p := pragmas[lcg.Intn(len(pragmas))]

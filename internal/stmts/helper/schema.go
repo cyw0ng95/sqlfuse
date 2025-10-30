@@ -7,6 +7,12 @@ import (
 	"strings"
 )
 
+// FlavorConfig defines the minimal interface needed for database flavor detection.
+// This avoids circular dependencies with the stmts package.
+type FlavorConfig interface {
+	Name() string
+}
+
 type ColumnInfo struct {
 	Name string
 	Type string
@@ -20,11 +26,31 @@ type TableInfo struct {
 // GetAllTablesAndCols returns all user tables and their columns in the current database.
 // It supports both SQLite and DuckDB based on the dbType parameter.
 // dbType should be one of: "duckdb", "sqlite", "go-sqlite3", "turso", or empty (defaults to "sqlite").
+// DEPRECATED: Use GetAllTablesAndColsWithFlavor when flavor is available.
 func GetAllTablesAndCols(db *sql.DB, dbType string) ([]TableInfo, error) {
 	// Normalize dbType to handle empty or unknown values
 	if dbType == "" {
 		dbType = "sqlite"
 	}
+
+	// Route to appropriate implementation based on database type
+	if dbType == "duckdb" {
+		return getDuckDBTablesAndCols(db)
+	}
+	// All SQLite variants (sqlite, go-sqlite3, turso) use the same schema introspection
+	return getSQLiteTablesAndCols(db)
+}
+
+// GetAllTablesAndColsWithFlavor returns all user tables and their columns using a FlavorConfig.
+// This is the preferred method when a FlavorConfig is available.
+// If flavor is nil, defaults to SQLite behavior.
+func GetAllTablesAndColsWithFlavor(db *sql.DB, flavor FlavorConfig) ([]TableInfo, error) {
+	// Use default SQLite flavor if none provided
+	if flavor == nil {
+		return getSQLiteTablesAndCols(db)
+	}
+	
+	dbType := flavor.Name()
 
 	// Route to appropriate implementation based on database type
 	if dbType == "duckdb" {
