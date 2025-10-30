@@ -12,7 +12,7 @@ import (
 
 // GenSelectWithScalarFunction generates a SELECT statement with scalar SQL functions
 func GenSelectWithScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db)
+	tables, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil || len(tables) == 0 {
 		// No tables available, use literal values
 		return genSelectScalarFunctionLiteral(lcg), nil
@@ -722,7 +722,7 @@ func genSqliteOffsetFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 
 // GenSelectWithMathFunction generates a SELECT statement with mathematical SQL functions
 func GenSelectWithMathFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db)
+	tables, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil || len(tables) == 0 {
 		return genSelectMathFunctionLiteral(lcg), nil
 	}
@@ -964,7 +964,7 @@ func genTruncFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 
 // GenSelectWithAggregateFunction generates a SELECT statement with aggregate SQL functions
 func GenSelectWithAggregateFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db)
+	tables, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil || len(tables) == 0 {
 		return genSelectAggregateFunctionLiteral(lcg), nil
 	}
@@ -1484,7 +1484,7 @@ func genUUIDBlobFunction(lcg *common.LCG) string {
 
 // GenSelectWithRegexpFunction generates a SELECT statement with regexp extension functions
 func GenSelectWithRegexpFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db)
+	tables, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil || len(tables) == 0 {
 		return genSelectRegexpFunctionLiteral(lcg), nil
 	}
@@ -1875,7 +1875,7 @@ func genSQLiteStrftimeWithFormat(lcg *common.LCG) string {
 // GenSelectWithGoSQLite3ScalarFunction generates a SELECT statement with go-sqlite3 specific core functions.
 // These functions are only supported by full SQLite3 (via go-sqlite3) and not by Turso LibSQL.
 func GenSelectWithGoSQLite3ScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db)
+	tables, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil || len(tables) == 0 {
 		// No tables available, use literal values
 		return genSelectGoSQLite3ScalarFunctionLiteral(lcg), nil
@@ -1902,7 +1902,7 @@ func GenSelectWithGoSQLite3ScalarFunction(db *sql.DB, lcg *common.LCG) (SelectSt
 // GenSelectWithGoSQLite3AggregateFunction generates a SELECT statement with go-sqlite3 specific aggregate functions.
 // These functions are only supported by full SQLite3 (via go-sqlite3) and may not be available in Turso LibSQL.
 func GenSelectWithGoSQLite3AggregateFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db)
+	tables, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil || len(tables) == 0 {
 		// No tables available, use literal values
 		return genSelectGoSQLite3AggregateFunctionLiteral(lcg), nil

@@ -18,16 +18,19 @@ type TableInfo struct {
 }
 
 // GetAllTablesAndCols returns all user tables and their columns in the current database.
-// It supports both SQLite and DuckDB by detecting which system is in use.
-func GetAllTablesAndCols(db *sql.DB) ([]TableInfo, error) {
-	// Try to determine database type by checking for DuckDB-specific tables
-	var dbType string
-	err := db.QueryRow("SELECT 1 FROM information_schema.tables LIMIT 1").Scan(&dbType)
-	isDuckDB := err == nil // If this succeeds, it's likely DuckDB (has information_schema)
+// It supports both SQLite and DuckDB based on the dbType parameter.
+// dbType should be one of: "duckdb", "sqlite", "go-sqlite3", "turso", or empty (defaults to "sqlite").
+func GetAllTablesAndCols(db *sql.DB, dbType string) ([]TableInfo, error) {
+	// Normalize dbType to handle empty or unknown values
+	if dbType == "" {
+		dbType = "sqlite"
+	}
 
-	if isDuckDB {
+	// Route to appropriate implementation based on database type
+	if dbType == "duckdb" {
 		return getDuckDBTablesAndCols(db)
 	}
+	// All SQLite variants (sqlite, go-sqlite3, turso) use the same schema introspection
 	return getSQLiteTablesAndCols(db)
 }
 

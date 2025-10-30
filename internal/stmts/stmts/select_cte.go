@@ -11,7 +11,7 @@ import (
 
 // GenSelectWithCTE generates a SELECT statement with Common Table Expression (WITH clause)
 func GenSelectWithCTE(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db)
+	tables, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil || len(tables) == 0 {
 		return genSelectCTELiteral(lcg), nil
 	}
@@ -86,7 +86,7 @@ func genSelectCTELiteral(lcg *common.LCG) SelectStmt {
 
 // GenSelectWithMultipleCTE generates a SELECT with multiple CTEs
 func GenSelectWithMultipleCTE(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db)
+	tables, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil || len(tables) == 0 {
 		return genSelectMultipleCTELiteral(lcg), nil
 	}

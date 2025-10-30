@@ -48,7 +48,7 @@ func genSelectInternalWithFlavor(db *sql.DB, lcg *common.LCG, flavor FlavorConfi
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}
-	tables, err := helper.GetAllTablesAndCols(db)
+	tables, err := helper.GetAllTablesAndCols(db, flavor.Name())
 	if err != nil || len(tables) == 0 {
 		// No real user tables available — return a harmless no-op select
 		return SelectStmt{sql: "SELECT 1;", flavor: flavor}, nil

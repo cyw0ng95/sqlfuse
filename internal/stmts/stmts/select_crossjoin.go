@@ -9,7 +9,7 @@ import (
 
 // GenSelectCrossJoin generates a SELECT across two tables using CROSS JOIN.
 func GenSelectCrossJoin(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil || len(tbls) < 2 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}

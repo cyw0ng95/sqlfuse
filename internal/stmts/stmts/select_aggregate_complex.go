@@ -10,7 +10,7 @@ import (
 
 // GenSelectAggregateComplex generates a SELECT with multiple aggregate functions.
 func GenSelectAggregateComplex(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil || len(tbls) == 0 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}

@@ -27,7 +27,7 @@ func genSelectWithWindowFunctionInternal(ctx *GenContext) (SelectStmt, error) {
 			return SelectStmt{sql: "SELECT 1 AS id, 1 AS row_num;", flavor: GetDefaultFlavor()}, nil
 		}
 
-		tables, err := helper.GetAllTablesAndCols(ctx.DB)
+		tables, err := helper.GetAllTablesAndCols(ctx.DB, ctx.Flavor.Name())
 		if err != nil || len(tables) == 0 {
 			return SelectStmt{sql: "SELECT 1 AS id, 1 AS row_num;", flavor: GetDefaultFlavor()}, nil
 		}
@@ -66,7 +66,7 @@ func genSelectWithWindowFunctionInternal(ctx *GenContext) (SelectStmt, error) {
 		return genSelectWindowFunctionLiteral(ctx.LCG), nil
 	}
 
-	tables, err := helper.GetAllTablesAndCols(ctx.DB)
+	tables, err := helper.GetAllTablesAndCols(ctx.DB, ctx.Flavor.Name())
 	if err != nil || len(tables) == 0 {
 		return genSelectWindowFunctionLiteral(ctx.LCG), nil
 	}
@@ -263,7 +263,7 @@ func genSelectWithMultipleWindowsInternal(ctx *GenContext) (SelectStmt, error) {
 			return SelectStmt{sql: "SELECT 1 AS id, COUNT(*) AS cnt;", flavor: GetDefaultFlavor()}, nil
 		}
 
-		tables, err := helper.GetAllTablesAndCols(ctx.DB)
+		tables, err := helper.GetAllTablesAndCols(ctx.DB, ctx.Flavor.Name())
 		if err != nil || len(tables) == 0 {
 			return SelectStmt{sql: "SELECT 1 AS id, COUNT(*) AS cnt;", flavor: GetDefaultFlavor()}, nil
 		}
@@ -288,7 +288,7 @@ func genSelectWithMultipleWindowsInternal(ctx *GenContext) (SelectStmt, error) {
 		return genSelectMultipleWindowsLiteral(ctx.LCG), nil
 	}
 
-	tables, err := helper.GetAllTablesAndCols(ctx.DB)
+	tables, err := helper.GetAllTablesAndCols(ctx.DB, ctx.Flavor.Name())
 	if err != nil || len(tables) == 0 {
 		return genSelectMultipleWindowsLiteral(ctx.LCG), nil
 	}
