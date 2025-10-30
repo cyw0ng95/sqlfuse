@@ -8,7 +8,7 @@ SQLsmith-Go is a Go implementation of the [SQLsmith](https://github.com/anse1/sq
 
 ### Key Features
 
-- **Multi-Flavor Support**: Generates SQL compatible with different database implementations (Turso LibSQL, go-sqlite3, Chai SQL, DuckDB)
+- **Multi-Flavor Support**: Generates SQL compatible with different database implementations (Turso LibSQL, go-sqlite3, DuckDB, Chai SQL)
 - **Intelligent Generation**: Uses schema awareness to produce meaningful queries with valid table/column references
 - **Comprehensive Coverage**: Supports diverse SQL features including CTEs, window functions, subqueries, and complex expressions
 - **Flavor-Aware**: Adapts generated SQL to match the capabilities and constraints of the target database
@@ -30,14 +30,14 @@ SQLsmith-Go is a Go implementation of the [SQLsmith](https://github.com/anse1/sq
 │  │              │    │              │    │  Builders    │  │
 │  │ • Turso      │    │ • Base       │    │              │  │
 │  │ • go-sqlite3 │    │ • Turso      │    │ • SELECT     │  │
-│  │ • Chai       │    │ • go-sqlite3 │    │ • INSERT     │  │
-│  │ • DuckDB     │    │ • DuckDB     │    │ • UPDATE     │  │
+
+│  │ • DuckDB     │    │ • go-sqlite3 │    │ • INSERT     │  │
+│  │ • Chai       │    │ • DuckDB     │    │ • UPDATE     │  │
 │  │ • HTTP API   │    │              │    │ • DELETE     │  │
 │  └──────────────┘    └──────────────┘    │ • PRAGMA     │  │
 │                                           │ • CREATE     │  │
-│  ┌──────────────┐    ┌──────────────┐    │ • ...        │  │
-│  │   Dialects   │    │   Frontend   │    └──────────────┘  │
-│  │              │    │              │                      │
+│  │   Dialects   │    │   Frontend   │    │ • ...        │  │
+│  │              │    │              │    └──────────────┘  │
 │  │ • Feature    │    │ • Vue.js     │                      │
 │  │   Detection  │    │ • Vuetify    │                      │
 │  │ • SQL        │    │ • Job Ctrl   │                      │
@@ -253,8 +253,8 @@ sqlsmith-go/
 │   ├── executors/
 │   │   ├── turso_embedded/      # Turso LibSQL executor
 │   │   ├── go_sqlite3_embedded/ # go-sqlite3 executor
-│   │   ├── chai_embedded/       # Chai SQL executor
-│   │   └── duckdb_embedded/     # DuckDB executor
+│   │   ├── duckdb_embedded/     # DuckDB executor
+│   │   └── chai_embedded/       # Chai SQL executor
 │   └── server/                  # HTTP API server
 │
 ├── internal/

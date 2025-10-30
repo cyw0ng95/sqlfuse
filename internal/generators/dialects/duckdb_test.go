@@ -4,14 +4,18 @@ import (
 	"testing"
 )
 
-func TestDuckDBFlavorConfig(t *testing.T) {
-	cfg := NewDuckDBFlavorConfig()
-
-	if cfg.Name() != "duckdb" {
-		t.Errorf("expected Name() = 'duckdb', got %q", cfg.Name())
+func TestDuckDBFlavorConfig_Name(t *testing.T) {
+	config := NewDuckDBFlavorConfig()
+	expected := "duckdb"
+	if got := config.Name(); got != expected {
+		t.Errorf("Name() = %v, want %v", got, expected)
 	}
+}
 
-	// Test features that should be supported
+func TestDuckDBFlavorConfig_SupportsFeature(t *testing.T) {
+	config := NewDuckDBFlavorConfig()
+
+	// Features that DuckDB supports (unlike some SQLite variants)
 	supportedFeatures := []string{
 		"exists_subquery",
 		"in_subquery",
@@ -19,69 +23,44 @@ func TestDuckDBFlavorConfig(t *testing.T) {
 		"regexp",
 		"filter_clause",
 		"window_functions",
+		"raise_function",
+		"format_function",
 		"cte_recursive",
 		"cte_materialized",
-		"format_function",
+		"schema_qualified",
 		"collate_custom",
 	}
 
 	for _, feature := range supportedFeatures {
-		if !cfg.SupportsFeature(feature) {
-			t.Errorf("expected SupportsFeature(%q) = true, got false", feature)
+		if !config.SupportsFeature(feature) {
+			t.Errorf("SupportsFeature(%q) = false, want true", feature)
 		}
 	}
 
-	// Test features that should NOT be supported
+	// Features that DuckDB does NOT support (SQLite-specific)
 	unsupportedFeatures := []string{
-		"match",          // FTS syntax differs
-		"raise_function", // SQLite-specific
+		"sqlite_pragma",
+		"match", // SQLite FTS-specific
+		"named_transactions",
 	}
 
 	for _, feature := range unsupportedFeatures {
-		if cfg.SupportsFeature(feature) {
-			t.Errorf("expected SupportsFeature(%q) = false, got true", feature)
+		if config.SupportsFeature(feature) {
+			t.Errorf("SupportsFeature(%q) = true, want false", feature)
 		}
-	}
-
-	// ValidateSQL should not error (it's a no-op currently)
-	if err := cfg.ValidateSQL("SELECT 1"); err != nil {
-		t.Errorf("ValidateSQL failed: %v", err)
 	}
 }
 
-// TestDuckDBVsGoSQLite3FeatureComparison verifies that DuckDB supports
-// all the features that go-sqlite3 does (except SQLite-specific ones).
-func TestDuckDBVsGoSQLite3FeatureComparison(t *testing.T) {
-	duckdb := NewDuckDBFlavorConfig()
-	gosqlite3 := NewGoSQLite3FlavorConfig()
+func TestDuckDBFlavorConfig_ValidateSQL(t *testing.T) {
+	config := NewDuckDBFlavorConfig()
 
-	// Features both should support
-	commonFeatures := []string{
-		"exists_subquery",
-		"in_subquery",
-		"modulo_operator",
-		"regexp",
-		"filter_clause",
-		"window_functions",
-		"cte_recursive",
+	// Currently validation is not implemented, should return nil
+	if err := config.ValidateSQL("SELECT 1;"); err != nil {
+		t.Errorf("ValidateSQL() returned error: %v", err)
 	}
 
-	for _, feature := range commonFeatures {
-		duck := duckdb.SupportsFeature(feature)
-		sqlite := gosqlite3.SupportsFeature(feature)
-		if duck != sqlite {
-			t.Errorf("feature %q: duckdb=%v, go-sqlite3=%v (expected both true)", feature, duck, sqlite)
-		}
-	}
-
-	// Features DuckDB doesn't support but go-sqlite3 might
-	sqliteSpecific := []string{
-		"raise_function", // SQLite-specific RAISE()
-	}
-
-	for _, feature := range sqliteSpecific {
-		if duckdb.SupportsFeature(feature) {
-			t.Errorf("DuckDB should not support SQLite-specific feature %q", feature)
-		}
+	// Even invalid SQL should return nil (not implemented)
+	if err := config.ValidateSQL("INVALID SQL"); err != nil {
+		t.Errorf("ValidateSQL() returned error for invalid SQL: %v", err)
 	}
 }

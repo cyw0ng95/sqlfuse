@@ -8,111 +8,117 @@ import (
 
 // DuckDBGenerator is the DuckDB-specific generator that embeds BaseGenerator
 // for common functionality and adds DuckDB-specific configuration.
-// DuckDB is an analytical database with extensive SQL support beyond SQLite.
+// DuckDB is an in-process SQL OLAP database with extensive analytical capabilities.
 type DuckDBGenerator struct {
 	*BaseGenerator
 	flavorConfig stmts.FlavorConfig // SQL flavor configuration for DuckDB
 }
 
 // DefaultDuckDBStmtWeights returns a weight distribution for DuckDB.
-// DuckDB is an analytical database, so we emphasize:
-// - SELECT queries over DML (analytical workload)
-// - Window functions and CTEs (analytical features)
-// - Aggregations and complex queries
-// - Lower weights for transactions (less common in analytical workloads)
+// DuckDB supports advanced analytical features, so we emphasize:
+// - Window functions (OVER clause)
+// - Recursive CTEs (WITH RECURSIVE)
+// - EXISTS and IN subqueries
+// - FILTER clauses for aggregates
+// - Complex analytical queries
+//
+// Note: DuckDB uses SET for configuration instead of PRAGMA,
+// so PRAGMA weight is set to 0.
 //
 // Values are token-like weights; probabilities are weight / sum(weights).
 func DefaultDuckDBStmtWeights() map[stmts.StmtType]uint64 {
 	w := map[stmts.StmtType]uint64{}
 	
-	// INSERT variants - Lower than OLTP databases since DuckDB is analytical
-	w[stmts.StmtInsert] = 150
-	w[stmts.StmtInsertMultiple] = 50
-	w[stmts.StmtInsertBulk] = 30
-	w[stmts.StmtInsertOrReplace] = 15
-	w[stmts.StmtInsertOrIgnore] = 15
-	w[stmts.StmtInsertOrAbort] = 10
-	w[stmts.StmtInsertOrRollback] = 5
-	w[stmts.StmtInsertOrFail] = 5
+	// INSERT variants
+	w[stmts.StmtInsert] = 250
+	w[stmts.StmtInsertMultiple] = 70
+	w[stmts.StmtInsertBulk] = 15
+	w[stmts.StmtInsertOrReplace] = 25
+	w[stmts.StmtInsertOrIgnore] = 25
+	w[stmts.StmtInsertOrAbort] = 15
+	w[stmts.StmtInsertOrRollback] = 10
+	w[stmts.StmtInsertOrFail] = 10
 	
-	// UPDATE and DELETE - Lower for analytical workloads
-	w[stmts.StmtUpdate] = 40
-	w[stmts.StmtDelete] = 30
+	// UPDATE and DELETE
+	w[stmts.StmtUpdate] = 80
+	w[stmts.StmtDelete] = 60
 	
-	// Basic SELECT variants - Higher weights for analytical queries
-	w[stmts.StmtSelectBasic] = 150
-	w[stmts.StmtSelectWhere] = 120
-	w[stmts.StmtSelectWhereComplex] = 80
-	w[stmts.StmtSelectWhereIn] = 70
-	w[stmts.StmtSelectSubquery] = 60
-	w[stmts.StmtSelectCase] = 60
-	w[stmts.StmtSelectAggregateComplex] = 50
-	w[stmts.StmtSelectLike] = 40
-	w[stmts.StmtSelectLimit] = 80
-	w[stmts.StmtSelectOrder] = 60
-	w[stmts.StmtSelectGroup] = 70
-	w[stmts.StmtSelectHaving] = 60
+	// Basic SELECT variants
+	w[stmts.StmtSelectBasic] = 120
+	w[stmts.StmtSelectWhere] = 100
+	w[stmts.StmtSelectWhereComplex] = 60
+	w[stmts.StmtSelectWhereIn] = 50
+	w[stmts.StmtSelectSubquery] = 40
+	w[stmts.StmtSelectCase] = 40
+	w[stmts.StmtSelectAggregateComplex] = 30
+	w[stmts.StmtSelectLike] = 80
+	w[stmts.StmtSelectLimit] = 60
+	w[stmts.StmtSelectOrder] = 40
+	w[stmts.StmtSelectGroup] = 40
+	w[stmts.StmtSelectHaving] = 40
 	
-	// JOIN variants - Important for analytical queries
-	w[stmts.StmtSelectJoin] = 40
-	w[stmts.StmtSelectCross] = 30
-	w[stmts.StmtSelectInner] = 40
-	w[stmts.StmtSelectOuter] = 40
-	w[stmts.StmtSelectJoinUsing] = 30
-	w[stmts.StmtSelectNatural] = 25
+	// JOIN variants
+	w[stmts.StmtSelectJoin] = 20
+	w[stmts.StmtSelectCross] = 20
+	w[stmts.StmtSelectInner] = 20
+	w[stmts.StmtSelectOuter] = 20
+	w[stmts.StmtSelectJoinUsing] = 20
+	w[stmts.StmtSelectNatural] = 20
 	
 	// Advanced SELECT with recursion/nesting
-	w[stmts.StmtSelectRecursive] = 40
-	w[stmts.StmtSelectNestedCase] = 35
-	w[stmts.StmtSelectComplexJoin] = 35
+	w[stmts.StmtSelectRecursive] = 30
+	w[stmts.StmtSelectNestedCase] = 25
+	w[stmts.StmtSelectComplexJoin] = 25
 	
-	// Window functions and CTEs - Much higher for DuckDB (analytical database)
-	w[stmts.StmtSelectWindow] = 80            // Higher than go-sqlite3's 60
-	w[stmts.StmtSelectMultipleWindows] = 50   // Higher than go-sqlite3's 40
-	w[stmts.StmtSelectCTE] = 70               // Higher than go-sqlite3's 50
-	w[stmts.StmtSelectMultipleCTE] = 45       // Higher than go-sqlite3's 35
-	w[stmts.StmtSelectRecursiveCTE] = 40      // Higher than go-sqlite3's 30
+	// Window functions and CTEs - Higher weights for DuckDB
+	// DuckDB has excellent analytical query support
+	w[stmts.StmtSelectWindow] = 80          // Significantly higher than Turso
+	w[stmts.StmtSelectMultipleWindows] = 60 // Higher than other flavors
+	w[stmts.StmtSelectCTE] = 60             // Higher than other flavors
+	w[stmts.StmtSelectMultipleCTE] = 45     // Higher than other flavors
+	w[stmts.StmtSelectRecursiveCTE] = 40    // Fully supported, high weight
 	
-	// Extension functions - DuckDB has rich built-in functions
-	w[stmts.StmtSelectJSON] = 60   // JSON support is built-in
-	w[stmts.StmtSelectUUID] = 40   // UUID support
-	w[stmts.StmtSelectRegexp] = 50 // REGEXP support
-	w[stmts.StmtSelectVector] = 30 // Some vector operations
-	w[stmts.StmtSelectTime] = 50   // Rich date/time functions
+	// Extension functions - DuckDB specific
+	// DuckDB has rich built-in functions but may not have all SQLite extensions
+	w[stmts.StmtSelectJSON] = 60   // DuckDB has excellent JSON support
+	w[stmts.StmtSelectUUID] = 30   // DuckDB has UUID support
+	w[stmts.StmtSelectRegexp] = 50 // DuckDB has REGEXP support
+	w[stmts.StmtSelectVector] = 0  // Vector functions may differ from Turso
+	w[stmts.StmtSelectTime] = 50   // DuckDB has extensive time/date functions
 	
-	// DDL - Normal weights
+	// DDL
 	w[stmts.StmtCreateTable] = 40
 	w[stmts.StmtDropTable] = 40
-	w[stmts.StmtAlterTable] = 35
-	w[stmts.StmtCreateView] = 30
-	w[stmts.StmtDropView] = 30
+	w[stmts.StmtAlterTable] = 40
+	w[stmts.StmtCreateView] = 35
+	w[stmts.StmtDropView] = 35
 	w[stmts.StmtCreateIndex] = 35
 	w[stmts.StmtDropIndex] = 35
-	w[stmts.StmtCreateVirtualTable] = 10 // DuckDB handles this differently
+	w[stmts.StmtCreateVirtualTable] = 10 // Lower weight, different from SQLite
 	w[stmts.StmtCreateTrigger] = 20
 	w[stmts.StmtDropTrigger] = 20
 	
-	// Transaction control - Lower for analytical workloads
-	w[stmts.StmtBegin] = 15
-	w[stmts.StmtCommit] = 15
-	w[stmts.StmtRollback] = 15
-	w[stmts.StmtSavepoint] = 10
-	w[stmts.StmtRelease] = 10
+	// Transaction control
+	w[stmts.StmtBegin] = 25
+	w[stmts.StmtCommit] = 25
+	w[stmts.StmtRollback] = 25
+	w[stmts.StmtSavepoint] = 15
+	w[stmts.StmtRelease] = 15
 	
-	// Database attachment - DuckDB supports this
-	w[stmts.StmtAttach] = 15
-	w[stmts.StmtDetach] = 15
+	// Database attachment (different from SQLite)
+	w[stmts.StmtAttach] = 5
+	w[stmts.StmtDetach] = 5
 	
-	// Query analysis - Useful for analytical database
+	// Query analysis
 	w[stmts.StmtExplain] = 25
 	w[stmts.StmtExplainQueryPlan] = 25
 	
 	// Database maintenance
-	w[stmts.StmtAnalyze] = 20
+	w[stmts.StmtAnalyze] = 15
 	w[stmts.StmtVacuum] = 10
 	w[stmts.StmtReindex] = 15
 	
-	// Compound SELECT statements - Important for analytical queries
+	// Compound SELECT statements - DuckDB handles these well
 	w[stmts.StmtSelectUnion] = 50
 	w[stmts.StmtSelectIntersect] = 40
 	w[stmts.StmtSelectExcept] = 40

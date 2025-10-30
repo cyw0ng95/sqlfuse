@@ -3,24 +3,9 @@ package dialects
 import "sqlsmith-go/internal/stmts/stmts"
 
 // DuckDBFlavorConfig implements FlavorConfig for DuckDB.
-// DuckDB is an analytical database with extensive SQL support,
-// including many features beyond standard SQLite.
-//
-// Supported features that SQLite doesn't have:
-// - Full window functions with FILTER clause
-// - Advanced analytical functions (PERCENTILE_CONT, PERCENT_RANK, etc.)
-// - ARRAY and STRUCT data types
-// - Advanced join types (ASOF, LATERAL)
-// - FULL OUTER JOIN
-// - More comprehensive date/time functions
-// - SAMPLE clause for SELECT
-// - PIVOT and UNPIVOT
-// - QUALIFY clause for filtering window function results
-//
-// Note: DuckDB uses different syntax for some SQLite-specific features:
-// - ATTACH DATABASE works differently (uses .db file format)
-// - Some PRAGMAs are not supported or have different names
-// - Virtual tables are handled differently
+// DuckDB is an in-process SQL OLAP database management system that supports
+// a wide range of SQL features including advanced analytics capabilities.
+// Reference: https://duckdb.org/docs/stable/sql/introduction
 type DuckDBFlavorConfig struct{}
 
 // Name returns the SQL flavor name.
@@ -29,26 +14,29 @@ func (d *DuckDBFlavorConfig) Name() string {
 }
 
 // SupportsFeature checks if a specific SQL feature is supported by DuckDB.
-// DuckDB has excellent SQL support, including most modern SQL features.
+// DuckDB supports most standard SQL features and many advanced features:
+// - Window functions: Full support ✓
+// - Recursive CTEs: Full support ✓
+// - EXISTS and IN subqueries: Full support ✓
+// - REGEXP: Full support (REGEXP_MATCHES, etc.) ✓
+// - FILTER clauses for aggregates: Full support ✓
+// - Schema qualified names: Full support ✓
+// - Custom collations: Partial support
 //
-// Supported features:
-// - "exists_subquery": NOT EXISTS (subquery) expressions ✓
-// - "in_subquery": IN (subquery) expressions ✓
-// - "modulo_operator": % modulo operator ✓
-// - "regexp": REGEXP operator ✓
-// - "filter_clause": aggregate FILTER (WHERE ...) clause ✓
-// - "window_functions": OVER (...) window functions ✓
-// - "cte_recursive": RECURSIVE keyword in WITH clause ✓
-// - "cte_materialized": MATERIALIZED keyword in WITH clause ✓
+// Unlike SQLite-based systems, DuckDB:
+// - Has full analytical SQL support (WINDOW, PIVOT, etc.)
+// - Supports PostgreSQL-style syntax and functions
+// - Has native support for many data types (STRUCT, LIST, MAP, etc.)
+// - Does NOT support all SQLite pragmas (different configuration system)
 //
-// Unsupported or different features:
-// - "match": MATCH operator (FTS syntax differs from SQLite)
-// - "raise_function": RAISE() function (SQLite-specific)
-// - Some SQLite-specific PRAGMAs
+// Note: DuckDB does not support SQLite PRAGMA statements in the same way.
+// Instead, it uses SET statements for configuration.
 func (d *DuckDBFlavorConfig) SupportsFeature(feature string) bool {
 	unsupported := map[string]bool{
-		"match":          false, // FTS syntax is different in DuckDB
-		"raise_function": false, // SQLite-specific, not in DuckDB
+		// DuckDB doesn't support some SQLite-specific features
+		"sqlite_pragma":      false, // DuckDB uses SET instead of PRAGMA
+		"match":              false, // FTS MATCH operator is SQLite-specific
+		"named_transactions": false, // DuckDB uses standard transactions
 	}
 
 	// If explicitly marked as unsupported, return false
@@ -56,7 +44,8 @@ func (d *DuckDBFlavorConfig) SupportsFeature(feature string) bool {
 		return supported
 	}
 
-	// DuckDB supports most modern SQL features
+	// DuckDB supports most SQL features, including many that SQLite doesn't
+	// Return true for all other features (permissive default)
 	return true
 }
 

@@ -1,5 +1,4 @@
--- DuckDB initialization schema for SQL fuzzing
--- DuckDB supports a wide range of SQL features including analytical functions
+-- DuckDB initialization schema
 
 -- Table with various column types and constraints
 CREATE TABLE IF NOT EXISTS users (
@@ -27,7 +26,7 @@ CREATE TABLE IF NOT EXISTS misc (
     id INTEGER PRIMARY KEY,
     flag BOOLEAN,
     data BLOB,
-    value DECIMAL(10,2)
+    value DECIMAL
 );
 
 -- Table with CHECK constraint
@@ -41,7 +40,8 @@ CREATE TABLE IF NOT EXISTS products (
 -- Table with default values and various types
 CREATE TABLE IF NOT EXISTS settings (
     key VARCHAR PRIMARY KEY,
-    value VARCHAR,
+    value 
+ VARCHAR,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -69,6 +69,7 @@ CREATE VIEW IF NOT EXISTS user_balances AS
     LEFT JOIN accounts a ON u.id = a.user_id;
 
 -- Insert some initial data
+-- Note: DuckDB doesn't have AUTOINCREMENT, so we provide explicit IDs
 INSERT INTO users (id, name, email) VALUES (1, 'Alice', 'alice@example.com');
 INSERT INTO users (id, name, email) VALUES (2, 'Bob', 'bob@example.com');
 INSERT INTO products (id, name, price) VALUES (1, 'Widget', 9.99);
