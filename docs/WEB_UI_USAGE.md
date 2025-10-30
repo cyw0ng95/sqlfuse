@@ -54,7 +54,7 @@ The Jobs section allows you to start fuzzing jobs for different database flavors
 1. **Select an Executor**: Choose from the dropdown which shows both the executor name and its flavor:
    - `turso_embedded (turso)` - Turso LibSQL flavor
    - `go_sqlite3_embedded (go-sqlite3)` - Full SQLite3 support
-   - `chai_embedded (chai)` - Chai SQL flavor
+   - `duckdb_embedded (duckdb)` - DuckDB flavor
 
 2. **Specify Arguments**: Add command-line arguments for the executor, such as:
    - `--workers 4` - Number of concurrent workers
@@ -97,9 +97,9 @@ Each database flavor has different capabilities and restrictions:
 - Supports: window functions, recursive CTEs, all operators, etc.
 - Ideal for comprehensive SQLite3 testing
 
-**Chai SQL (`chai`)**:
-- Chai database flavor
-- Feature set depends on Chai implementation
+**DuckDB (`duckdb`)**:
+- DuckDB database flavor
+- Feature set depends on DuckDB implementation
 
 ## API Endpoints
 

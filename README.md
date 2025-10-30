@@ -578,22 +578,17 @@ pnpm run build
 [
   {
     "executor": "turso_embedded",
-    "path": "./output/turso_embedded",
+    "path": "./output/turso_embedded_executor",
     "flavor": "turso"
   },
   {
     "executor": "go_sqlite3_embedded",
-    "path": "./output/go_sqlite3_embedded",
+    "path": "./output/go_sqlite3_embedded_executor",
     "flavor": "go-sqlite3"
   },
   {
-    "executor": "chai_embedded",
-    "path": "./output/chai_embedded",
-    "flavor": "chai"
-  },
-  {
     "executor": "duckdb_embedded",
-    "path": "./output/duckdb_embedded",
+    "path": "./output/duckdb_embedded_executor",
     "flavor": "duckdb"
   }
 ]
