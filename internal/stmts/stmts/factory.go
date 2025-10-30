@@ -96,6 +96,51 @@ func (f *StmtGeneratorFactory) CreateGenerator(stmtType StmtType) StmtGenerator 
 		return &DropTriggerGenerator{}
 	case StmtSelectUnion, StmtSelectIntersect, StmtSelectExcept:
 		return &CompoundSelectGenerator{variant: stmtType}
+	
+	// DuckDB-specific statements
+	case StmtCopy:
+		return &CopyGenerator{}
+	case StmtSet:
+		return &SetGenerator{}
+	case StmtReset:
+		return &ResetGenerator{}
+	case StmtCreateSchema:
+		return &CreateSchemaGenerator{}
+	case StmtDropSchema:
+		return &DropSchemaGenerator{}
+	case StmtCreateSequence:
+		return &CreateSequenceGenerator{}
+	case StmtDropSequence:
+		return &DropSequenceGenerator{}
+	case StmtCreateMacro:
+		return &CreateMacroGenerator{}
+	case StmtDropMacro:
+		return &DropMacroGenerator{}
+	case StmtCreateType:
+		return &CreateTypeGenerator{}
+	case StmtDropType:
+		return &DropTypeGenerator{}
+	case StmtDescribe:
+		return &DescribeGenerator{}
+	case StmtShow:
+		return &ShowGenerator{}
+	case StmtSummarize:
+		return &SummarizeGenerator{}
+	case StmtUse:
+		return &UseGenerator{}
+	case StmtCall:
+		return &CallGenerator{}
+	case StmtCheckpoint:
+		return &CheckpointGenerator{}
+	case StmtExportDatabase:
+		return &ExportDatabaseGenerator{}
+	case StmtImportDatabase:
+		return &ImportDatabaseGenerator{}
+	case StmtPrepare:
+		return &PrepareGenerator{}
+	case StmtExecute:
+		return &ExecuteGenerator{}
+	
 	default:
 		return nil
 	}
