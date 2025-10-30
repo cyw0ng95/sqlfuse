@@ -11,7 +11,7 @@ import (
 // GenSelectRecursive generates a SELECT statement with recursive/nested features.
 // maxDepth controls how deep the recursion can go (0 = no recursion, simple SELECT).
 func GenSelectRecursive(db *sql.DB, lcg *common.LCG, maxDepth int) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil || len(tbls) == 0 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
@@ -63,7 +63,7 @@ func genFromClause(ctx *GenContext, tbls []helper.TableInfo, defaultTbl helper.T
 
 // GenSelectWithNestedCase generates a SELECT with nested CASE expressions.
 func GenSelectWithNestedCase(db *sql.DB, lcg *common.LCG, maxDepth int) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil || len(tbls) == 0 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
@@ -115,7 +115,7 @@ func genNestedCase(ctx *GenContext, tbl helper.TableInfo, depth int) string {
 
 // GenSelectWithComplexJoin generates a SELECT with potentially nested subqueries in joins.
 func GenSelectWithComplexJoin(db *sql.DB, lcg *common.LCG, maxDepth int) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil || len(tbls) < 2 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
@@ -179,7 +179,7 @@ func GenSelectWithComplexJoin(db *sql.DB, lcg *common.LCG, maxDepth int) (Select
 // GenSelectDeeplyNested generates a SELECT with deeply nested subqueries.
 // This creates complex queries with multiple levels of nesting for stress testing.
 func GenSelectDeeplyNested(db *sql.DB, lcg *common.LCG, maxDepth int) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil || len(tbls) == 0 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}

@@ -47,7 +47,7 @@ func GenAnalyze(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 		sql = "ANALYZE;"
 	} else {
 		// 70% chance: ANALYZE a specific table
-		tables, err := helper.GetAllTablesAndCols(db)
+		tables, err := helper.GetAllTablesAndCols(db, "")
 		if err != nil || len(tables) == 0 {
 			// Fallback to analyzing everything
 			sql = "ANALYZE;"

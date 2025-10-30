@@ -65,7 +65,7 @@ func GenCreateIndex(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	var tables []helper.TableInfo
 	var err error
 	if db != nil {
-		tables, err = helper.GetAllTablesAndCols(db)
+		tables, err = helper.GetAllTablesAndCols(db, "")
 	}
 	
 	if db == nil || err != nil || len(tables) == 0 {

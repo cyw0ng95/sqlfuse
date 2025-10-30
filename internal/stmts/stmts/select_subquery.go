@@ -12,7 +12,7 @@ import (
 // NOTE: Turso does NOT support EXISTS (subquery) or IN (subquery) per COMPAT.md.
 // This generator uses subqueries in FROM clause as derived tables, which IS supported.
 func GenSelectSubquery(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil || len(tbls) == 0 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}

@@ -346,7 +346,7 @@ func NewRandomSelectBuilder(ctx *GenContext, db *sql.DB) *RandomSelectBuilder {
 
 // Build generates a random SELECT statement using available tables.
 func (r *RandomSelectBuilder) Build() (*SelectStmt, error) {
-	tables, err := helper.GetAllTablesAndCols(r.db)
+	tables, err := helper.GetAllTablesAndCols(r.db, r.ctx.Flavor.Name())
 	if err != nil || len(tables) == 0 {
 		return &SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}

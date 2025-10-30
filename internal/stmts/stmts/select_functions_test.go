@@ -172,7 +172,7 @@ func TestSpecificScalarFunctions(t *testing.T) {
 
 	lcg := common.NewLCG(5000)
 
-	tables, _ := helper.GetAllTablesAndCols(db)
+	tables, _ := helper.GetAllTablesAndCols(db, "")
 	if tables == nil {
 		tables = []helper.TableInfo{}
 	}
@@ -256,7 +256,7 @@ func TestSpecificMathFunctions(t *testing.T) {
 
 	lcg := common.NewLCG(6000)
 
-	tables, _ := helper.GetAllTablesAndCols(db)
+	tables, _ := helper.GetAllTablesAndCols(db, "")
 	if tables == nil {
 		tables = []helper.TableInfo{}
 	}
@@ -329,7 +329,7 @@ func TestSpecificAggregateFunctions(t *testing.T) {
 
 	lcg := common.NewLCG(7000)
 
-	tables, _ := helper.GetAllTablesAndCols(db)
+	tables, _ := helper.GetAllTablesAndCols(db, "")
 	if tables == nil {
 		tables = []helper.TableInfo{}
 	}
@@ -1094,7 +1094,7 @@ func TestGoSQLite3SpecificFunctionGenerators(t *testing.T) {
 	lcg := common.NewLCG(6000)
 	
 	// Get tables for testing
-	tables, err := helper.GetAllTablesAndCols(db)
+	tables, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil {
 		t.Fatalf("Failed to get tables: %v", err)
 	}
@@ -1174,7 +1174,7 @@ func TestGoSQLite3SpecificAggregateFunctionGenerators(t *testing.T) {
 	lcg := common.NewLCG(8000)
 	
 	// Get tables for testing
-	tables, err := helper.GetAllTablesAndCols(db)
+	tables, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil {
 		t.Fatalf("Failed to get tables: %v", err)
 	}
