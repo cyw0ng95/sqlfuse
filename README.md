@@ -30,6 +30,7 @@ SQLsmith-Go is a Go implementation of the [SQLsmith](https://github.com/anse1/sq
 │  │              │    │              │    │  Builders    │  │
 │  │ • Turso      │    │ • Base       │    │              │  │
 │  │ • go-sqlite3 │    │ • Turso      │    │ • SELECT     │  │
+
 │  │ • DuckDB     │    │ • go-sqlite3 │    │ • INSERT     │  │
 │  │ • Chai       │    │ • DuckDB     │    │ • UPDATE     │  │
 │  │ • HTTP API   │    │              │    │ • DELETE     │  │
@@ -81,6 +82,7 @@ The project uses Go workspaces to ensure each executor includes only its require
 
 - **turso_embedded**: 155MB (includes turso-go)
 - **go_sqlite3_embedded**: 8.6MB (includes go-sqlite3 + CGo SQLite)
+- **duckdb_embedded**: Varies (includes go-duckdb)
 - **server**: 11MB (no database drivers)
 
 This keeps binaries focused and reduces deployment size.
@@ -105,6 +107,7 @@ bash build.sh
 # Outputs:
 # - output/turso_embedded_executor
 # - output/go_sqlite3_embedded_executor
+# - output/duckdb_embedded_executor
 # - output/server
 ```
 
@@ -587,6 +590,11 @@ pnpm run build
     "executor": "chai_embedded",
     "path": "./output/chai_embedded",
     "flavor": "chai"
+  },
+  {
+    "executor": "duckdb_embedded",
+    "path": "./output/duckdb_embedded",
+    "flavor": "duckdb"
   }
 ]
 ```

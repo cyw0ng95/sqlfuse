@@ -40,7 +40,8 @@ CREATE TABLE IF NOT EXISTS products (
 -- Table with default values and various types
 CREATE TABLE IF NOT EXISTS settings (
     key VARCHAR PRIMARY KEY,
-    value VARCHAR,
+    value 
+ VARCHAR,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

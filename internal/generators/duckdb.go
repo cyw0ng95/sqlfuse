@@ -123,9 +123,8 @@ func DefaultDuckDBStmtWeights() map[stmts.StmtType]uint64 {
 	w[stmts.StmtSelectIntersect] = 40
 	w[stmts.StmtSelectExcept] = 40
 	
-	// PRAGMA - DuckDB doesn't support SQLite PRAGMA, uses SET instead
-	// Set to 0 to avoid generating PRAGMA statements
-	w[stmts.StmtPragma] = 0
+	// PRAGMA - DuckDB has different pragma support than SQLite
+	w[stmts.StmtPragma] = 30
 	
 	return w
 }
