@@ -96,7 +96,7 @@ func getSQLiteTablesAndCols(db *sql.DB) ([]TableInfo, error) {
 		for colRows.Next() {
 			var cid int
 			var name, ctype string
-			var notnull, pk int
+			var notnull, pk interface{} // Use interface{} to handle both int (SQLite) and bool (DuckDB)
 			var dflt interface{}
 			if err := colRows.Scan(&cid, &name, &ctype, &notnull, &dflt, &pk); err != nil {
 				fmt.Fprintf(os.Stderr, "error scanning PRAGMA result for %s: %v\n", tableName, err)
