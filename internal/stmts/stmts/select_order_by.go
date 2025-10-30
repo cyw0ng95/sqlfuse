@@ -9,7 +9,7 @@ import (
 
 // GenSelectOrderBy generates a SELECT with ORDER BY on one or two columns.
 func GenSelectOrderBy(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db, "")
+	tbls, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tbls) == 0 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}

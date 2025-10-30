@@ -58,7 +58,7 @@ func GenCreateTrigger(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, e
 	var tables []helper.TableInfo
 	var err error
 	if db != nil {
-		tables, err = helper.GetAllTablesAndCols(db, "")
+		tables, err = helper.GetAllTablesAndCols(db, "sqlite")
 	}
 	
 	if db == nil || err != nil || len(tables) == 0 {

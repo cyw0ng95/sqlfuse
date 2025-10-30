@@ -120,7 +120,7 @@ func GenInsertBulk(db *sql.DB, lcgOrRand interface{}) (Stmt, error) {
 
 // GenUpsert generates an INSERT ... ON CONFLICT(...) DO UPDATE statement when possible.
 func GenUpsert(db *sql.DB, lcgOrRand interface{}) (Stmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db, "")
+	tables, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tables) == 0 {
 		return nil, fmt.Errorf("no tables for upsert: %v", err)
 	}
@@ -197,7 +197,7 @@ func GenUpsert(db *sql.DB, lcgOrRand interface{}) (Stmt, error) {
 
 // GenInsertFromSelect generates INSERT INTO t(cols) SELECT ... FROM other_table LIMIT n
 func GenInsertFromSelect(db *sql.DB, lcgOrRand interface{}) (Stmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db, "")
+	tables, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tables) < 1 {
 		return nil, fmt.Errorf("no tables for insert-select: %v", err)
 	}
@@ -253,7 +253,7 @@ func GenInsertFromSelect(db *sql.DB, lcgOrRand interface{}) (Stmt, error) {
 
 // genInsertInternal generates n rows inserted into a chosen table.
 func genInsertInternal(db *sql.DB, lcgOrRand interface{}, rowsCount int) (Stmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db, "")
+	tables, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tables) == 0 {
 		return nil, fmt.Errorf("no tables for insert: %v", err)
 	}
@@ -342,7 +342,7 @@ func min(a, b int) int {
 
 // GenInsertOrReplace generates an INSERT OR REPLACE statement
 func GenInsertOrReplace(db *sql.DB, lcg *common.LCG) (Stmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db, "")
+	tables, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tables) == 0 {
 		return nil, fmt.Errorf("no tables for insert or replace: %v", err)
 	}
@@ -384,7 +384,7 @@ func GenInsertOrReplace(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 
 // GenInsertOrIgnore generates an INSERT OR IGNORE statement
 func GenInsertOrIgnore(db *sql.DB, lcg *common.LCG) (Stmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db, "")
+	tables, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tables) == 0 {
 		return nil, fmt.Errorf("no tables for insert or ignore: %v", err)
 	}
@@ -426,7 +426,7 @@ func GenInsertOrIgnore(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 
 // GenInsertOrAbort generates an INSERT OR ABORT statement
 func GenInsertOrAbort(db *sql.DB, lcg *common.LCG) (Stmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db, "")
+	tables, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tables) == 0 {
 		return nil, fmt.Errorf("no tables for insert or abort: %v", err)
 	}
@@ -467,7 +467,7 @@ func GenInsertOrAbort(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 
 // GenInsertOrRollback generates an INSERT OR ROLLBACK statement
 func GenInsertOrRollback(db *sql.DB, lcg *common.LCG) (Stmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db, "")
+	tables, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tables) == 0 {
 		return nil, fmt.Errorf("no tables for insert or rollback: %v", err)
 	}
@@ -508,7 +508,7 @@ func GenInsertOrRollback(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 
 // GenInsertOrFail generates an INSERT OR FAIL statement
 func GenInsertOrFail(db *sql.DB, lcg *common.LCG) (Stmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db, "")
+	tables, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tables) == 0 {
 		return nil, fmt.Errorf("no tables for insert or fail: %v", err)
 	}

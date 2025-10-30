@@ -9,7 +9,7 @@ import (
 
 // GenSelectJoinUsing generates a SELECT with JOIN ... USING(col) if a common column exists.
 func GenSelectJoinUsing(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db, "")
+	tbls, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tbls) < 2 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}

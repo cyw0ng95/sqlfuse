@@ -9,7 +9,7 @@ import (
 
 // GenSelectHaving generates a GROUP BY with HAVING predicate.
 func GenSelectHaving(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db, "")
+	tbls, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tbls) == 0 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}

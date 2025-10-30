@@ -13,7 +13,7 @@ import (
 // lcg should be *common.LCG.
 func GenSelectWhere(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	// reuse basic select selection logic
-	tbls, err := helper.GetAllTablesAndCols(db, "")
+	tbls, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tbls) == 0 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
