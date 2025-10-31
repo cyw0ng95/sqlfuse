@@ -2,7 +2,7 @@ package stmts
 
 import (
 	"database/sql"
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 )
 
 // BuildGeneratorFuncs returns a map[string]generatorFunc for all built-in statement types.

@@ -1,6 +1,6 @@
-# SQLsmith-Go Examples
+# SQLfuse Examples
 
-This directory contains examples demonstrating various features of sqlsmith-go.
+This directory contains examples demonstrating various features of sqlfuse.
 
 ## Examples
 
@@ -25,7 +25,7 @@ go run impedance_example.go
 
 **Expected output:**
 ```
-SQLsmith-Go Example: Impedance Matching & Statistics
+SQLfuse Example: Impedance Matching & Statistics
 ====================================================
 
 Progress: 20 queries | Gen: 1234.5/s | Exec: 987.6/s | Errors: 5.23%
@@ -80,7 +80,7 @@ To add a new example:
 
 1. Create a new `.go` file in this directory
 2. Use `package main` and implement a `main()` function
-3. Import necessary packages from `sqlsmith-go/internal/*`
+3. Import necessary packages from `sqlfuse/internal/*`
 4. Add documentation to this README
 
 ## Related Documentation

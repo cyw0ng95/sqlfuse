@@ -1,11 +1,11 @@
-module sqlsmith-go/cmd/executors/go_sqlite3_embedded
+module sqlfuse/cmd/executors/go_sqlite3_embedded
 
 go 1.24.9
 
 require (
 	github.com/mattn/go-sqlite3 v1.14.32
 	github.com/spf13/cobra v1.10.1
-	sqlsmith-go/internal v0.0.0-00010101000000-000000000000
+	sqlfuse/internal v0.0.0-00010101000000-000000000000
 )
 
 require (
@@ -17,4 +17,4 @@ require (
 	golang.org/x/sys v0.37.0 // indirect
 )
 
-replace sqlsmith-go/internal => ../../../internal
+replace sqlfuse/internal => ../../../internal

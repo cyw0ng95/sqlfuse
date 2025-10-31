@@ -17,8 +17,8 @@ import (
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
-	"sqlsmith-go/internal/generators"
-	"sqlsmith-go/internal/stmts/stmts"
+	"sqlfuse/internal/generators"
+	"sqlfuse/internal/stmts/stmts"
 )
 
 func main() {
@@ -60,7 +60,7 @@ func main() {
 	impedance.SetBlacklistThreshold(0.90) // Blacklist if >90% error rate
 	impedance.SetMinObservations(10)       // Need at least 10 observations
 
-	fmt.Println("SQLsmith-Go Example: Impedance Matching & Statistics")
+	fmt.Println("SQLfuse Example: Impedance Matching & Statistics")
 	fmt.Println("====================================================")
 	fmt.Println()
 

@@ -3,7 +3,7 @@ package generators_test
 import (
 	"testing"
 
-	"sqlsmith-go/internal/generators"
+	"sqlfuse/internal/generators"
 )
 
 func TestGeneratorInterface(t *testing.T) {

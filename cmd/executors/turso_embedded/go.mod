@@ -1,11 +1,11 @@
-module sqlsmith-go/cmd/executors/turso_embedded
+module sqlfuse/cmd/executors/turso_embedded
 
 go 1.24.9
 
 require (
 	github.com/spf13/cobra v1.10.1
 	github.com/tursodatabase/turso-go v0.2.2
-	sqlsmith-go/internal v0.0.0-00010101000000-000000000000
+	sqlfuse/internal v0.0.0-00010101000000-000000000000
 )
 
 require (
@@ -18,4 +18,4 @@ require (
 	golang.org/x/sys v0.37.0 // indirect
 )
 
-replace sqlsmith-go/internal => ../../../internal
+replace sqlfuse/internal => ../../../internal

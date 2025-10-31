@@ -2,8 +2,8 @@ package generators
 
 import (
 	"database/sql"
-	"sqlsmith-go/internal/generators/dialects"
-	"sqlsmith-go/internal/stmts/stmts"
+	"sqlfuse/internal/generators/dialects"
+	"sqlfuse/internal/stmts/stmts"
 )
 
 // DuckDBGenerator is the DuckDB-specific generator that embeds BaseGenerator

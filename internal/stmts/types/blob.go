@@ -2,7 +2,7 @@ package types
 
 import (
 	"fmt"
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 )
 
 // BlobLiteral returns a hex blob literal with various patterns.

@@ -3,8 +3,8 @@ package stmts
 import (
 	"testing"
 
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/helper"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
 )
 
 // TestSelectBuilder tests the basic SELECT builder functionality

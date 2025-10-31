@@ -1,7 +1,7 @@
 package generators
 
 import (
-	"sqlsmith-go/internal/stmts/stmts"
+	"sqlfuse/internal/stmts/stmts"
 	"testing"
 )
 

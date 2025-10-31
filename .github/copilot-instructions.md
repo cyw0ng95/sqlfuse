@@ -1,4 +1,4 @@
-# SQLsmith-Go AI Coding Instructions
+# SQLfuse AI Coding Instructions
 
 ## Project Overview
 This is a Go implementation of SQLsmith - a SQL query generator/fuzzer for testing database systems. The project supports multiple SQLite-compatible database flavors with different feature sets and compatibility constraints.
@@ -125,7 +125,7 @@ Each executor can be built independently:
 ### Container Development
 Use the provided Containerfile for consistent environment:
 ```bash
-podman build -t sqlsmith-go .
+podman build -t sqlfuse .
 # Containerfile uses Fedora 43 with Go, git, and make
 ```
 

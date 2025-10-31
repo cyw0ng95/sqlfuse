@@ -1,10 +1,10 @@
-# SQLsmith-Go
+# SQLfuse
 
-A high-performance SQL query generator and fuzzer for testing database systems. SQLsmith-Go generates syntactically valid, semantically interesting SQL statements to discover bugs, edge cases, and performance issues in both SQLite-compatible and analytical database implementations.
+A high-performance SQL query generator and fuzzer for testing database systems. SQLfuse generates syntactically valid, semantically interesting SQL statements to discover bugs, edge cases, and performance issues in both SQLite-compatible and analytical database implementations.
 
 ## Overview
 
-SQLsmith-Go is a Go implementation of the [SQLsmith](https://github.com/anse1/sqlsmith) approach to database testing through randomized query generation. Unlike traditional fuzzing that generates random bytes, SQLsmith-Go produces valid SQL statements that exercise diverse database features while respecting the constraints and capabilities of different database flavors.
+SQLfuse is a Go implementation of the [SQLsmith](https://github.com/anse1/sqlsmith) approach to database testing through randomized query generation. Unlike traditional fuzzing that generates random bytes, SQLfuse produces valid SQL statements that exercise diverse database features while respecting the constraints and capabilities of different database flavors.
 
 ### Key Features
 
@@ -25,7 +25,7 @@ SQLsmith-Go is a Go implementation of the [SQLsmith](https://github.com/anse1/sq
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        SQLsmith-Go                           │
+│                        SQLfuse                           │
 ├─────────────────────────────────────────────────────────────┤
 │                                                              │
 │  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐  │
@@ -179,7 +179,7 @@ bash build.sh
 
 ### Randomness & Reproducibility
 
-SQLsmith-Go uses a Linear Congruential Generator (LCG) for deterministic randomness:
+SQLfuse uses a Linear Congruential Generator (LCG) for deterministic randomness:
 
 - **Seeded**: All generation is reproducible given the same seed
 - **Token-Based**: Tracks PRNG consumption for profiling
@@ -251,7 +251,7 @@ FROM products;
 ## Project Structure
 
 ```
-sqlsmith-go/
+sqlfuse/
 ├── cmd/
 │   ├── executors/
 │   │   ├── turso_embedded/      # Turso LibSQL executor
@@ -361,8 +361,8 @@ package main
 
 import (
     "database/sql"
-    "sqlsmith-go/internal/executors"
-    "sqlsmith-go/internal/generators"
+    "sqlfuse/internal/executors"
+    "sqlfuse/internal/generators"
     _ "github.com/mydb/driver"
 )
 
@@ -566,7 +566,7 @@ pnpm run build
 {
   "port": "8080",
   "executors_config_path": "./config/executors.json",
-  "server_name": "sqlsmith-go server",
+  "server_name": "sqlfuse server",
   "server_version": "0.1",
   "job": {
     "max_output_bytes": 65536,

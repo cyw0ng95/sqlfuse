@@ -1,11 +1,11 @@
-module sqlsmith-go/cmd/executors/duckdb_embedded
+module sqlfuse/cmd/executors/duckdb_embedded
 
 go 1.24.9
 
 require (
 	github.com/marcboeker/go-duckdb v1.8.3
 	github.com/spf13/cobra v1.10.1
-	sqlsmith-go/internal v0.0.0-00010101000000-000000000000
+	sqlfuse/internal v0.0.0-00010101000000-000000000000
 )
 
 require (
@@ -30,4 +30,4 @@ require (
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 )
 
-replace sqlsmith-go/internal => ../../../internal
+replace sqlfuse/internal => ../../../internal

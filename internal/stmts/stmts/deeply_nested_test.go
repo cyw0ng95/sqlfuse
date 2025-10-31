@@ -8,7 +8,7 @@ import (
 
 	_ "github.com/tursodatabase/turso-go"
 
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 )
 
 // TestGenSelectDeeplyNested tests the deeply nested SELECT generation.

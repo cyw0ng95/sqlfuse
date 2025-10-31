@@ -1,6 +1,6 @@
 package types
 
-import "sqlsmith-go/internal/common"
+import "sqlfuse/internal/common"
 
 // ValueForType returns an SQL literal string appropriate for the declared column type.
 func ValueForType(typ string, lcg *common.LCG, hint string) string {

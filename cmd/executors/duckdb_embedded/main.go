@@ -5,10 +5,10 @@ import (
 	"os"
 	"strings"
 
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/executors"
-	"sqlsmith-go/internal/generators"
-	"sqlsmith-go/internal/stmts/helper"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/executors"
+	"sqlfuse/internal/generators"
+	"sqlfuse/internal/stmts/helper"
 
 	_ "github.com/marcboeker/go-duckdb"
 	"github.com/spf13/cobra"

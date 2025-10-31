@@ -100,7 +100,7 @@ Example dialect configuration (`dialects/mydb.go`):
 ```go
 package dialects
 
-import "sqlsmith-go/internal/stmts/stmts"
+import "sqlfuse/internal/stmts/stmts"
 
 type MyDBFlavorConfig struct{}
 
@@ -128,8 +128,8 @@ package generators
 
 import (
     "database/sql"
-    "sqlsmith-go/internal/generators/dialects"
-    "sqlsmith-go/internal/stmts/stmts"
+    "sqlfuse/internal/generators/dialects"
+    "sqlfuse/internal/stmts/stmts"
 )
 
 type MyDBGenerator struct {

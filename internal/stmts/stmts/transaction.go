@@ -1,7 +1,7 @@
 package stmts
 
 import (
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 )
 
 // BeginTransactionGenerator is a StmtGenerator for BEGIN TRANSACTION statements.

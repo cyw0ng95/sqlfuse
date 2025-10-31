@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/generators"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/generators"
 )
 
 // Executor is a simple command-line based executor abstraction.
