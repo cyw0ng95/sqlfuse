@@ -61,11 +61,14 @@ cd internal && go build ./...
 ```bash
 cd internal && go test ./...
 ```
-**Result**: ✅ Success - All 9 packages pass
+**Result**: ✅ Success - All packages pass
 - sqlfuse/internal/common: PASS
 - sqlfuse/internal/generators: PASS
 - sqlfuse/internal/generators/dialects: PASS
+- sqlfuse/internal/stmts/ddl: no test files
+- sqlfuse/internal/stmts/dml: no test files
 - sqlfuse/internal/stmts/helper: PASS (3/3 tests)
+- sqlfuse/internal/stmts/other: no test files
 - sqlfuse/internal/stmts/stmts: PASS
 - sqlfuse/internal/stmts/types: PASS
 
