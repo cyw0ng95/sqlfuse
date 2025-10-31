@@ -2,26 +2,11 @@
 
 ## Overview
 
-This document summarizes the comprehensive analysis of SQLite documentation coverage in sqlfuse, based on recursive crawling of https://sqlite.org/lang.html and its linked pages.
+This document summarizes the comprehensive analysis of SQLite documentation coverage in sqlfuse, based on analysis of https://sqlite.org/lang.html and its linked pages.
 
-## Crawler Implementation
+## Coverage Analysis
 
-### Tools Created
-
-1. **`tools/sqlite_doc_crawler.go`**: Recursively crawls SQLite documentation
-   - Discovers SQL features from https://sqlite.org/lang.html
-   - Follows links to related documentation pages (lang_*.html, pragma.html, windowfunctions.html, json1.html)
-   - Extracts SQL keywords, syntax examples, and categorizes features
-   - Outputs structured JSON data for analysis
-
-2. **`tools/analyze_coverage.go`**: Analyzes implementation coverage
-   - Compares discovered features against implemented statement types
-   - Generates coverage statistics and recommendations
-   - Identifies missing features
-
-### Crawl Results
-
-The crawler discovered **34 distinct SQL feature categories** from **39 documentation pages**:
+Through manual analysis of SQLite's documentation, we identified **34 distinct SQL feature categories** from **39 documentation pages**:
 
 ## Coverage Summary
 
@@ -118,24 +103,9 @@ sqlfuse implements **77 distinct statement types** including:
 
 ## Recent Enhancements (This Update)
 
-### 1. Documentation Crawler
+### INDEXED BY / NOT INDEXED Clauses
 
-Created comprehensive tooling to recursively crawl and analyze SQLite documentation:
-
-**Implementation**: `tools/sqlite_doc_crawler.go`
-- Crawls https://sqlite.org/lang.html and follows all SQL-related links
-- Extracts SQL keywords, categories, and syntax examples
-- Generates structured JSON output for analysis
-- Discovered 34 feature categories across 39 pages
-
-**Implementation**: `tools/analyze_coverage.go`
-- Compares crawled features against implementation
-- Generates coverage statistics (61.8% fully/partially covered)
-- Identifies gaps and provides recommendations
-
-### 2. INDEXED BY / NOT INDEXED Clauses
-
-Based on discovery from https://sqlite.org/lang_indexedby.html, implemented support for SQLite query hints:
+Based on analysis of https://sqlite.org/lang_indexedby.html, implemented support for SQLite query hints:
 
 **New Statement Types**:
 - `StmtSelectIndexedBy` - SELECT with INDEXED BY clause to force index usage
@@ -273,7 +243,7 @@ SQL Generation
 
 ### Potential Additions from SQLite Docs
 
-Based on the crawler analysis, potential future enhancements include:
+Based on analysis of SQLite documentation, potential future enhancements include:
 
 1. **Enhanced JSON Functions** (json1.html)
    - JSON_EXTRACT
@@ -298,22 +268,6 @@ Based on the crawler analysis, potential future enhancements include:
 
 ## Usage
 
-### Running the Crawler
-
-```bash
-cd tools
-go run sqlite_doc_crawler.go
-# Output: /tmp/sqlite_sql_features.json
-```
-
-### Analyzing Coverage
-
-```bash
-cd tools
-go run analyze_coverage.go
-# Output: /tmp/sqlite_coverage_report.txt
-```
-
 ### Testing New Features
 
 ```bash
@@ -333,7 +287,7 @@ sqlfuse has **comprehensive coverage** of SQLite's core SQL language features, w
 - ✅ Query hints (INDEXED BY, NOT INDEXED)
 - ✅ Flavor-aware generation
 
-The recursive documentation crawler and analysis tools enable continuous validation of coverage against the official SQLite documentation, ensuring the fuzzer exercises a comprehensive range of SQL features.
+The analysis validates coverage against the official SQLite documentation, ensuring the fuzzer exercises a comprehensive range of SQL features.
 
 ## References
 
