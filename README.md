@@ -1,5 +1,7 @@
 # SQLfuse
 
+> **Note**: This project has been developed with assistance from AI coding assistants, including GitHub Copilot and Claude. While AI tools have helped with code generation and documentation, all implementations have been reviewed and tested.
+
 A high-performance SQL query generator and fuzzer for testing database systems. SQLfuse generates syntactically valid, semantically interesting SQL statements to discover bugs, edge cases, and performance issues in both SQLite-compatible and analytical database implementations.
 
 ## Overview
@@ -665,7 +667,7 @@ Contributions are welcome! Areas of interest:
 
 ## License
 
-[Add license information here]
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Related Projects
 
