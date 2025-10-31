@@ -1,0 +1,39 @@
+package dml
+
+import (
+	"sqlfuse/internal/stmts/stmts"
+	"database/sql"
+	"fmt"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
+)
+
+// GenSelectLimit generates a SELECT with a LIMIT clause (different limit ranges).
+func GenSelectLimit(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
+	tbls, err := helper.GetAllTablesAndCols(db, "sqlite")
+	if err != nil || len(tbls) == 0 {
+		return SelectStmt{sql: "SELECT 1;", flavor: stmts.GetDefaultFlavor()}, nil
+	}
+
+	var rnd func(int) int
+	if lcg != nil {
+		rnd = lcg.Intn
+	} else {
+		rnd = func(n int) int { return 0 }
+	}
+
+	tbl := tbls[rnd(len(tbls))]
+	if len(tbl.Cols) == 0 {
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", stmts.QuoteIdent(tbl.Name)), flavor: stmts.GetDefaultFlavor()}, nil
+	}
+
+	// pick columns
+	cols := []helper.ColumnInfo{}
+	for i := 0; i < 1+rnd(min(3, len(tbl.Cols))); i++ {
+		cols = append(cols, tbl.Cols[rnd(len(tbl.Cols))])
+	}
+
+	limit := 1 + rnd(1000)
+	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;", joinCols(cols), stmts.QuoteIdent(tbl.Name), limit)
+	return SelectStmt{sql: sql, flavor: stmts.GetDefaultFlavor()}, nil
+}

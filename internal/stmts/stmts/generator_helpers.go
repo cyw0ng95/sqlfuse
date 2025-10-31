@@ -29,20 +29,30 @@ func NewGeneratorConfig(lcg *common.LCG, flavor FlavorConfig) *GeneratorConfig {
 	}
 }
 
-// ensureLCG returns the provided LCG or creates a default one if nil.
+// EnsureLCG returns the provided LCG or creates a default one if nil.
 // This is a convenience function for backward compatibility with existing code.
-func ensureLCG(lcg *common.LCG) *common.LCG {
+func EnsureLCG(lcg *common.LCG) *common.LCG {
 	if lcg == nil {
 		return common.NewLCG(1)
 	}
 	return lcg
 }
 
-// ensureFlavor returns the provided flavor or creates a default one if nil.
+// ensureLCG is deprecated: use EnsureLCG instead.
+func ensureLCG(lcg *common.LCG) *common.LCG {
+	return EnsureLCG(lcg)
+}
+
+// EnsureFlavor returns the provided flavor or creates a default one if nil.
 // This is a convenience function for backward compatibility with existing code.
-func ensureFlavor(flavor FlavorConfig) FlavorConfig {
+func EnsureFlavor(flavor FlavorConfig) FlavorConfig {
 	if flavor == nil {
 		return GetDefaultFlavor()
 	}
 	return flavor
+}
+
+// ensureFlavor is deprecated: use EnsureFlavor instead.
+func ensureFlavor(flavor FlavorConfig) FlavorConfig {
+	return EnsureFlavor(flavor)
 }

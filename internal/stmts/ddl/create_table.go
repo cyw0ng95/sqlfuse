@@ -1,46 +1,47 @@
-package stmts
+package ddl
 
 import (
+	"sqlfuse/internal/stmts/stmts"
 	"fmt"
 	"sqlfuse/internal/common"
 	"strings"
 )
 
-// CreateTableGenerator is a StmtGenerator for CREATE TABLE statements.
+// CreateTableGenerator is a stmts.StmtGenerator for CREATE TABLE statements.
 type CreateTableGenerator struct{}
 
-// Generate implements StmtGenerator for CREATE TABLE statements.
-func (g *CreateTableGenerator) Generate(ctx *GenContext) (Stmt, error) {
+// Generate implements stmts.StmtGenerator for CREATE TABLE statements.
+func (g *CreateTableGenerator) Generate(ctx *stmts.GenContext) (stmts.Stmt, error) {
 	return genCreateTableWithFlavor(ctx.LCG, ctx.Flavor)
 }
 
-// CanGenerate implements StmtGenerator. CREATE TABLE can always be generated.
-func (g *CreateTableGenerator) CanGenerate(ctx *GenContext) bool {
+// CanGenerate implements stmts.StmtGenerator. CREATE TABLE can always be generated.
+func (g *CreateTableGenerator) CanGenerate(ctx *stmts.GenContext) bool {
 	return true
 }
 
 // CreateTableStmt represents a CREATE TABLE statement.
-// It embeds BaseStmt to avoid boilerplate method implementations.
+// It embeds stmts.BaseStmt to avoid boilerplate method implementations.
 type CreateTableStmt struct {
-	*BaseStmt
+	*stmts.BaseStmt
 }
 
 // GenCreateTable generates a simple CREATE TABLE statement using the provided LCG.
 // This function is kept for backward compatibility with existing code.
 // It produces 1..4 columns with common SQLite-compatible types.
-func GenCreateTable(lcg *common.LCG) (Stmt, error) {
+func GenCreateTable(lcg *common.LCG) (stmts.Stmt, error) {
 	return genCreateTableInternal(lcg)
 }
 
 // genCreateTableInternal is the internal implementation used by both old and new interfaces.
-func genCreateTableInternal(lcg *common.LCG) (Stmt, error) {
-	return genCreateTableWithFlavor(lcg, GetDefaultFlavor())
+func genCreateTableInternal(lcg *common.LCG) (stmts.Stmt, error) {
+	return genCreateTableWithFlavor(lcg, stmts.GetDefaultFlavor())
 }
 
 // genCreateTableWithFlavor creates a CREATE TABLE statement with flavor support.
-func genCreateTableWithFlavor(lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
-	flavor = ensureFlavor(flavor)
+func genCreateTableWithFlavor(lcg *common.LCG, flavor stmts.FlavorConfig) (stmts.Stmt, error) {
+	lcg = stmts.EnsureLCG(lcg)
+	flavor = stmts.EnsureFlavor(flavor)
 
 	// choose number of columns 1..4
 	n := 1 + lcg.Intn(4)
@@ -66,6 +67,6 @@ func genCreateTableWithFlavor(lcg *common.LCG, flavor FlavorConfig) (Stmt, error
 
 	sql := fmt.Sprintf("CREATE TABLE IF NOT EXISTS \"%s\" (%s);", tbl, strings.Join(cols, ", "))
 	return &CreateTableStmt{
-		BaseStmt: NewBaseStmt(sql, "create_table", flavor),
+		BaseStmt: stmts.NewBaseStmt(sql, "create_table", flavor),
 	}, nil
 }

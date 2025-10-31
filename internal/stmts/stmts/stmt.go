@@ -135,8 +135,9 @@ func (p *PragmaStmt) SQL() string          { return p.sql }
 func (p *PragmaStmt) Type() string         { return "pragma" }
 func (p *PragmaStmt) Flavor() FlavorConfig { return p.flavor }
 
-// Helper function to check if database has tables (used by generators that need tables).
-func hasTables(db *sql.DB) bool {
+// HasTables checks if the database has any user tables.
+// This is used by generators that require existing tables.
+func HasTables(db *sql.DB) bool {
 	if db == nil {
 		return false
 	}
@@ -147,6 +148,11 @@ func hasTables(db *sql.DB) bool {
 		return false
 	}
 	return count > 0
+}
+
+// hasTables is deprecated: use HasTables instead.
+func hasTables(db *sql.DB) bool {
+	return HasTables(db)
 }
 
 // GenerateStmt is a convenience function that generates a statement using a named generator.
