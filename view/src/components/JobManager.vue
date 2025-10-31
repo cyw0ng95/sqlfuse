@@ -153,8 +153,7 @@
 
 <script setup>
   import { onMounted, ref } from 'vue'
-
-  const API_BASE = 'http://localhost:8080'
+  import { API_BASE_URL } from '../config.js'
 
   const executors = ref([])
   const selectedExecutor = ref('')
@@ -168,7 +167,7 @@
   const infoData = ref(null)
 
   async function fetchJson (path, opts) {
-    const url = path.startsWith('http://') || path.startsWith('https://') ? path : `${API_BASE}${path}`
+    const url = path.startsWith('http://') || path.startsWith('https://') ? path : `${API_BASE_URL}${path}`
     try {
       const res = await fetch(url, opts)
       if (!res.ok) {

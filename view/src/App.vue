@@ -17,7 +17,7 @@
   //
 </script>
 
-<style>
+<style scoped>
 .main-gradient {
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   min-height: 100vh;

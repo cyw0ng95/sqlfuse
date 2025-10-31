@@ -89,15 +89,15 @@
 
 <script setup>
   import { computed, onMounted, ref } from 'vue'
-  import JobManager from '@/components/JobManager.vue'
+  import JobManager from '../components/JobManager.vue'
+  import { API_BASE_URL } from '../config.js'
 
   const health = ref({})
   const info = ref({})
   const generators = ref({})
 
   async function fetchJson (path) {
-    const API_BASE = 'http://localhost:8080'
-    const url = path.startsWith('http://') || path.startsWith('https://') ? path : `${API_BASE}${path}`
+    const url = path.startsWith('http://') || path.startsWith('https://') ? path : `${API_BASE_URL}${path}`
     try {
       const res = await fetch(url, { cache: 'no-store' })
       if (!res.ok) {
