@@ -118,3 +118,34 @@ func TestGetAllTablesAndColsNoAutoDetection(t *testing.T) {
 		t.Error("Expected error when using duckdb type on SQLite database, but got nil")
 	}
 }
+
+// TestGetAllTablesAndColsNilDB verifies that passing a nil database
+// returns an error instead of panicking.
+func TestGetAllTablesAndColsNilDB(t *testing.T) {
+	// Test with SQLite
+	_, err := GetAllTablesAndCols(nil, "sqlite")
+	if err == nil {
+		t.Error("Expected error when passing nil database for sqlite, but got nil")
+	}
+	if err != nil && err.Error() != "database connection is nil" {
+		t.Errorf("Expected 'database connection is nil' error, got: %v", err)
+	}
+
+	// Test with DuckDB
+	_, err = GetAllTablesAndCols(nil, "duckdb")
+	if err == nil {
+		t.Error("Expected error when passing nil database for duckdb, but got nil")
+	}
+	if err != nil && err.Error() != "database connection is nil" {
+		t.Errorf("Expected 'database connection is nil' error, got: %v", err)
+	}
+
+	// Test with empty string (defaults to SQLite)
+	_, err = GetAllTablesAndCols(nil, "")
+	if err == nil {
+		t.Error("Expected error when passing nil database with empty dbType, but got nil")
+	}
+	if err != nil && err.Error() != "database connection is nil" {
+		t.Errorf("Expected 'database connection is nil' error, got: %v", err)
+	}
+}

@@ -62,6 +62,11 @@ func GetAllTablesAndColsWithFlavor(db *sql.DB, flavor FlavorConfig) ([]TableInfo
 
 // getSQLiteTablesAndCols uses SQLite-specific PRAGMA statements
 func getSQLiteTablesAndCols(db *sql.DB) ([]TableInfo, error) {
+	// Handle nil database
+	if db == nil {
+		return nil, fmt.Errorf("database connection is nil")
+	}
+	
 	// serialize concurrent callers
 	rows, err := db.Query(`SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'`)
 	if err != nil {
@@ -116,6 +121,11 @@ func getSQLiteTablesAndCols(db *sql.DB) ([]TableInfo, error) {
 
 // getDuckDBTablesAndCols uses DuckDB's information_schema
 func getDuckDBTablesAndCols(db *sql.DB) ([]TableInfo, error) {
+	// Handle nil database
+	if db == nil {
+		return nil, fmt.Errorf("database connection is nil")
+	}
+	
 	// Query tables from information_schema
 	rows, err := db.Query(`
 		SELECT table_name 
