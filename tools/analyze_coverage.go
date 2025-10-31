@@ -33,10 +33,19 @@ type ImplementedFeatures struct {
 }
 
 func main() {
+	// Default input file path
+	inputFile := "/tmp/sqlite_sql_features.json"
+	
+	// Check for command-line argument
+	if len(os.Args) > 1 {
+		inputFile = os.Args[1]
+	}
+	
 	// Load crawled features
-	data, err := os.ReadFile("/tmp/sqlite_sql_features.json")
+	data, err := os.ReadFile(inputFile)
 	if err != nil {
-		fmt.Printf("Error reading features file: %v\n", err)
+		fmt.Printf("Error reading features file from %s: %v\n", inputFile, err)
+		fmt.Printf("Usage: %s [input_file.json]\n", os.Args[0])
 		os.Exit(1)
 	}
 

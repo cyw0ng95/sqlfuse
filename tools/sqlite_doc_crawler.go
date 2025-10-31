@@ -344,12 +344,19 @@ func (dc *SQLiteDocCrawler) PrintSummary() {
 func main() {
 	startURL := "https://sqlite.org/lang.html"
 	maxDepth := 2 // Limit crawl depth to avoid excessive requests
+	outputFile := "/tmp/sqlite_sql_features.json"
+	
+	// Check for command-line arguments
+	if len(os.Args) > 1 {
+		outputFile = os.Args[1]
+	}
 
 	crawler := NewSQLiteDocCrawler(startURL, maxDepth)
 	
 	fmt.Printf("=== SQLite Documentation Crawler ===\n")
 	fmt.Printf("Starting URL: %s\n", startURL)
-	fmt.Printf("Max depth: %d\n\n", maxDepth)
+	fmt.Printf("Max depth: %d\n", maxDepth)
+	fmt.Printf("Output file: %s\n\n", outputFile)
 
 	err := crawler.Crawl(startURL, 0)
 	if err != nil {
@@ -360,7 +367,6 @@ func main() {
 	crawler.PrintSummary()
 
 	// Save to file
-	outputFile := "/tmp/sqlite_sql_features.json"
 	err = crawler.SaveToFile(outputFile)
 	if err != nil {
 		fmt.Printf("\nError saving to file: %v\n", err)

@@ -41,6 +41,11 @@ func genSelectIndexedBy(db *sql.DB, lcg interface{ Intn(int) int }, flavor Flavo
 	// Common patterns: idx_tablename_columnname
 	col := table.Cols[lcg.Intn(len(table.Cols))]
 	indexName := fmt.Sprintf("idx_%s_%s", table.Name, col.Name)
+	
+	// Truncate if too long (SQLite limit is 1000 characters, but keep it reasonable)
+	if len(indexName) > 50 {
+		indexName = indexName[:50]
+	}
 
 	// Select random columns
 	maxCols := len(table.Cols)
