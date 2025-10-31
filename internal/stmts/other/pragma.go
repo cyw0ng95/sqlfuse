@@ -552,7 +552,7 @@ func genPragmaWithFlavor(lcg *common.LCG, flavor stmts.FlavorConfig) stmts.Stmt 
 
 	// If no pragmas are supported (e.g., DuckDB), return a no-op comment
 	if len(pragmas) == 0 {
-		return &PragmaStmt{sql: "-- PRAGMA not supported for this flavor", flavor: flavor}
+		return stmts.NewPragmaStmt("-- PRAGMA not supported for this flavor", flavor)
 	}
 
 	// Select a random pragma from the supported list
@@ -561,15 +561,15 @@ func genPragmaWithFlavor(lcg *common.LCG, flavor stmts.FlavorConfig) stmts.Stmt 
 }
 
 // generatePragmaSQL generates SQL for a specific pragma with appropriate values.
-func generatePragmaSQL(pragma string, lcg *common.LCG, flavor stmts.FlavorConfig) *PragmaStmt {
+func generatePragmaSQL(pragma string, lcg *common.LCG, flavor stmts.FlavorConfig) *stmts.PragmaStmt {
 	// Look up the pragma definition
 	def, exists := pragmaDefinitions[pragma]
 	if !exists {
 		// Fallback for unknown pragmas
-		return &PragmaStmt{sql: fmt.Sprintf("PRAGMA %s;", pragma), flavor: flavor}
+		return stmts.NewPragmaStmt(fmt.Sprintf("PRAGMA %s;", pragma), flavor)
 	}
 
 	// Use the definition's value generator
 	sql := def.GenerateValue(pragma, lcg, flavor)
-	return &PragmaStmt{sql: sql, flavor: flavor}
+	return stmts.NewPragmaStmt(sql, flavor)
 }

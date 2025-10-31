@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sqlfuse/internal/common"
 	"sqlfuse/internal/stmts/helper"
+	"sqlfuse/internal/stmts/other"
 	"strings"
 )
 
@@ -18,7 +19,7 @@ func GenSelectRecursive(db *sql.DB, lcg *common.LCG, maxDepth int) (SelectStmt, 
 	}
 
 	ctx := stmts.NewGenContext(db, lcg, maxDepth)
-	exprGen := NewExprGenerator(ctx)
+	exprGen := other.NewExprGenerator(ctx)
 
 	// Pick a primary table
 	tbl := tbls[ctx.Intn(len(tbls))]
@@ -53,7 +54,7 @@ func genFromClause(ctx *stmts.GenContext, tbls []helper.TableInfo, defaultTbl he
 	// Use subquery in FROM clause for recursion more frequently
 	if ctx.CanRecurse() && ctx.Intn(2) == 0 && len(tbls) > 0 {
 		subCtx := ctx.Descend()
-		exprGen := NewExprGenerator(subCtx)
+		exprGen := other.NewExprGenerator(subCtx)
 		subquery := exprGen.GenSubquery(tbls)
 		return fmt.Sprintf("(%s) AS subq", subquery)
 	}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sqlfuse/internal/common"
 	"sqlfuse/internal/stmts/helper"
+	"sqlfuse/internal/stmts/other"
 	"strings"
 )
 
@@ -17,7 +18,7 @@ func GenSelectWithExpressions(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	}
 
 	ctx := stmts.NewGenContext(db, lcg, 2)
-	eg := NewExprGenerator(ctx)
+	eg := other.NewExprGenerator(ctx)
 
 	var rnd func(int) int
 	if lcg != nil {
@@ -53,7 +54,7 @@ func GenSelectWhereCast(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	}
 
 	ctx := stmts.NewGenContext(db, lcg, 2)
-	eg := NewExprGenerator(ctx)
+	eg := other.NewExprGenerator(ctx)
 
 	var rnd func(int) int
 	if lcg != nil {
@@ -84,7 +85,7 @@ func GenSelectWhereBetween(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	}
 
 	ctx := stmts.NewGenContext(db, lcg, 2)
-	eg := NewExprGenerator(ctx)
+	eg := other.NewExprGenerator(ctx)
 
 	var rnd func(int) int
 	if lcg != nil {
@@ -115,7 +116,7 @@ func GenSelectWhereGlob(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	}
 
 	ctx := stmts.NewGenContext(db, lcg, 2)
-	eg := NewExprGenerator(ctx)
+	eg := other.NewExprGenerator(ctx)
 
 	var rnd func(int) int
 	if lcg != nil {
@@ -146,7 +147,7 @@ func GenSelectWithCollate(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	}
 
 	ctx := stmts.NewGenContext(db, lcg, 2)
-	eg := NewExprGenerator(ctx)
+	eg := other.NewExprGenerator(ctx)
 
 	var rnd func(int) int
 	if lcg != nil {
@@ -189,7 +190,7 @@ func GenSelectWithUnaryOp(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	}
 
 	ctx := stmts.NewGenContext(db, lcg, 2)
-	eg := NewExprGenerator(ctx)
+	eg := other.NewExprGenerator(ctx)
 
 	var rnd func(int) int
 	if lcg != nil {
@@ -219,7 +220,7 @@ func GenSelectWithBinaryOp(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	}
 
 	ctx := stmts.NewGenContext(db, lcg, 2)
-	eg := NewExprGenerator(ctx)
+	eg := other.NewExprGenerator(ctx)
 
 	var rnd func(int) int
 	if lcg != nil {
