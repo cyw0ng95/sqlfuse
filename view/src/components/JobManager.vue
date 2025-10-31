@@ -155,6 +155,13 @@
   import { onMounted, ref } from 'vue'
   import { API_BASE_URL } from '../config.js'
 
+  const props = defineProps({
+    customWeights: {
+      type: Object,
+      default: null
+    }
+  })
+
   const executors = ref([])
   const selectedExecutor = ref('')
   const args = ref('')
@@ -204,6 +211,12 @@
     // split args by whitespace
     const argsList = args.value.trim() === '' ? [] : (args.value.trim().match(/\S+/g) || [])
     const payload = { executor: selectedExecutor.value, args: argsList }
+    
+    // Add custom weights if provided
+    if (props.customWeights && Object.keys(props.customWeights).length > 0) {
+      payload.weights = props.customWeights
+    }
+    
     const data = await fetchJson('/job/new', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
     creating.value = false
     if (data.error) {
