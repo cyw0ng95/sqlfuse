@@ -157,8 +157,14 @@
       const saved = sessionStorage.getItem(STORAGE_KEY)
       if (saved) {
         const parsed = JSON.parse(saved)
-        // Merge with current weights to handle new statement types
-        weights.value = { ...weights.value, ...parsed }
+        // Only merge weights for statement types that exist in current generator
+        const validWeights = {}
+        for (const [key, value] of Object.entries(parsed)) {
+          if (weights.value.hasOwnProperty(key)) {
+            validWeights[key] = value
+          }
+        }
+        weights.value = { ...weights.value, ...validWeights }
         onWeightChange()
       }
     } catch (error) {

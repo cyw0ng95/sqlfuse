@@ -18,6 +18,11 @@ import (
 	"sqlfuse/internal/stmts/stmts"
 )
 
+// WeightSetter is an interface for generators that support custom weights
+type WeightSetter interface {
+	SetWeights(weights map[stmts.StmtType]uint64)
+}
+
 // Executor is a simple command-line based executor abstraction.
 // Implementations represent an executable binary and can build an *exec.Cmd for running it.
 type Executor interface {
@@ -131,12 +136,8 @@ func Run(startMsg string, flags *CommonFlags, connect func(dsn string) (*sql.DB,
 			
 			// Apply custom weights if provided
 			if customWeights != nil {
-				if bg, ok := gen.(*generators.TursoGenerator); ok {
-					bg.SetWeights(customWeights)
-				} else if bg, ok := gen.(*generators.GoSQLite3Generator); ok {
-					bg.SetWeights(customWeights)
-				} else if bg, ok := gen.(*generators.DuckDBGenerator); ok {
-					bg.SetWeights(customWeights)
+				if ws, ok := gen.(WeightSetter); ok {
+					ws.SetWeights(customWeights)
 				}
 			}
 			
