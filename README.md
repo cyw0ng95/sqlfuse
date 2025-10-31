@@ -37,10 +37,10 @@ SQLfuse is a Go implementation of the [SQLsmith](https://github.com/anse1/sqlsmi
 │  │ • DuckDB     │    │ • go-sqlite3 │    │ • INSERT     │  │
 │  │ • HTTP API   │    │ • DuckDB     │    │ • UPDATE     │  │
 │  └──────────────┘    └──────────────┘    │ • DELETE     │  │
-│  └──────────────┘    └──────────────┘    │ • PRAGMA     │  │
+│                                           │ • PRAGMA     │  │
 │                                           │ • CREATE     │  │
-│  │   Dialects   │    │   Frontend   │    │ • ...        │  │
-│  │              │    │              │    └──────────────┘  │
+│  ┌──────────────┐    ┌──────────────┐    │ • ...        │  │
+│  │   Dialects   │    │   Frontend   │    └──────────────┘  │
 │  │ • Feature    │    │ • Vue.js     │                      │
 │  │   Detection  │    │ • Vuetify    │                      │
 │  │ • SQL        │    │ • Job Ctrl   │                      │

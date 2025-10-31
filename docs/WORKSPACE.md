@@ -37,7 +37,7 @@ sqlfuse/
 │       └── job_ctrl.go
 ```
 
-**Note:** The `chai_embedded` executor exists in the workspace but is not currently built or functional (database driver is commented out). It remains as a placeholder for future implementation.
+**Note:** The `chai_embedded` executor exists in the workspace but is not currently built or functional. The Chai SQL driver import is commented out in `cmd/executors/chai_embedded/main.go` (line 15), and the executor is excluded from the build script. It remains as a placeholder for potential future implementation.
 
 ## Module Dependencies
 
