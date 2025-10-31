@@ -3,7 +3,7 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
-	"sqlsmith-go/internal/stmts/helper"
+	"sqlfuse/internal/stmts/helper"
 	"strings"
 )
 

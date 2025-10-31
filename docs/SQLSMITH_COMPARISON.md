@@ -1,10 +1,10 @@
 # SQL Generation Ideas from Original SQLsmith
 
-This document describes the SQL generation improvements implemented in sqlsmith-go based on ideas from the original [SQLsmith](https://github.com/anse1/sqlsmith) by Andreas Seltenreich.
+This document describes the SQL generation improvements implemented in sqlfuse based on ideas from the original [SQLsmith](https://github.com/anse1/sqlsmith) by Andreas Seltenreich.
 
 ## Overview
 
-The original SQLsmith is a mature SQL fuzzer for PostgreSQL that has found 118+ bugs in various database systems. It uses several sophisticated techniques for generating effective test queries. This document describes how we've adapted these techniques for sqlsmith-go.
+The original SQLsmith is a mature SQL fuzzer for PostgreSQL that has found 118+ bugs in various database systems. It uses several sophisticated techniques for generating effective test queries. This document describes how we've adapted these techniques for sqlfuse.
 
 ## Key Concepts from Original SQLsmith
 
@@ -12,7 +12,7 @@ The original SQLsmith is a mature SQL fuzzer for PostgreSQL that has found 118+ 
 
 **Original SQLsmith**: Tracks which SQL productions consistently fail and automatically blacklists them to avoid wasting time on unsupported features.
 
-**Implementation in sqlsmith-go**:
+**Implementation in sqlfuse**:
 - `internal/common/impedance.go`: `ImpedanceMatcher` tracks success/failure rates
 - Configurable error rate threshold (default 99% error rate over 100 observations)
 - Thread-safe tracking with read-write locks
@@ -50,7 +50,7 @@ fmt.Println(report)
 
 **Original SQLsmith**: Productions can retry on failure up to a configurable limit before giving up.
 
-**Implementation in sqlsmith-go**:
+**Implementation in sqlfuse**:
 - `ImpedanceMatcher.RecordRetry()`: Tracks retry attempts
 - `ImpedanceMatcher.RecordLimit()`: Tracks when retry limits are hit
 - Configurable retry limits per production type
@@ -82,7 +82,7 @@ return fallbackStatement()
 
 **Original SQLsmith**: Provides detailed statistics about generation and execution rates, error patterns, and AST characteristics.
 
-**Implementation in sqlsmith-go**:
+**Implementation in sqlfuse**:
 - `internal/common/stats.go`: `GenerationStats` tracks comprehensive metrics
 - Query generation and execution rates
 - Error categorization and frequency
@@ -125,7 +125,7 @@ Top errors:
 
 **Original SQLsmith**: Uses AST level/depth to control recursion and complexity. Deeper nodes are less likely to recurse.
 
-**Implementation in sqlsmith-go**:
+**Implementation in sqlfuse**:
 - `internal/generators/depth.go`: `DepthHelper` provides depth-aware decisions
 - Similar to original's `d6()`, `d9()`, `d20()`, `d42()`, `d100()` dice roll functions
 - Probabilistic decisions based on current depth
@@ -159,7 +159,7 @@ if dh.ShouldGenerateComplex(3, 6) {
 
 **Original SQLsmith**: Maintains indexes of operators, functions, and aggregates by return type for type-consistent generation.
 
-**Status in sqlsmith-go**: Not yet implemented, but framework is prepared.
+**Status in sqlfuse**: Not yet implemented, but framework is prepared.
 
 **Planned Implementation**:
 ```go
@@ -188,7 +188,7 @@ fn := random_pick(intFuncs)
 
 **Original SQLsmith**: Queries database schema to discover supported operators, functions, and types.
 
-**Status in sqlsmith-go**: Partial implementation (tables/columns), needs operator/function discovery.
+**Status in sqlfuse**: Partial implementation (tables/columns), needs operator/function discovery.
 
 **Planned Enhancement**:
 - Query system tables for available operators
@@ -200,7 +200,7 @@ fn := random_pick(intFuncs)
 
 ### Similarities
 
-| Feature | Original SQLsmith | sqlsmith-go |
+| Feature | Original SQLsmith | sqlfuse |
 |---------|------------------|-------------|
 | Impedance matching | ✅ Full support | ✅ Full support |
 | Statistics tracking | ✅ Comprehensive | ✅ Comprehensive |
@@ -211,7 +211,7 @@ fn := random_pick(intFuncs)
 
 ### Differences
 
-| Feature | Original SQLsmith | sqlsmith-go |
+| Feature | Original SQLsmith | sqlfuse |
 |---------|------------------|-------------|
 | Language | C++ | Go |
 | Primary target | PostgreSQL | SQLite-compatible DBs |
@@ -221,7 +221,7 @@ fn := random_pick(intFuncs)
 | AST visitor pattern | ✅ Full | ⚠️ Basic |
 | Production classes | ✅ Inheritance-based | ✅ Interface-based |
 
-### Unique to sqlsmith-go
+### Unique to sqlfuse
 
 - **Multi-flavor support**: Turso, go-sqlite3, DuckDB, Chai SQL
 - **Flavor-aware generation**: Adapts to database capabilities
@@ -440,7 +440,7 @@ go test ./internal/...
 To add more original SQLsmith features:
 
 1. Study the original C++ implementation in https://github.com/anse1/sqlsmith
-2. Identify patterns that would benefit sqlsmith-go
+2. Identify patterns that would benefit sqlfuse
 3. Implement in Go following existing patterns (interfaces, not inheritance)
 4. Add comprehensive tests
 5. Update this documentation
@@ -448,4 +448,4 @@ To add more original SQLsmith features:
 
 ## License
 
-sqlsmith-go follows the same GPLv3 license as the original SQLsmith.
+sqlfuse follows the same GPLv3 license as the original SQLsmith.

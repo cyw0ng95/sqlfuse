@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/helper"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
 
 	_ "github.com/tursodatabase/turso-go"
 )

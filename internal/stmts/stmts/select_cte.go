@@ -3,9 +3,9 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/helper"
-	"sqlsmith-go/internal/stmts/types"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
+	"sqlfuse/internal/stmts/types"
 	"strings"
 )
 

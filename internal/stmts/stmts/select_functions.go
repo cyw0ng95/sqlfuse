@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/helper"
-	"sqlsmith-go/internal/stmts/types"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
+	"sqlfuse/internal/stmts/types"
 )
 
 // GenSelectWithScalarFunction generates a SELECT statement with scalar SQL functions

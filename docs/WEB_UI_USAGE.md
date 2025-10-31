@@ -2,7 +2,7 @@
 
 ## Overview
 
-The SQLsmith-Go web UI provides an interface for managing fuzzing jobs across different database flavors. This guide explains how to use the interface to start and monitor fuzzing jobs.
+The SQLfuse web UI provides an interface for managing fuzzing jobs across different database flavors. This guide explains how to use the interface to start and monitor fuzzing jobs.
 
 ## Starting the Server
 

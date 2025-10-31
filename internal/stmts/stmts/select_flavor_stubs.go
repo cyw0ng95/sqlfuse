@@ -2,7 +2,7 @@ package stmts
 
 import (
 	"database/sql"
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 )
 
 // This file contains temporary stub implementations of flavor-aware Gen* functions.

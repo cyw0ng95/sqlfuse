@@ -1,6 +1,6 @@
 # DuckDB SQL Feature Implementation
 
-This document describes the comprehensive implementation of DuckDB SQL features in SQLsmith-Go, completed through recursive crawling and analysis of the DuckDB documentation at https://duckdb.org/docs/stable/sql/introduction.
+This document describes the comprehensive implementation of DuckDB SQL features in SQLfuse, completed through recursive crawling and analysis of the DuckDB documentation at https://duckdb.org/docs/stable/sql/introduction.
 
 ## Overview
 
@@ -393,7 +393,7 @@ StmtSetVariable    StmtType = "set_variable"
 
 ```go
 import (
-    "sqlsmith-go/internal/generators"
+    "sqlfuse/internal/generators"
 )
 
 // Create DuckDB generator

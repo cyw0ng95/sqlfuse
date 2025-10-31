@@ -3,8 +3,8 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/helper"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
 )
 
 // GenSelectLimit generates a SELECT with a LIMIT clause (different limit ranges).

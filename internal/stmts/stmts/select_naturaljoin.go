@@ -3,8 +3,8 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/helper"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
 )
 
 // GenSelectNaturalJoin generates a SELECT with NATURAL JOIN between two tables.

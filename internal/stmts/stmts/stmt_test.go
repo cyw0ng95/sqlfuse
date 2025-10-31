@@ -9,7 +9,7 @@ import (
 	"github.com/antlr4-go/antlr/v4"
 	parser "github.com/libsql/sqlite-antlr4-parser/sqliteparser"
 	_ "github.com/tursodatabase/turso-go"
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 )
 
 const (

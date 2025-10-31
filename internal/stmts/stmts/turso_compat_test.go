@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/helper"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
 )
 
 // TestNoUnsupportedFeatures verifies that the generator NEVER produces

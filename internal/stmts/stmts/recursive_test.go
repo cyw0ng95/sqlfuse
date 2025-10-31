@@ -7,8 +7,8 @@ import (
 
 	_ "github.com/tursodatabase/turso-go"
 
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/helper"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
 )
 
 // TestGenSelectRecursive tests the recursive SELECT generation.

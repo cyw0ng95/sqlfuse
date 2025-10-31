@@ -1,6 +1,6 @@
 package dialects
 
-import "sqlsmith-go/internal/stmts/stmts"
+import "sqlfuse/internal/stmts/stmts"
 
 // DuckDBFlavorConfig implements FlavorConfig for DuckDB.
 // DuckDB is an in-process SQL OLAP database management system that supports

@@ -1,7 +1,7 @@
 package stmts
 
 import (
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 	"testing"
 )
 

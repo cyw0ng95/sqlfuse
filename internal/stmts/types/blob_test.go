@@ -1,7 +1,7 @@
 package types
 
 import (
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 	"strings"
 	"testing"
 )

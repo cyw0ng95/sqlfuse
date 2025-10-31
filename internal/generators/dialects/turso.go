@@ -1,6 +1,6 @@
 package dialects
 
-import "sqlsmith-go/internal/stmts/stmts"
+import "sqlfuse/internal/stmts/stmts"
 
 // TursoFlavorConfig implements FlavorConfig for Turso LibSQL.
 // It enforces Turso-specific compatibility constraints based on:

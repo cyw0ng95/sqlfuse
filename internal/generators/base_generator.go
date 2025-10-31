@@ -2,8 +2,8 @@ package generators
 
 import (
 	"database/sql"
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/stmts"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/stmts"
 )
 
 // BaseGenerator provides common generator functionality that can be embedded

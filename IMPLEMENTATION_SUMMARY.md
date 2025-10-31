@@ -2,7 +2,7 @@
 
 ## Overview
 
-This task successfully compared sqlsmith-go with the original [SQLsmith](https://github.com/anse1/sqlsmith) and implemented several key SQL generation ideas that were missing.
+This task successfully compared sqlfuse with the original [SQLsmith](https://github.com/anse1/sqlsmith) and implemented several key SQL generation ideas that were missing.
 
 ## What Was Accomplished
 
@@ -210,7 +210,7 @@ These were identified but left for future work:
 
 ## Comparison with Original SQLsmith
 
-| Feature | Original SQLsmith | sqlsmith-go (Before) | sqlsmith-go (After) |
+| Feature | Original SQLsmith | sqlfuse (Before) | sqlfuse (After) |
 |---------|------------------|----------------------|---------------------|
 | Impedance Matching | ✅ Full | ❌ None | ✅ Full |
 | Statistics Tracking | ✅ Full | ❌ None | ✅ Full |
@@ -223,7 +223,7 @@ These were identified but left for future work:
 
 ## Conclusion
 
-This implementation successfully brings sqlsmith-go much closer to the original SQLsmith's sophisticated approach to SQL fuzzing. The new features are:
+This implementation successfully brings sqlfuse much closer to the original SQLsmith's sophisticated approach to SQL fuzzing. The new features are:
 
 - **Well-tested**: 21 new tests, 100% passing
 - **Well-documented**: Comprehensive documentation and examples

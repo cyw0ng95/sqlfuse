@@ -16,7 +16,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"sqlsmith-go/internal/executors"
+	"sqlfuse/internal/executors"
 )
 
 // --- Job manager implementation ---

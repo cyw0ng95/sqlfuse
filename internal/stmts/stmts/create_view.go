@@ -2,7 +2,7 @@ package stmts
 
 import (
 	"fmt"
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 )
 
 // CreateViewGenerator is a StmtGenerator for CREATE VIEW statements.

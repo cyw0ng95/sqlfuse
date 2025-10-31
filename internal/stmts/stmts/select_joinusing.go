@@ -3,8 +3,8 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/helper"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
 )
 
 // GenSelectJoinUsing generates a SELECT with JOIN ... USING(col) if a common column exists.

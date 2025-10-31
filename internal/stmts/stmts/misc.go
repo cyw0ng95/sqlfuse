@@ -3,7 +3,7 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 )
 
 // UseGenerator is a StmtGenerator for USE statements.

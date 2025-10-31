@@ -2,7 +2,7 @@ package stmts
 
 import (
 	"fmt"
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 )
 
 // PragmaValueGenerator is a function that generates the value part of a PRAGMA SQL statement.

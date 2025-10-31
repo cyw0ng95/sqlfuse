@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document summarizes the comprehensive enhancement made to the SQLsmith-Go project to add support for all SQL statements documented in the SQLite language reference (https://sqlite.org/lang.html), while maintaining compatibility with different database flavors (Turso LibSQL vs go-sqlite3).
+This document summarizes the comprehensive enhancement made to the SQLfuse project to add support for all SQL statements documented in the SQLite language reference (https://sqlite.org/lang.html), while maintaining compatibility with different database flavors (Turso LibSQL vs go-sqlite3).
 
 ## Changes Made
 
@@ -248,7 +248,7 @@ To add more statements in the future:
 
 ## Conclusion
 
-This enhancement brings SQLsmith-Go to near-complete coverage of the SQLite SQL language, enabling more comprehensive database fuzzing and testing. All statements are implemented with proper flavor compatibility, ensuring they work correctly across different SQLite-compatible databases.
+This enhancement brings SQLfuse to near-complete coverage of the SQLite SQL language, enabling more comprehensive database fuzzing and testing. All statements are implemented with proper flavor compatibility, ensuring they work correctly across different SQLite-compatible databases.
 
 The implementation follows the project's established patterns:
 - Factory-based generator creation

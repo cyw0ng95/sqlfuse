@@ -3,7 +3,7 @@ package types
 import (
 	"fmt"
 	"math"
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 	"strings"
 )
 

@@ -2,7 +2,7 @@ package stmts
 
 import (
 	"fmt"
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 )
 
 // SavepointGenerator is a StmtGenerator for SAVEPOINT statements.

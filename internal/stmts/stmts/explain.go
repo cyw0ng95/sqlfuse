@@ -3,7 +3,7 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 )
 
 // ExplainGenerator is a StmtGenerator for EXPLAIN statements.

@@ -7,7 +7,7 @@ This project uses Go workspaces to split dependencies across different executors
 The workspace is defined in `go.work` and consists of 5 modules:
 
 ```
-sqlsmith-go/
+sqlfuse/
 ├── go.work                          # Workspace definition
 ├── internal/                        # Shared internal packages
 │   ├── go.mod
@@ -35,7 +35,7 @@ sqlsmith-go/
 
 ## Module Dependencies
 
-### internal module (`sqlsmith-go/internal`)
+### internal module (`sqlfuse/internal`)
 Shared code used by all executors and server. Contains:
 - `common/` - Logger, LCG random number generator
 - `executors/` - Shared executor logic
@@ -52,39 +52,39 @@ Shared code used by all executors and server. Contains:
 **Test dependencies:**
 - `github.com/tursodatabase/turso-go` - Used in test files only
 
-### turso_embedded executor (`sqlsmith-go/cmd/executors/turso_embedded`)
+### turso_embedded executor (`sqlfuse/cmd/executors/turso_embedded`)
 Fuzzer for Turso LibSQL database.
 
 **Direct dependencies:**
 - `github.com/tursodatabase/turso-go` - Turso database driver
 - `github.com/spf13/cobra` - CLI framework
-- `sqlsmith-go/internal` - Shared code (via replace directive)
+- `sqlfuse/internal` - Shared code (via replace directive)
 
 **Binary includes:** ONLY turso-go (verified with `go version -m`)
 
-### go_sqlite3_embedded executor (`sqlsmith-go/cmd/executors/go_sqlite3_embedded`)
+### go_sqlite3_embedded executor (`sqlfuse/cmd/executors/go_sqlite3_embedded`)
 Fuzzer for SQLite via go-sqlite3.
 
 **Direct dependencies:**
 - `github.com/mattn/go-sqlite3` - SQLite database driver
 - `github.com/spf13/cobra` - CLI framework
-- `sqlsmith-go/internal` - Shared code (via replace directive)
+- `sqlfuse/internal` - Shared code (via replace directive)
 
 **Binary includes:** ONLY go-sqlite3 (verified with `go version -m`)
 
-### chai_embedded executor (`sqlsmith-go/cmd/executors/chai_embedded`)
+### chai_embedded executor (`sqlfuse/cmd/executors/chai_embedded`)
 Fuzzer for Chai SQL database (driver currently commented out).
 
 **Direct dependencies:**
 - `github.com/spf13/cobra` - CLI framework
-- `sqlsmith-go/internal` - Shared code (via replace directive)
+- `sqlfuse/internal` - Shared code (via replace directive)
 
-### server (`sqlsmith-go/cmd/server`)
+### server (`sqlfuse/cmd/server`)
 HTTP API server for managing fuzzing jobs.
 
 **Direct dependencies:**
 - `github.com/labstack/echo/v4` - HTTP framework
-- `sqlsmith-go/internal` - Shared code (via replace directive)
+- `sqlfuse/internal` - Shared code (via replace directive)
 
 ## Benefits of Workspace Structure
 
@@ -144,17 +144,17 @@ bash build.sh --test
 1. Create new directory: `cmd/executors/my_executor/`
 2. Create `go.mod`:
    ```go
-   module sqlsmith-go/cmd/executors/my_executor
+   module sqlfuse/cmd/executors/my_executor
    
    go 1.24.9
    
    require (
        github.com/my/database-driver vX.Y.Z
        github.com/spf13/cobra v1.10.1
-       sqlsmith-go/internal v0.0.0
+       sqlfuse/internal v0.0.0
    )
    
-   replace sqlsmith-go/internal => ../../../internal
+   replace sqlfuse/internal => ../../../internal
    ```
 3. Create `main.go` (see existing executors for examples)
 4. Add to `go.work`:
