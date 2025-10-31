@@ -160,7 +160,7 @@
         // Only merge weights for statement types that exist in current generator
         const validWeights = {}
         for (const [key, value] of Object.entries(parsed)) {
-          if (weights.value.hasOwnProperty(key)) {
+          if (key in weights.value) {
             validWeights[key] = value
           }
         }

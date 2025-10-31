@@ -218,7 +218,7 @@ func RegisterJobRoutes(e *echo.Echo) {
 		if req.Weights != nil && len(req.Weights) > 0 {
 			weightsJSON, err := json.Marshal(req.Weights)
 			if err != nil {
-				return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid weights format"})
+				return c.JSON(http.StatusBadRequest, map[string]string{"error": fmt.Sprintf("invalid weights format: %v", err)})
 			}
 			weightsArg := "--weights=" + string(weightsJSON)
 			cmdObj.Args = append(cmdObj.Args, weightsArg)
