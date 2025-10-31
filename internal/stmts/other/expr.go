@@ -1,6 +1,7 @@
 package other
 
 import (
+	"sqlfuse/internal/stmts/stmts"
 	"fmt"
 	"sqlfuse/internal/stmts/helper"
 	"sqlfuse/internal/stmts/types"
@@ -631,4 +632,13 @@ func (eg *ExprGenerator) GenRandomExpr(tbls []helper.TableInfo) string {
 	default: // case 8
 		return eg.genCaseExpr(tbls)
 	}
+}
+
+// isNumericType checks if a column type is numeric.
+func isNumericType(t string) bool {
+	if t == "" {
+		return false
+	}
+	up := strings.ToUpper(t)
+	return strings.Contains(up, "INT") || strings.Contains(up, "REAL") || strings.Contains(up, "NUM") || strings.Contains(up, "FLOAT") || strings.Contains(up, "DOUBLE") || strings.Contains(up, "DEC")
 }

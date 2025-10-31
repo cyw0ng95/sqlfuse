@@ -131,6 +131,11 @@ type PragmaStmt struct {
 	flavor FlavorConfig
 }
 
+// NewPragmaStmt creates a new PRAGMA statement with the given SQL and flavor.
+func NewPragmaStmt(sql string, flavor FlavorConfig) *PragmaStmt {
+	return &PragmaStmt{sql: sql, flavor: flavor}
+}
+
 func (p *PragmaStmt) SQL() string          { return p.sql }
 func (p *PragmaStmt) Type() string         { return "pragma" }
 func (p *PragmaStmt) Flavor() FlavorConfig { return p.flavor }

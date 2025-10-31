@@ -59,7 +59,7 @@ func GenExplain(db *sql.DB, lcg *common.LCG) (stmts.Stmt, error) {
 	switch choice {
 	case 0:
 		// EXPLAIN SELECT
-		innerStmt, err := GenSelect(db, lcg)
+		innerStmt, err := stmts.GenSelect(db, lcg)
 		if err != nil {
 			innerSQL = "SELECT 1"
 		} else {
@@ -67,7 +67,7 @@ func GenExplain(db *sql.DB, lcg *common.LCG) (stmts.Stmt, error) {
 		}
 	case 1:
 		// EXPLAIN UPDATE
-		innerStmt, err := GenUpdate(db, lcg)
+		innerStmt, err := stmts.GenUpdate(db, lcg)
 		if err != nil {
 			innerSQL = "SELECT 1"
 		} else {
@@ -75,7 +75,7 @@ func GenExplain(db *sql.DB, lcg *common.LCG) (stmts.Stmt, error) {
 		}
 	case 2:
 		// EXPLAIN DELETE
-		innerStmt, err := GenDelete(db, lcg)
+		innerStmt, err := stmts.GenDelete(db, lcg)
 		if err != nil {
 			innerSQL = "SELECT 1"
 		} else {
@@ -83,7 +83,7 @@ func GenExplain(db *sql.DB, lcg *common.LCG) (stmts.Stmt, error) {
 		}
 	case 3:
 		// EXPLAIN INSERT
-		innerStmt, err := GenInsert(db, lcg)
+		innerStmt, err := stmts.GenInsert(db, lcg)
 		if err != nil {
 			innerSQL = "SELECT 1"
 		} else {
@@ -91,7 +91,7 @@ func GenExplain(db *sql.DB, lcg *common.LCG) (stmts.Stmt, error) {
 		}
 	default:
 		// EXPLAIN a simple SELECT with WHERE
-		innerStmt, err := GenSelect(db, lcg)
+		innerStmt, err := stmts.GenSelect(db, lcg)
 		if err != nil {
 			innerSQL = "SELECT 1"
 		} else {
@@ -123,7 +123,7 @@ func GenExplainQueryPlan(db *sql.DB, lcg *common.LCG) (stmts.Stmt, error) {
 	}
 
 	// Generate a SELECT statement to explain
-	innerStmt, err := GenSelect(db, lcg)
+	innerStmt, err := stmts.GenSelect(db, lcg)
 	innerSQL := "SELECT 1"
 	if err == nil {
 		innerSQL = innerStmt.SQL()
