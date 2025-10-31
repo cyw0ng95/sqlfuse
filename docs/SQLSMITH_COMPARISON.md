@@ -223,7 +223,7 @@ fn := random_pick(intFuncs)
 
 ### Unique to sqlfuse
 
-- **Multi-flavor support**: Turso, go-sqlite3, DuckDB, Chai SQL
+- **Multi-flavor support**: Turso, go-sqlite3, DuckDB
 - **Flavor-aware generation**: Adapts to database capabilities
 - **Go workspace architecture**: Modular, isolated dependencies
 - **Web UI**: Vue.js frontend for job management

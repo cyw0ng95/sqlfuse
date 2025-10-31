@@ -8,7 +8,7 @@ SQLfuse is a Go implementation of the [SQLsmith](https://github.com/anse1/sqlsmi
 
 ### Key Features
 
-- **Multi-Flavor Support**: Generates SQL compatible with different database implementations (Turso LibSQL, go-sqlite3, DuckDB, Chai SQL)
+- **Multi-Flavor Support**: Generates SQL compatible with different database implementations (Turso LibSQL, go-sqlite3, DuckDB)
 - **Intelligent Generation**: Uses schema awareness to produce meaningful queries with valid table/column references
 - **Comprehensive Coverage**: Supports diverse SQL features including CTEs, window functions, subqueries, and complex expressions
 - **Flavor-Aware**: Adapts generated SQL to match the capabilities and constraints of the target database
@@ -35,8 +35,8 @@ SQLfuse is a Go implementation of the [SQLsmith](https://github.com/anse1/sqlsmi
 │  │ • go-sqlite3 │    │ • Turso      │    │ • SELECT     │  │
 
 │  │ • DuckDB     │    │ • go-sqlite3 │    │ • INSERT     │  │
-│  │ • Chai       │    │ • DuckDB     │    │ • UPDATE     │  │
-│  │ • HTTP API   │    │              │    │ • DELETE     │  │
+│  │ • HTTP API   │    │ • DuckDB     │    │ • UPDATE     │  │
+│  └──────────────┘    └──────────────┘    │ • DELETE     │  │
 │  └──────────────┘    └──────────────┘    │ • PRAGMA     │  │
 │                                           │ • CREATE     │  │
 │  │   Dialects   │    │   Frontend   │    │ • ...        │  │
@@ -256,8 +256,7 @@ sqlfuse/
 │   ├── executors/
 │   │   ├── turso_embedded/      # Turso LibSQL executor
 │   │   ├── go_sqlite3_embedded/ # go-sqlite3 executor
-│   │   ├── duckdb_embedded/     # DuckDB executor
-│   │   └── chai_embedded/       # Chai SQL executor
+│   │   └── duckdb_embedded/     # DuckDB executor
 │   └── server/                  # HTTP API server
 │
 ├── internal/
@@ -497,7 +496,7 @@ A Vue.js-based interface for interactive fuzzing across multiple database flavor
 
 ### Features
 
-- **Multi-Flavor Support**: Select from different database executors (Turso, go-sqlite3, Chai) with visual flavor indicators
+- **Multi-Flavor Support**: Select from different database executors (Turso, go-sqlite3, DuckDB) with visual flavor indicators
 - **Job Management**: Start, stop, and monitor fuzzing jobs with real-time status updates
 - **Live Output**: View stdout/stderr output from running jobs
 - **Executor Selection**: Dropdown shows both executor name and flavor (e.g., "turso_embedded (turso)")
