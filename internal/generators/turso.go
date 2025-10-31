@@ -65,6 +65,9 @@ func DefaultTursoStmtWeights() map[stmts.StmtType]uint64 {
 	w[stmts.StmtSelectRegexp] = 30
 	w[stmts.StmtSelectVector] = 20
 	w[stmts.StmtSelectTime] = 35
+	// INDEXED BY clauses
+	w[stmts.StmtSelectIndexedBy] = 15
+	w[stmts.StmtSelectNotIndexed] = 10
 	// DDL
 	w[stmts.StmtCreateTable] = 40
 	w[stmts.StmtDropTable] = 40
