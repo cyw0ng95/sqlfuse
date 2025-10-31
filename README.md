@@ -83,9 +83,9 @@ The `BaseGenerator` handles LCG-based randomness, statement selection, and recur
 
 The project uses Go workspaces to ensure each executor includes only its required database driver:
 
-- **turso_embedded**: 155MB (includes turso-go)
-- **go_sqlite3_embedded**: 8.6MB (includes go-sqlite3 + CGo SQLite)
-- **duckdb_embedded**: Varies (includes go-duckdb)
+- **turso_embedded**: 156MB (includes turso-go)
+- **go_sqlite3_embedded**: 8.9MB (includes go-sqlite3 + CGo SQLite)
+- **duckdb_embedded**: 48MB (includes go-duckdb)
 - **server**: 11MB (no database drivers)
 
 This keeps binaries focused and reduces deployment size.
@@ -606,10 +606,13 @@ Comprehensive documentation is available in the `docs/` directory:
 - **[WORKSPACE.md](docs/WORKSPACE.md)**: Go workspace structure and module layout
 - **[PRAGMA_SUPPORT.md](docs/PRAGMA_SUPPORT.md)**: Flavor-specific PRAGMA generation
 - **[DIALECTS_README.md](docs/DIALECTS_README.md)**: Database dialect system
+- **[DUCKDB_IMPLEMENTATION.md](docs/DUCKDB_IMPLEMENTATION.md)**: DuckDB SQL feature implementation
 - **[DESIGN_PATTERNS.md](docs/DESIGN_PATTERNS.md)**: Code organization patterns
 - **[DESIGN_IMPROVEMENTS.md](docs/DESIGN_IMPROVEMENTS.md)**: Planned enhancements
 - **[WEB_UI_USAGE.md](docs/WEB_UI_USAGE.md)**: Web interface usage guide
 - **[SQLSMITH_COMPARISON.md](docs/SQLSMITH_COMPARISON.md)**: Comparison with original SQLsmith and implementation of key ideas
+- **[SQL_STATEMENT_ENHANCEMENT.md](docs/SQL_STATEMENT_ENHANCEMENT.md)**: SQLite statement generation enhancements
+- **[REFACTORING_SUMMARY.md](docs/REFACTORING_SUMMARY.md)**: Design pattern refactoring summary
 
 ## Examples
 

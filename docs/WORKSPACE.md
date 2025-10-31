@@ -92,9 +92,9 @@ HTTP API server for managing fuzzing jobs.
 ## Benefits of Workspace Structure
 
 1. **Dependency Isolation**: Each executor only includes its required database driver
-   - turso_embedded: 155MB (includes turso-go)
-   - go_sqlite3_embedded: 8.4MB (includes go-sqlite3)
-   - duckdb_embedded: Varies (includes go-duckdb)
+   - turso_embedded: 156MB (includes turso-go)
+   - go_sqlite3_embedded: 8.9MB (includes go-sqlite3)
+   - duckdb_embedded: 48MB (includes go-duckdb)
    - server: 11MB (no database drivers)
 
 2. **Code Reuse**: Shared internal packages are in one place, referenced via replace directives
