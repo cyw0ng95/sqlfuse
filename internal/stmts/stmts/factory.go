@@ -52,6 +52,10 @@ func (f *StmtGeneratorFactory) CreateGenerator(stmtType StmtType) StmtGenerator 
 		StmtSelectRecursiveCTE, StmtSelectJSON, StmtSelectUUID,
 		StmtSelectRegexp, StmtSelectVector, StmtSelectTime:
 		return &SelectVariantGenerator{variant: stmtType, maxDepth: f.maxDepth}
+	case StmtSelectIndexedBy:
+		return NewSelectIndexedByGenerator()
+	case StmtSelectNotIndexed:
+		return NewSelectNotIndexedGenerator()
 	case StmtCreateTable:
 		return &CreateTableGenerator{}
 	case StmtDropTable:

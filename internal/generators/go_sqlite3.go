@@ -83,6 +83,10 @@ func DefaultGoSQLite3StmtWeights() map[stmts.StmtType]uint64 {
 	w[stmts.StmtSelectRegexp] = 40 // Higher than Turso's 30 - REGEXP is standard SQLite
 	w[stmts.StmtSelectVector] = 5  // Lower than Turso's 20 - not standard in go-sqlite3
 	w[stmts.StmtSelectTime] = 35   // Same as Turso
+	
+	// INDEXED BY clauses - full support in go-sqlite3
+	w[stmts.StmtSelectIndexedBy] = 20
+	w[stmts.StmtSelectNotIndexed] = 15
 
 	// DDL
 	w[stmts.StmtCreateTable] = 40

@@ -48,6 +48,8 @@ const (
 	StmtSelectRegexp           StmtType = "select_regexp"
 	StmtSelectVector           StmtType = "select_vector"
 	StmtSelectTime             StmtType = "select_time"
+	StmtSelectIndexedBy        StmtType = "select_indexed_by"
+	StmtSelectNotIndexed       StmtType = "select_not_indexed"
 	StmtCreateTable            StmtType = "create_table"
 	StmtDropTable              StmtType = "drop_table"
 	StmtAlterTable             StmtType = "alter_table"
@@ -156,6 +158,8 @@ var AllStmtTypes = []StmtType{
 	StmtSelectRegexp,
 	StmtSelectVector,
 	StmtSelectTime,
+	StmtSelectIndexedBy,
+	StmtSelectNotIndexed,
 	StmtCreateTable,
 	StmtDropTable,
 	StmtAlterTable,

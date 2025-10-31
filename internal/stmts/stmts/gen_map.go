@@ -69,6 +69,8 @@ func BuildGeneratorFuncs(lcg *common.LCG, maxRecursionDepth int, flavorConfig Fl
 	m["select_regexp"] = createGenFunc(StmtSelectRegexp, "SELECT 1")
 	m["select_vector"] = createGenFunc(StmtSelectVector, "SELECT 1")
 	m["select_time"] = createGenFunc(StmtSelectTime, "SELECT 1")
+	m["select_indexed_by"] = createGenFunc(StmtSelectIndexedBy, "SELECT 1")
+	m["select_not_indexed"] = createGenFunc(StmtSelectNotIndexed, "SELECT 1")
 
 	// DDL statements
 	m["create_table"] = createGenFunc(StmtCreateTable, "CREATE TABLE IF NOT EXISTS fallback (id INTEGER);")
