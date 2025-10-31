@@ -4,7 +4,7 @@ This project uses Go workspaces to split dependencies across different executors
 
 ## Workspace Layout
 
-The workspace is defined in `go.work` and consists of 5 modules:
+The workspace is defined in `go.work` and consists of 6 modules:
 
 ```
 sqlfuse/
@@ -22,7 +22,11 @@ sqlfuse/
 │   │   │   ├── go.mod
 │   │   │   ├── go.sum
 │   │   │   └── main.go
-│   │   └── duckdb_embedded/         # DuckDB executor
+│   │   ├── duckdb_embedded/         # DuckDB executor
+│   │   │   ├── go.mod
+│   │   │   ├── go.sum
+│   │   │   └── main.go
+│   │   └── chai_embedded/           # Chai SQL executor (WIP - not built)
 │   │       ├── go.mod
 │   │       ├── go.sum
 │   │       └── main.go
@@ -32,6 +36,8 @@ sqlfuse/
 │       ├── main.go
 │       └── job_ctrl.go
 ```
+
+**Note:** The `chai_embedded` executor exists in the workspace but is not currently built or functional (database driver is commented out). It remains as a placeholder for future implementation.
 
 ## Module Dependencies
 
