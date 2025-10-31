@@ -8,7 +8,7 @@ SQLfuse is a Go implementation of the [SQLsmith](https://github.com/anse1/sqlsmi
 
 ### Key Features
 
-- **Multi-Flavor Support**: Generates SQL compatible with different database implementations (Turso LibSQL, go-sqlite3, DuckDB, Chai SQL)
+- **Multi-Flavor Support**: Generates SQL compatible with different database implementations (Turso LibSQL, go-sqlite3, DuckDB)
 - **Intelligent Generation**: Uses schema awareness to produce meaningful queries with valid table/column references
 - **Comprehensive Coverage**: Supports diverse SQL features including CTEs, window functions, subqueries, and complex expressions
 - **Flavor-Aware**: Adapts generated SQL to match the capabilities and constraints of the target database
@@ -35,12 +35,12 @@ SQLfuse is a Go implementation of the [SQLsmith](https://github.com/anse1/sqlsmi
 │  │ • go-sqlite3 │    │ • Turso      │    │ • SELECT     │  │
 
 │  │ • DuckDB     │    │ • go-sqlite3 │    │ • INSERT     │  │
-│  │ • Chai       │    │ • DuckDB     │    │ • UPDATE     │  │
-│  │ • HTTP API   │    │              │    │ • DELETE     │  │
-│  └──────────────┘    └──────────────┘    │ • PRAGMA     │  │
+│  │ • HTTP API   │    │ • DuckDB     │    │ • UPDATE     │  │
+│  └──────────────┘    └──────────────┘    │ • DELETE     │  │
+│                                           │ • PRAGMA     │  │
 │                                           │ • CREATE     │  │
-│  │   Dialects   │    │   Frontend   │    │ • ...        │  │
-│  │              │    │              │    └──────────────┘  │
+│  ┌──────────────┐    ┌──────────────┐    │ • ...        │  │
+│  │   Dialects   │    │   Frontend   │    └──────────────┘  │
 │  │ • Feature    │    │ • Vue.js     │                      │
 │  │   Detection  │    │ • Vuetify    │                      │
 │  │ • SQL        │    │ • Job Ctrl   │                      │
@@ -83,9 +83,9 @@ The `BaseGenerator` handles LCG-based randomness, statement selection, and recur
 
 The project uses Go workspaces to ensure each executor includes only its required database driver:
 
-- **turso_embedded**: 155MB (includes turso-go)
-- **go_sqlite3_embedded**: 8.6MB (includes go-sqlite3 + CGo SQLite)
-- **duckdb_embedded**: Varies (includes go-duckdb)
+- **turso_embedded**: 156MB (includes turso-go)
+- **go_sqlite3_embedded**: 8.9MB (includes go-sqlite3 + CGo SQLite)
+- **duckdb_embedded**: 48MB (includes go-duckdb)
 - **server**: 11MB (no database drivers)
 
 This keeps binaries focused and reduces deployment size.
@@ -256,8 +256,7 @@ sqlfuse/
 │   ├── executors/
 │   │   ├── turso_embedded/      # Turso LibSQL executor
 │   │   ├── go_sqlite3_embedded/ # go-sqlite3 executor
-│   │   ├── duckdb_embedded/     # DuckDB executor
-│   │   └── chai_embedded/       # Chai SQL executor
+│   │   └── duckdb_embedded/     # DuckDB executor
 │   └── server/                  # HTTP API server
 │
 ├── internal/
@@ -497,7 +496,7 @@ A Vue.js-based interface for interactive fuzzing across multiple database flavor
 
 ### Features
 
-- **Multi-Flavor Support**: Select from different database executors (Turso, go-sqlite3, Chai) with visual flavor indicators
+- **Multi-Flavor Support**: Select from different database executors (Turso, go-sqlite3, DuckDB) with visual flavor indicators
 - **Job Management**: Start, stop, and monitor fuzzing jobs with real-time status updates
 - **Live Output**: View stdout/stderr output from running jobs
 - **Executor Selection**: Dropdown shows both executor name and flavor (e.g., "turso_embedded (turso)")
@@ -607,10 +606,13 @@ Comprehensive documentation is available in the `docs/` directory:
 - **[WORKSPACE.md](docs/WORKSPACE.md)**: Go workspace structure and module layout
 - **[PRAGMA_SUPPORT.md](docs/PRAGMA_SUPPORT.md)**: Flavor-specific PRAGMA generation
 - **[DIALECTS_README.md](docs/DIALECTS_README.md)**: Database dialect system
+- **[DUCKDB_IMPLEMENTATION.md](docs/DUCKDB_IMPLEMENTATION.md)**: DuckDB SQL feature implementation
 - **[DESIGN_PATTERNS.md](docs/DESIGN_PATTERNS.md)**: Code organization patterns
 - **[DESIGN_IMPROVEMENTS.md](docs/DESIGN_IMPROVEMENTS.md)**: Planned enhancements
 - **[WEB_UI_USAGE.md](docs/WEB_UI_USAGE.md)**: Web interface usage guide
 - **[SQLSMITH_COMPARISON.md](docs/SQLSMITH_COMPARISON.md)**: Comparison with original SQLsmith and implementation of key ideas
+- **[SQL_STATEMENT_ENHANCEMENT.md](docs/SQL_STATEMENT_ENHANCEMENT.md)**: SQLite statement generation enhancements
+- **[REFACTORING_SUMMARY.md](docs/REFACTORING_SUMMARY.md)**: Design pattern refactoring summary
 
 ## Examples
 

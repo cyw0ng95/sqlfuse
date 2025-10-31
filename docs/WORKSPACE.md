@@ -4,7 +4,7 @@ This project uses Go workspaces to split dependencies across different executors
 
 ## Workspace Layout
 
-The workspace is defined in `go.work` and consists of 5 modules:
+The workspace is defined in `go.work` and consists of 6 modules:
 
 ```
 sqlfuse/
@@ -22,7 +22,11 @@ sqlfuse/
 │   │   │   ├── go.mod
 │   │   │   ├── go.sum
 │   │   │   └── main.go
-│   │   └── chai_embedded/           # Chai SQL executor
+│   │   ├── duckdb_embedded/         # DuckDB executor
+│   │   │   ├── go.mod
+│   │   │   ├── go.sum
+│   │   │   └── main.go
+│   │   └── chai_embedded/           # Chai SQL executor (WIP - not built)
 │   │       ├── go.mod
 │   │       ├── go.sum
 │   │       └── main.go
@@ -32,6 +36,8 @@ sqlfuse/
 │       ├── main.go
 │       └── job_ctrl.go
 ```
+
+**Note:** The `chai_embedded` executor exists in the workspace but is not currently built or functional. The Chai SQL driver import is commented out in `cmd/executors/chai_embedded/main.go` (line 15), and the executor is excluded from the build script. It remains as a placeholder for potential future implementation.
 
 ## Module Dependencies
 
@@ -72,12 +78,15 @@ Fuzzer for SQLite via go-sqlite3.
 
 **Binary includes:** ONLY go-sqlite3 (verified with `go version -m`)
 
-### chai_embedded executor (`sqlfuse/cmd/executors/chai_embedded`)
-Fuzzer for Chai SQL database (driver currently commented out).
+### duckdb_embedded executor (`sqlfuse/cmd/executors/duckdb_embedded`)
+Fuzzer for DuckDB analytical database.
 
 **Direct dependencies:**
+- `github.com/marcboeker/go-duckdb` - DuckDB database driver
 - `github.com/spf13/cobra` - CLI framework
 - `sqlfuse/internal` - Shared code (via replace directive)
+
+**Binary includes:** ONLY go-duckdb (verified with `go version -m`)
 
 ### server (`sqlfuse/cmd/server`)
 HTTP API server for managing fuzzing jobs.
@@ -89,8 +98,9 @@ HTTP API server for managing fuzzing jobs.
 ## Benefits of Workspace Structure
 
 1. **Dependency Isolation**: Each executor only includes its required database driver
-   - turso_embedded: 155MB (includes turso-go)
-   - go_sqlite3_embedded: 8.4MB (includes go-sqlite3)
+   - turso_embedded: 156MB (includes turso-go)
+   - go_sqlite3_embedded: 8.9MB (includes go-sqlite3)
+   - duckdb_embedded: 48MB (includes go-duckdb)
    - server: 11MB (no database drivers)
 
 2. **Code Reuse**: Shared internal packages are in one place, referenced via replace directives
@@ -112,6 +122,7 @@ bash build.sh
 This builds:
 - `output/turso_embedded_executor`
 - `output/go_sqlite3_embedded_executor`
+- `output/duckdb_embedded_executor`
 - `output/server`
 
 ### Build individual modules:
@@ -121,6 +132,9 @@ cd cmd/executors/turso_embedded && go build -o ../../../output/turso_embedded_ex
 
 # Build go-sqlite3 executor
 cd cmd/executors/go_sqlite3_embedded && go build -o ../../../output/go_sqlite3_embedded_executor .
+
+# Build duckdb executor
+cd cmd/executors/duckdb_embedded && go build -o ../../../output/duckdb_embedded_executor .
 
 # Build server
 cd cmd/server && go build -o ../../output/server .
