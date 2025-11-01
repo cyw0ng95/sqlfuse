@@ -28,7 +28,7 @@ type CreateSecretStmt struct {
 // Secrets store credentials for external services.
 // Reference: https://duckdb.org/docs/stable/sql/statements/create_secret
 func GenCreateSecret(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}
@@ -93,7 +93,7 @@ type DropSecretStmt struct {
 
 // GenDropSecret generates a DROP SECRET statement.
 func GenDropSecret(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}
@@ -133,7 +133,7 @@ type LoadInstallStmt struct {
 // GenLoadInstall generates a LOAD or INSTALL statement.
 // Reference: https://duckdb.org/docs/stable/sql/statements/load_and_install
 func GenLoadInstall(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}
@@ -188,7 +188,7 @@ type CommentOnStmt struct {
 // GenCommentOn generates a COMMENT ON statement.
 // Reference: https://duckdb.org/docs/stable/sql/statements/comment_on
 func GenCommentOn(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}
@@ -250,7 +250,7 @@ type ProfilingStmt struct {
 // GenProfiling generates profiling-related statements.
 // Reference: https://duckdb.org/docs/stable/sql/statements/profiling
 func GenProfiling(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}
@@ -301,7 +301,7 @@ type SetVariableStmt struct {
 // GenSetVariable generates a SET VARIABLE statement.
 // Reference: https://duckdb.org/docs/stable/sql/statements/set_variable
 func GenSetVariable(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}

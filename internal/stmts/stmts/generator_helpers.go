@@ -38,11 +38,6 @@ func EnsureLCG(lcg *common.LCG) *common.LCG {
 	return lcg
 }
 
-// ensureLCG is deprecated: use EnsureLCG instead.
-func ensureLCG(lcg *common.LCG) *common.LCG {
-	return EnsureLCG(lcg)
-}
-
 // EnsureFlavor returns the provided flavor or creates a default one if nil.
 // This is a convenience function for backward compatibility with existing code.
 func EnsureFlavor(flavor FlavorConfig) FlavorConfig {

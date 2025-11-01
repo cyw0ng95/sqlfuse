@@ -39,7 +39,7 @@ func genCreateTableInternal(lcg *common.LCG) (Stmt, error) {
 
 // genCreateTableWithFlavor creates a CREATE TABLE statement with flavor support.
 func genCreateTableWithFlavor(lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	flavor = ensureFlavor(flavor)
 
 	// choose number of columns 1..4

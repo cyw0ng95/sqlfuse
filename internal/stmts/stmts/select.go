@@ -67,7 +67,7 @@ func genSelectInternalWithFlavor(db *sql.DB, lcg *common.LCG, flavor FlavorConfi
 	tbl := tables[rnd(len(tables))]
 	// if no columns known, select all
 	if len(tbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name)), flavor: flavor}, nil
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", QuoteIdent(tbl.Name)), flavor: flavor}, nil
 	}
 
 	// pick 1..min(3,len(cols)) columns using rnd
@@ -113,12 +113,12 @@ func genSelectInternalWithFlavor(db *sql.DB, lcg *common.LCG, flavor FlavorConfi
 	where := ""
 	if numericIdx >= 0 {
 		val := types.ValueForType(cols[numericIdx].Type, lcg, cols[numericIdx].Name)
-		where = fmt.Sprintf(" WHERE %s > %s", quoteIdent(cols[numericIdx].Name), val)
+		where = fmt.Sprintf(" WHERE %s > %s", QuoteIdent(cols[numericIdx].Name), val)
 	}
 
 	limit := 1 + rnd(50)
 
-	sql := fmt.Sprintf("SELECT %s FROM %s%s LIMIT %d;", joinCols(cols), quoteIdent(tbl.Name), where, limit)
+	sql := fmt.Sprintf("SELECT %s FROM %s%s LIMIT %d;", joinCols(cols), QuoteIdent(tbl.Name), where, limit)
 	return SelectStmt{sql: sql, flavor: flavor}, nil
 }
 
@@ -128,7 +128,7 @@ func joinCols(cols []helper.ColumnInfo) string {
 		if i > 0 {
 			q += ", "
 		}
-		q += quoteIdent(c.Name)
+		q += QuoteIdent(c.Name)
 	}
 	return q
 }

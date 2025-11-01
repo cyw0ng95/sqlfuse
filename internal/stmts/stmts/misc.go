@@ -28,7 +28,7 @@ type UseStmt struct {
 // USE changes the active schema.
 // Reference: https://duckdb.org/docs/stable/sql/statements/use
 func GenUse(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}
@@ -66,7 +66,7 @@ type CheckpointStmt struct {
 // CHECKPOINT forces a write of the WAL to the database file.
 // Reference: https://duckdb.org/docs/stable/sql/statements/checkpoint
 func GenCheckpoint(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}
@@ -113,7 +113,7 @@ type ExportDatabaseStmt struct {
 // GenExportDatabase generates an EXPORT DATABASE statement.
 // Reference: https://duckdb.org/docs/stable/sql/statements/export
 func GenExportDatabase(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}
@@ -157,7 +157,7 @@ type ImportDatabaseStmt struct {
 // GenImportDatabase generates an IMPORT DATABASE statement.
 // Reference: https://duckdb.org/docs/stable/sql/statements/import
 func GenImportDatabase(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}
@@ -191,7 +191,7 @@ type PrepareStmt struct {
 // GenPrepare generates a PREPARE statement.
 // Reference: https://duckdb.org/docs/stable/sql/statements/prepare
 func GenPrepare(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}
@@ -238,7 +238,7 @@ type ExecuteStmt struct {
 // GenExecute generates an EXECUTE statement.
 // Reference: https://duckdb.org/docs/stable/sql/statements/execute
 func GenExecute(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}

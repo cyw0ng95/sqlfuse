@@ -24,7 +24,7 @@ func GenSelectWhereLike(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 	tbl := tbls[rnd(len(tbls))]
 	if len(tbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// find a text-like column
@@ -71,9 +71,9 @@ func GenSelectWhereLike(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 		likeVal = "'%a%'"
 	}
 
-	where := fmt.Sprintf(" WHERE %s LIKE %s", quoteIdent(cols[0].Name), likeVal)
+	where := fmt.Sprintf(" WHERE %s LIKE %s", QuoteIdent(cols[0].Name), likeVal)
 	limit := 1 + rnd(50)
-	sql := fmt.Sprintf("SELECT %s FROM %s%s LIMIT %d;", joinCols(cols), quoteIdent(tbl.Name), where, limit)
+	sql := fmt.Sprintf("SELECT %s FROM %s%s LIMIT %d;", joinCols(cols), QuoteIdent(tbl.Name), where, limit)
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 

@@ -27,7 +27,7 @@ func GenSelectWithExpressions(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 	tbl := tbls[rnd(len(tbls))]
 	if len(tbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// Generate 1-3 expressions for the SELECT list
@@ -40,7 +40,7 @@ func GenSelectWithExpressions(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	}
 
 	limit := 1 + rnd(50)
-	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;", strings.Join(exprs, ", "), quoteIdent(tbl.Name), limit)
+	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;", strings.Join(exprs, ", "), QuoteIdent(tbl.Name), limit)
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
@@ -63,7 +63,7 @@ func GenSelectWhereCast(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 	tbl := tbls[rnd(len(tbls))]
 	if len(tbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// Build WHERE clause with CAST
@@ -71,7 +71,7 @@ func GenSelectWhereCast(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	where := fmt.Sprintf(" WHERE %s IS NOT NULL", castExpr)
 
 	limit := 1 + rnd(50)
-	sql := fmt.Sprintf("SELECT * FROM %s%s LIMIT %d;", quoteIdent(tbl.Name), where, limit)
+	sql := fmt.Sprintf("SELECT * FROM %s%s LIMIT %d;", QuoteIdent(tbl.Name), where, limit)
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
@@ -94,7 +94,7 @@ func GenSelectWhereBetween(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 	tbl := tbls[rnd(len(tbls))]
 	if len(tbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// Build WHERE clause with BETWEEN
@@ -102,7 +102,7 @@ func GenSelectWhereBetween(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	where := fmt.Sprintf(" WHERE %s", betweenExpr)
 
 	limit := 1 + rnd(50)
-	sql := fmt.Sprintf("SELECT * FROM %s%s LIMIT %d;", quoteIdent(tbl.Name), where, limit)
+	sql := fmt.Sprintf("SELECT * FROM %s%s LIMIT %d;", QuoteIdent(tbl.Name), where, limit)
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
@@ -125,7 +125,7 @@ func GenSelectWhereGlob(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 	tbl := tbls[rnd(len(tbls))]
 	if len(tbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// Build WHERE clause with GLOB
@@ -133,7 +133,7 @@ func GenSelectWhereGlob(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	where := fmt.Sprintf(" WHERE %s", globExpr)
 
 	limit := 1 + rnd(50)
-	sql := fmt.Sprintf("SELECT * FROM %s%s LIMIT %d;", quoteIdent(tbl.Name), where, limit)
+	sql := fmt.Sprintf("SELECT * FROM %s%s LIMIT %d;", QuoteIdent(tbl.Name), where, limit)
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
@@ -156,7 +156,7 @@ func GenSelectWithCollate(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 	tbl := tbls[rnd(len(tbls))]
 	if len(tbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// Find a text column for COLLATE
@@ -176,7 +176,7 @@ func GenSelectWithCollate(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	}
 
 	limit := 1 + rnd(50)
-	sql := fmt.Sprintf("SELECT * FROM %s%s LIMIT %d;", quoteIdent(tbl.Name), orderBy, limit)
+	sql := fmt.Sprintf("SELECT * FROM %s%s LIMIT %d;", QuoteIdent(tbl.Name), orderBy, limit)
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
@@ -199,14 +199,14 @@ func GenSelectWithUnaryOp(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 	tbl := tbls[rnd(len(tbls))]
 	if len(tbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// Generate unary expression for SELECT list
 	unaryExpr := eg.GenUnaryExpr(tbls)
 
 	limit := 1 + rnd(50)
-	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;", unaryExpr, quoteIdent(tbl.Name), limit)
+	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;", unaryExpr, QuoteIdent(tbl.Name), limit)
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
@@ -229,13 +229,13 @@ func GenSelectWithBinaryOp(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 	tbl := tbls[rnd(len(tbls))]
 	if len(tbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// Generate binary expression for SELECT list
 	binaryExpr := eg.GenBinaryExpr(tbls)
 
 	limit := 1 + rnd(50)
-	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;", binaryExpr, quoteIdent(tbl.Name), limit)
+	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;", binaryExpr, QuoteIdent(tbl.Name), limit)
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }

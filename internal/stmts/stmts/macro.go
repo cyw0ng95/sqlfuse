@@ -28,7 +28,7 @@ type CreateMacroStmt struct {
 // Macros are DuckDB's way of creating reusable SQL functions.
 // Reference: https://duckdb.org/docs/stable/sql/statements/create_macro
 func GenCreateMacro(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}
@@ -78,7 +78,7 @@ type DropMacroStmt struct {
 // GenDropMacro generates a DROP MACRO statement.
 // Reference: https://duckdb.org/docs/stable/sql/statements/drop
 func GenDropMacro(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}
@@ -113,7 +113,7 @@ type CallStmt struct {
 // CALL is used to invoke table-producing macros or functions.
 // Reference: https://duckdb.org/docs/stable/sql/statements/call
 func GenCall(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}

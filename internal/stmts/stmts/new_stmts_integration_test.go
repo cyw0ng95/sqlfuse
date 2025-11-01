@@ -9,9 +9,9 @@ import (
 // TestAnalyzeGeneration tests the ANALYZE statement generation.
 func TestAnalyzeGeneration(t *testing.T) {
 	lcg := common.NewLCG(42)
-	stmt, err := GenAnalyze(nil, lcg)
+	stmt, err := GenAnalyzeWithFlavor(nil, lcg, nil)
 	if err != nil {
-		t.Fatalf("GenAnalyze failed: %v", err)
+		t.Fatalf("GenAnalyzeWithFlavor failed: %v", err)
 	}
 
 	sql := stmt.SQL()

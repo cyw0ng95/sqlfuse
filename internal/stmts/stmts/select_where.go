@@ -27,7 +27,7 @@ func GenSelectWhere(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 	tbl := tbls[rnd(len(tbls))]
 	if len(tbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// pick up to 3 columns
@@ -63,15 +63,15 @@ func GenSelectWhere(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	where := ""
 	if numericCol >= 0 {
 		val := types.ValueForType(tbl.Cols[numericCol].Type, lcg, tbl.Cols[numericCol].Name)
-		where = fmt.Sprintf(" WHERE %s > %s", quoteIdent(tbl.Cols[numericCol].Name), val)
+		where = fmt.Sprintf(" WHERE %s > %s", QuoteIdent(tbl.Cols[numericCol].Name), val)
 	} else {
 		// fallback to equality on first selected column
 		val := types.ValueForType(cols[0].Type, lcg, cols[0].Name)
-		where = fmt.Sprintf(" WHERE %s = %s", quoteIdent(cols[0].Name), val)
+		where = fmt.Sprintf(" WHERE %s = %s", QuoteIdent(cols[0].Name), val)
 	}
 
 	limit := 1 + rnd(50)
-	sql := fmt.Sprintf("SELECT %s FROM %s%s LIMIT %d;", joinCols(cols), quoteIdent(tbl.Name), where, limit)
+	sql := fmt.Sprintf("SELECT %s FROM %s%s LIMIT %d;", joinCols(cols), QuoteIdent(tbl.Name), where, limit)
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 

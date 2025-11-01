@@ -29,7 +29,7 @@ type MergeIntoStmt struct {
 // MERGE INTO performs UPSERT-style operations (INSERT, UPDATE, DELETE based on conditions).
 // Reference: https://duckdb.org/docs/stable/sql/statements/merge_into
 func GenMergeInto(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}
@@ -115,7 +115,7 @@ type QualifyStmt struct {
 // QUALIFY filters results based on window function results.
 // Reference: https://duckdb.org/docs/stable/sql/query_syntax/qualify
 func GenQualify(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}
@@ -167,7 +167,7 @@ type AlterDatabaseStmt struct {
 // GenAlterDatabase generates an ALTER DATABASE statement.
 // Reference: https://duckdb.org/docs/stable/sql/statements/alter_database
 func GenAlterDatabase(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}
@@ -207,7 +207,7 @@ type AlterViewStmt struct {
 // GenAlterView generates an ALTER VIEW statement.
 // Reference: https://duckdb.org/docs/stable/sql/statements/alter_view
 func GenAlterView(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}

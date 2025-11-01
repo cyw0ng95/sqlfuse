@@ -99,45 +99,45 @@ func genUpdateWithFlavor(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt
 		case 0:
 			// Simple value assignment
 			val := types.ValueForType(col.Type, lcg, col.Name)
-			expr = fmt.Sprintf("%s = %s", quoteIdent(col.Name), val)
+			expr = fmt.Sprintf("%s = %s", QuoteIdent(col.Name), val)
 		case 1:
 			// Arithmetic expression (for numeric columns)
 			if isNumericType(col.Type) {
 				val := types.ValueForType(col.Type, lcg, col.Name)
 				ops := []string{"+", "-", "*", "/"}
 				op := ops[rnd(len(ops))]
-				expr = fmt.Sprintf("%s = %s %s %s", quoteIdent(col.Name), quoteIdent(col.Name), op, val)
+				expr = fmt.Sprintf("%s = %s %s %s", QuoteIdent(col.Name), QuoteIdent(col.Name), op, val)
 			} else {
 				val := types.ValueForType(col.Type, lcg, col.Name)
-				expr = fmt.Sprintf("%s = %s", quoteIdent(col.Name), val)
+				expr = fmt.Sprintf("%s = %s", QuoteIdent(col.Name), val)
 			}
 		case 2:
 			// CASE expression
 			val1 := types.ValueForType(col.Type, lcg, col.Name)
 			val2 := types.ValueForType(col.Type, lcg, col.Name)
 			expr = fmt.Sprintf("%s = CASE WHEN %s IS NULL THEN %s ELSE %s END",
-				quoteIdent(col.Name), quoteIdent(col.Name), val1, val2)
+				QuoteIdent(col.Name), QuoteIdent(col.Name), val1, val2)
 		case 3:
 			// COALESCE expression
 			val := types.ValueForType(col.Type, lcg, col.Name)
-			expr = fmt.Sprintf("%s = COALESCE(%s, %s)", quoteIdent(col.Name), quoteIdent(col.Name), val)
+			expr = fmt.Sprintf("%s = COALESCE(%s, %s)", QuoteIdent(col.Name), QuoteIdent(col.Name), val)
 		case 4:
 			// CAST expression
 			targetTypes := []string{"TEXT", "INTEGER", "REAL"}
 			targetType := targetTypes[rnd(len(targetTypes))]
 			val := types.ValueForType(col.Type, lcg, col.Name)
-			expr = fmt.Sprintf("%s = CAST(%s AS %s)", quoteIdent(col.Name), val, targetType)
+			expr = fmt.Sprintf("%s = CAST(%s AS %s)", QuoteIdent(col.Name), val, targetType)
 		case 5:
 			// NULL assignment
-			expr = fmt.Sprintf("%s = NULL", quoteIdent(col.Name))
+			expr = fmt.Sprintf("%s = NULL", QuoteIdent(col.Name))
 		case 6:
 			// String concatenation (for text columns)
 			if isTextType(col.Type) {
 				val := types.ValueForType(col.Type, lcg, col.Name)
-				expr = fmt.Sprintf("%s = %s || %s", quoteIdent(col.Name), quoteIdent(col.Name), val)
+				expr = fmt.Sprintf("%s = %s || %s", QuoteIdent(col.Name), QuoteIdent(col.Name), val)
 			} else {
 				val := types.ValueForType(col.Type, lcg, col.Name)
-				expr = fmt.Sprintf("%s = %s", quoteIdent(col.Name), val)
+				expr = fmt.Sprintf("%s = %s", QuoteIdent(col.Name), val)
 			}
 		case 7:
 			// UPPER/LOWER for text columns
@@ -146,10 +146,10 @@ func genUpdateWithFlavor(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt
 				if rnd(2) == 0 {
 					fn = "LOWER"
 				}
-				expr = fmt.Sprintf("%s = %s(%s)", quoteIdent(col.Name), fn, quoteIdent(col.Name))
+				expr = fmt.Sprintf("%s = %s(%s)", QuoteIdent(col.Name), fn, QuoteIdent(col.Name))
 			} else {
 				val := types.ValueForType(col.Type, lcg, col.Name)
-				expr = fmt.Sprintf("%s = %s", quoteIdent(col.Name), val)
+				expr = fmt.Sprintf("%s = %s", QuoteIdent(col.Name), val)
 			}
 		case 8:
 			// ABS/ROUND for numeric columns
@@ -158,15 +158,15 @@ func genUpdateWithFlavor(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt
 				if rnd(2) == 0 {
 					fn = "ROUND"
 				}
-				expr = fmt.Sprintf("%s = %s(%s)", quoteIdent(col.Name), fn, quoteIdent(col.Name))
+				expr = fmt.Sprintf("%s = %s(%s)", QuoteIdent(col.Name), fn, QuoteIdent(col.Name))
 			} else {
 				val := types.ValueForType(col.Type, lcg, col.Name)
-				expr = fmt.Sprintf("%s = %s", quoteIdent(col.Name), val)
+				expr = fmt.Sprintf("%s = %s", QuoteIdent(col.Name), val)
 			}
 		default:
 			// Default to simple assignment
 			val := types.ValueForType(col.Type, lcg, col.Name)
-			expr = fmt.Sprintf("%s = %s", quoteIdent(col.Name), val)
+			expr = fmt.Sprintf("%s = %s", QuoteIdent(col.Name), val)
 		}
 		setExprs = append(setExprs, expr)
 	}
@@ -186,39 +186,39 @@ func genUpdateWithFlavor(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt
 			case 0:
 				// Simple equality
 				val := types.ValueForType(col.Type, lcg, col.Name)
-				cond = fmt.Sprintf("%s = %s", quoteIdent(col.Name), val)
+				cond = fmt.Sprintf("%s = %s", QuoteIdent(col.Name), val)
 			case 1:
 				// Inequality
 				val := types.ValueForType(col.Type, lcg, col.Name)
 				ops := []string{"<", "<=", ">", ">=", "!=", "<>"}
 				op := ops[rnd(len(ops))]
-				cond = fmt.Sprintf("%s %s %s", quoteIdent(col.Name), op, val)
+				cond = fmt.Sprintf("%s %s %s", QuoteIdent(col.Name), op, val)
 			case 2:
 				// IS NULL / IS NOT NULL
 				if rnd(2) == 0 {
-					cond = fmt.Sprintf("%s IS NULL", quoteIdent(col.Name))
+					cond = fmt.Sprintf("%s IS NULL", QuoteIdent(col.Name))
 				} else {
-					cond = fmt.Sprintf("%s IS NOT NULL", quoteIdent(col.Name))
+					cond = fmt.Sprintf("%s IS NOT NULL", QuoteIdent(col.Name))
 				}
 			case 3:
 				// LIKE (for text columns)
 				if isTextType(col.Type) {
 					patterns := []string{"'%test%'", "'test%'", "'%test'", "'_test%'"}
 					pattern := patterns[rnd(len(patterns))]
-					cond = fmt.Sprintf("%s LIKE %s", quoteIdent(col.Name), pattern)
+					cond = fmt.Sprintf("%s LIKE %s", QuoteIdent(col.Name), pattern)
 				} else {
 					val := types.ValueForType(col.Type, lcg, col.Name)
-					cond = fmt.Sprintf("%s = %s", quoteIdent(col.Name), val)
+					cond = fmt.Sprintf("%s = %s", QuoteIdent(col.Name), val)
 				}
 			case 4:
 				// BETWEEN (for numeric columns)
 				if isNumericType(col.Type) {
 					val1 := types.ValueForType(col.Type, lcg, col.Name)
 					val2 := types.ValueForType(col.Type, lcg, col.Name)
-					cond = fmt.Sprintf("%s BETWEEN %s AND %s", quoteIdent(col.Name), val1, val2)
+					cond = fmt.Sprintf("%s BETWEEN %s AND %s", QuoteIdent(col.Name), val1, val2)
 				} else {
 					val := types.ValueForType(col.Type, lcg, col.Name)
-					cond = fmt.Sprintf("%s = %s", quoteIdent(col.Name), val)
+					cond = fmt.Sprintf("%s = %s", QuoteIdent(col.Name), val)
 				}
 			case 5:
 				// IN clause
@@ -226,20 +226,20 @@ func genUpdateWithFlavor(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt
 				for j := range vals {
 					vals[j] = types.ValueForType(col.Type, lcg, col.Name)
 				}
-				cond = fmt.Sprintf("%s IN (%s)", quoteIdent(col.Name), strings.Join(vals, ", "))
+				cond = fmt.Sprintf("%s IN (%s)", QuoteIdent(col.Name), strings.Join(vals, ", "))
 			case 6:
 				// Comparison with expression
 				if isNumericType(col.Type) {
 					val := types.ValueForType(col.Type, lcg, col.Name)
-					cond = fmt.Sprintf("%s > %s * 2", quoteIdent(col.Name), val)
+					cond = fmt.Sprintf("%s > %s * 2", QuoteIdent(col.Name), val)
 				} else {
 					val := types.ValueForType(col.Type, lcg, col.Name)
-					cond = fmt.Sprintf("%s = %s", quoteIdent(col.Name), val)
+					cond = fmt.Sprintf("%s = %s", QuoteIdent(col.Name), val)
 				}
 			default:
 				// Simple equality as default
 				val := types.ValueForType(col.Type, lcg, col.Name)
-				cond = fmt.Sprintf("%s = %s", quoteIdent(col.Name), val)
+				cond = fmt.Sprintf("%s = %s", QuoteIdent(col.Name), val)
 			}
 			whereClauses = append(whereClauses, cond)
 		}
@@ -258,7 +258,7 @@ func genUpdateWithFlavor(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt
 		}
 	}
 
-	sql := fmt.Sprintf("UPDATE %s SET %s%s;", quoteIdent(tbl.Name), strings.Join(setExprs, ", "), where)
+	sql := fmt.Sprintf("UPDATE %s SET %s%s;", QuoteIdent(tbl.Name), strings.Join(setExprs, ", "), where)
 	return &UpdateStmt{sql: sql, flavor: flavor}, nil
 }
 

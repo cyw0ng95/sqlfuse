@@ -33,7 +33,7 @@ func GenCreateView(lcg *common.LCG) (Stmt, error) {
 
 // genCreateViewInternal is the internal implementation used by both old and new interfaces.
 func genCreateViewInternal(lcg *common.LCG) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 
 	view := fmt.Sprintf("view_%d", lcg.Uint64()%1000000)
 	sql := fmt.Sprintf("CREATE VIEW IF NOT EXISTS \"%s\" AS SELECT 1 AS col1;", view)
