@@ -17,9 +17,10 @@ SQLfuse is a Go implementation of the [SQLsmith](https://github.com/anse1/sqlsmi
 - **Parallel Execution**: Multi-worker architecture for high-throughput fuzzing
 - **Web Interface**: Vue.js-based frontend for monitoring and controlling fuzzing jobs
 - **Modular Architecture**: Clean separation between generators, executors, and statement builders
-- **Impedance Matching**: Automatically blacklists problematic statement types based on error rates (inspired by original SQLsmith)
+- **Impedance Matching**: Automatically blacklists problematic statement types based on error rates (inspired by SQLsmith)
 - **Statistics Tracking**: Comprehensive metrics on generation/execution rates, error patterns, and AST complexity
 - **Depth-Based Generation**: Probabilistic recursion control for varied query complexity
+- **Oracle-Based Testing**: SQLancer-inspired test oracles for finding logic bugs (TLP, NoREC, PQS, QPG)
 
 ## Architecture
 
@@ -502,6 +503,7 @@ Comprehensive documentation is available in the `docs/` directory:
 Example programs demonstrating various features are available in the `examples/` directory:
 
 - **[impedance_example.go](examples/impedance_example.go)**: Demonstrates impedance matching and statistics tracking
+- **[oracle_example_standalone.go](examples/oracle_example_standalone.go)**: Demonstrates SQLancer-inspired oracle testing (TLP, NoREC, PQS, QPG)
 
 See [examples/README.md](examples/README.md) for more information.
 

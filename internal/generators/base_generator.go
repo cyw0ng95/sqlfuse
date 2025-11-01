@@ -3,6 +3,7 @@ package generators
 import (
 	"database/sql"
 	"sqlfuse/internal/common"
+	"sqlfuse/internal/oracles"
 	"sqlfuse/internal/stmts/stmts"
 )
 
@@ -23,6 +24,10 @@ type BaseGenerator struct {
 	stats            *common.GenerationStats
 	enableImpedance  bool
 	enableStats      bool
+
+	// Oracle-based testing
+	oracles       []oracles.Oracle
+	enableOracles bool
 }
 
 // NewBaseGenerator creates a new base generator with the given seed.
@@ -201,4 +206,34 @@ func (g *BaseGenerator) IsBlacklisted(stmtType stmts.StmtType) bool {
 		return false
 	}
 	return g.impedanceMatcher.IsBlacklisted(string(stmtType))
+}
+
+// EnableOracles enables or disables oracle-based testing.
+func (g *BaseGenerator) EnableOracles(enabled bool) {
+	g.enableOracles = enabled
+}
+
+// AddOracle adds a test oracle to the generator.
+func (g *BaseGenerator) AddOracle(oracle oracles.Oracle) {
+	g.oracles = append(g.oracles, oracle)
+}
+
+// RunOracles runs all registered oracles and returns any errors found.
+func (g *BaseGenerator) RunOracles() []error {
+	if !g.enableOracles {
+		return nil
+	}
+
+	var errors []error
+	for _, oracle := range g.oracles {
+		if err := oracle.Check(); err != nil {
+			errors = append(errors, err)
+		}
+	}
+	return errors
+}
+
+// GetOracles returns all registered oracles.
+func (g *BaseGenerator) GetOracles() []oracles.Oracle {
+	return g.oracles
 }

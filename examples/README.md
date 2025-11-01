@@ -56,6 +56,49 @@ Blacklisted Statement Types:
 No statement types blacklisted (good compatibility!)
 ```
 
+### oracle_example_standalone.go
+
+Demonstrates SQLancer-inspired oracle-based testing techniques for finding logic bugs in database systems.
+
+**Features shown:**
+- TLP (Ternary Logic Partitioning): Detects logic bugs via query partitioning
+- NoREC (Non-Optimizing Reference Engine): Finds optimizer bugs by comparing execution modes
+- PQS (Pivoted Query Synthesis): Validates row-level query correctness
+- QPG (Query Plan Guidance): Guides fuzzing to maximize code coverage
+
+**How to run:**
+```bash
+go run examples/oracle_example_standalone.go
+```
+
+**Expected output:**
+```
+SQLancer Oracle Testing Example
+================================
+
+1. TLP (Ternary Logic Partitioning) Oracle
+   Tests that WHERE p + WHERE NOT p + WHERE p IS NULL = original count
+   ...
+   ✓ TLP check passed!
+
+2. NoREC (Non-Optimizing Reference Engine) Concept
+   ...
+
+3. PQS (Pivoted Query Synthesis) Concept
+   ...
+
+4. QPG (Query Plan Guidance) Concept
+   ...
+
+Summary
+=======
+SQLancer-inspired oracles provide powerful testing techniques:
+  - TLP: Detects logic bugs via ternary partitioning
+  - NoREC: Finds optimizer bugs by comparing execution modes
+  - PQS: Validates row-level query correctness
+  - QPG: Guides fuzzing to maximize code coverage
+```
+
 ## Dependencies
 
 All examples require:
@@ -72,6 +115,7 @@ go build -o impedance_example examples/impedance_example.go
 
 # Run directly
 go run examples/impedance_example.go
+go run examples/oracle_example_standalone.go
 ```
 
 ## Adding New Examples
