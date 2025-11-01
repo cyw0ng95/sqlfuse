@@ -2,6 +2,7 @@ package oracles
 
 import (
 	"database/sql"
+	"strconv"
 )
 
 // ComparisonResult represents the outcome of comparing query results.
@@ -133,8 +134,8 @@ func ExecuteQuery(db *sql.DB, query string) QueryResult {
 						resultStr += digits
 					}
 				case float64:
-					// Simple float to string conversion
-					resultStr += "?"
+					// Convert float64 to string
+					resultStr += strconv.FormatFloat(v, 'f', -1, 64)
 				default:
 					resultStr += "?"
 				}

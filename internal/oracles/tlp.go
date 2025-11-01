@@ -2,6 +2,7 @@ package oracles
 
 import (
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -64,8 +65,8 @@ func (t *TLPOracle) TransformQuery(baseQuery string) []string {
 	queryWithoutWhere = strings.TrimSpace(queryWithoutWhere)
 
 	// Generate three partitioned queries
-	trueQuery := queryWithoutWhere + " WHERE (" + condition + ") IS 1"
-	falseQuery := queryWithoutWhere + " WHERE (" + condition + ") IS 0"
+	trueQuery := queryWithoutWhere + " WHERE (" + condition + ") IS TRUE"
+	falseQuery := queryWithoutWhere + " WHERE (" + condition + ") IS FALSE"
 	nullQuery := queryWithoutWhere + " WHERE (" + condition + ") IS NULL"
 
 	// Create UNION query
@@ -106,13 +107,7 @@ func normalizeRows(result string) []string {
 	}
 	rows := strings.Split(strings.TrimSpace(result), "\n")
 	// Sort for consistent comparison
-	for i := 0; i < len(rows)-1; i++ {
-		for j := i + 1; j < len(rows); j++ {
-			if rows[i] > rows[j] {
-				rows[i], rows[j] = rows[j], rows[i]
-			}
-		}
-	}
+	sort.Strings(rows)
 	return rows
 }
 

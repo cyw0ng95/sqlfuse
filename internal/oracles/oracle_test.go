@@ -2,6 +2,7 @@ package oracles
 
 import (
 	"database/sql"
+	"strings"
 	"testing"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -137,7 +138,7 @@ func TestTLPOracle_TransformQuery(t *testing.T) {
 	}
 
 	// Should contain UNION ALL of three partitions
-	if !containsAll(transformed[0], "IS 1", "IS 0", "IS NULL", "UNION ALL") {
+	if !containsAll(transformed[0], "IS TRUE", "IS FALSE", "IS NULL", "UNION ALL") {
 		t.Errorf("Transformed query missing expected partitions: %q", transformed[0])
 	}
 }
@@ -206,22 +207,9 @@ func TestExecuteQuery_Error(t *testing.T) {
 // Helper function to check if a string contains all substrings
 func containsAll(s string, substrs ...string) bool {
 	for _, substr := range substrs {
-		if !contains(s, substr) {
+		if !strings.Contains(s, substr) {
 			return false
 		}
 	}
 	return true
-}
-
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && indexOfSubstring(s, substr) >= 0)
-}
-
-func indexOfSubstring(s, substr string) int {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return i
-		}
-	}
-	return -1
 }

@@ -1,6 +1,7 @@
 package oracles
 
 import (
+	"strconv"
 	"strings"
 )
 
@@ -71,12 +72,12 @@ func (n *NoRecOracle) CompareResults(results []QueryResult) ComparisonResult {
 		// Extract count value (first column, first row)
 		lines := strings.Split(countStr, "\n")
 		if len(lines) > 0 && lines[0] != "" {
-			// Simple integer parsing - just count digits
 			countValue := strings.TrimSpace(lines[0])
-			for _, ch := range countValue {
-				if ch >= '0' && ch <= '9' {
-					expectedCount = expectedCount*10 + int(ch-'0')
-				}
+			var err error
+			expectedCount, err = strconv.Atoi(countValue)
+			if err != nil {
+				// If parsing fails, return Error
+				return Error
 			}
 		}
 	}
