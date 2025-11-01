@@ -37,6 +37,7 @@ const (
 	StmtSelectRecursive        StmtType = "select_recursive"
 	StmtSelectNestedCase       StmtType = "select_nested_case"
 	StmtSelectComplexJoin      StmtType = "select_complex_join"
+	StmtSelectDeeplyNested     StmtType = "select_deeply_nested"
 	StmtSelectWindow           StmtType = "select_window"
 	StmtSelectMultipleWindows  StmtType = "select_multiple_windows"
 	StmtSelectCTE              StmtType = "select_cte"
@@ -47,6 +48,8 @@ const (
 	StmtSelectRegexp           StmtType = "select_regexp"
 	StmtSelectVector           StmtType = "select_vector"
 	StmtSelectTime             StmtType = "select_time"
+	StmtSelectIndexedBy        StmtType = "select_indexed_by"
+	StmtSelectNotIndexed       StmtType = "select_not_indexed"
 	StmtCreateTable            StmtType = "create_table"
 	StmtDropTable              StmtType = "drop_table"
 	StmtAlterTable             StmtType = "alter_table"
@@ -72,6 +75,43 @@ const (
 	StmtSelectUnion            StmtType = "select_union"
 	StmtSelectIntersect        StmtType = "select_intersect"
 	StmtSelectExcept           StmtType = "select_except"
+
+	// DuckDB-specific statements
+	StmtCopy           StmtType = "copy"
+	StmtSet            StmtType = "set"
+	StmtReset          StmtType = "reset"
+	StmtCreateSchema   StmtType = "create_schema"
+	StmtDropSchema     StmtType = "drop_schema"
+	StmtCreateSequence StmtType = "create_sequence"
+	StmtDropSequence   StmtType = "drop_sequence"
+	StmtCreateMacro    StmtType = "create_macro"
+	StmtDropMacro      StmtType = "drop_macro"
+	StmtCreateType     StmtType = "create_type"
+	StmtDropType       StmtType = "drop_type"
+	StmtDescribe       StmtType = "describe"
+	StmtShow           StmtType = "show"
+	StmtSummarize      StmtType = "summarize"
+	StmtUse            StmtType = "use"
+	StmtCall           StmtType = "call"
+	StmtCheckpoint     StmtType = "checkpoint"
+	StmtExportDatabase StmtType = "export_database"
+	StmtImportDatabase StmtType = "import_database"
+	StmtPrepare        StmtType = "prepare"
+	StmtExecute        StmtType = "execute"
+
+	// Additional DuckDB-specific statements
+	StmtPivot          StmtType = "pivot"
+	StmtUnpivot        StmtType = "unpivot"
+	StmtMergeInto      StmtType = "merge_into"
+	StmtQualify        StmtType = "select_qualify"
+	StmtAlterDatabase  StmtType = "alter_database"
+	StmtAlterView      StmtType = "alter_view"
+	StmtCreateSecret   StmtType = "create_secret"
+	StmtDropSecret     StmtType = "drop_secret"
+	StmtLoadInstall    StmtType = "load_install"
+	StmtCommentOn      StmtType = "comment_on"
+	StmtProfiling      StmtType = "profiling"
+	StmtSetVariable    StmtType = "set_variable"
 )
 
 // AllStmtTypes defines a deterministic ordering used when selecting by weights.
@@ -107,6 +147,7 @@ var AllStmtTypes = []StmtType{
 	StmtSelectRecursive,
 	StmtSelectNestedCase,
 	StmtSelectComplexJoin,
+	StmtSelectDeeplyNested,
 	StmtSelectWindow,
 	StmtSelectMultipleWindows,
 	StmtSelectCTE,
@@ -117,6 +158,8 @@ var AllStmtTypes = []StmtType{
 	StmtSelectRegexp,
 	StmtSelectVector,
 	StmtSelectTime,
+	StmtSelectIndexedBy,
+	StmtSelectNotIndexed,
 	StmtCreateTable,
 	StmtDropTable,
 	StmtAlterTable,
@@ -142,4 +185,39 @@ var AllStmtTypes = []StmtType{
 	StmtSelectUnion,
 	StmtSelectIntersect,
 	StmtSelectExcept,
+
+	// DuckDB-specific statements
+	StmtCopy,
+	StmtSet,
+	StmtReset,
+	StmtCreateSchema,
+	StmtDropSchema,
+	StmtCreateSequence,
+	StmtDropSequence,
+	StmtCreateMacro,
+	StmtDropMacro,
+	StmtCreateType,
+	StmtDropType,
+	StmtDescribe,
+	StmtShow,
+	StmtSummarize,
+	StmtUse,
+	StmtCall,
+	StmtCheckpoint,
+	StmtExportDatabase,
+	StmtImportDatabase,
+	StmtPrepare,
+	StmtExecute,
+	StmtPivot,
+	StmtUnpivot,
+	StmtMergeInto,
+	StmtQualify,
+	StmtAlterDatabase,
+	StmtAlterView,
+	StmtCreateSecret,
+	StmtDropSecret,
+	StmtLoadInstall,
+	StmtCommentOn,
+	StmtProfiling,
+	StmtSetVariable,
 }

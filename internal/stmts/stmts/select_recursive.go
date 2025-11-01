@@ -3,15 +3,15 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/helper"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
 	"strings"
 )
 
 // GenSelectRecursive generates a SELECT statement with recursive/nested features.
 // maxDepth controls how deep the recursion can go (0 = no recursion, simple SELECT).
 func GenSelectRecursive(db *sql.DB, lcg *common.LCG, maxDepth int) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tbls) == 0 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
@@ -22,7 +22,7 @@ func GenSelectRecursive(db *sql.DB, lcg *common.LCG, maxDepth int) (SelectStmt, 
 	// Pick a primary table
 	tbl := tbls[ctx.Intn(len(tbls))]
 	if len(tbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// Generate SELECT expressions (may include complex nested expressions)
@@ -49,8 +49,8 @@ func GenSelectRecursive(db *sql.DB, lcg *common.LCG, maxDepth int) (SelectStmt, 
 
 // genFromClause generates a FROM clause, possibly with a subquery.
 func genFromClause(ctx *GenContext, tbls []helper.TableInfo, defaultTbl helper.TableInfo) string {
-	// Use subquery in FROM clause for recursion
-	if ctx.CanRecurse() && ctx.Intn(3) == 0 && len(tbls) > 0 {
+	// Use subquery in FROM clause for recursion more frequently
+	if ctx.CanRecurse() && ctx.Intn(2) == 0 && len(tbls) > 0 {
 		subCtx := ctx.Descend()
 		exprGen := NewExprGenerator(subCtx)
 		subquery := exprGen.GenSubquery(tbls)
@@ -58,12 +58,12 @@ func genFromClause(ctx *GenContext, tbls []helper.TableInfo, defaultTbl helper.T
 	}
 
 	// Regular table reference
-	return quoteIdent(defaultTbl.Name)
+	return QuoteIdent(defaultTbl.Name)
 }
 
 // GenSelectWithNestedCase generates a SELECT with nested CASE expressions.
 func GenSelectWithNestedCase(db *sql.DB, lcg *common.LCG, maxDepth int) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tbls) == 0 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
@@ -71,7 +71,7 @@ func GenSelectWithNestedCase(db *sql.DB, lcg *common.LCG, maxDepth int) (SelectS
 	ctx := NewGenContext(db, lcg, maxDepth)
 	tbl := tbls[ctx.Intn(len(tbls))]
 	if len(tbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// Generate nested CASE expression
@@ -81,12 +81,12 @@ func GenSelectWithNestedCase(db *sql.DB, lcg *common.LCG, maxDepth int) (SelectS
 	selectCols := []string{caseExpr}
 	numCols := 1 + ctx.Intn(2)
 	for i := 0; i < numCols && i < len(tbl.Cols); i++ {
-		selectCols = append(selectCols, quoteIdent(tbl.Cols[i].Name))
+		selectCols = append(selectCols, QuoteIdent(tbl.Cols[i].Name))
 	}
 
 	limit := 1 + ctx.Intn(50)
 	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;",
-		strings.Join(selectCols, ", "), quoteIdent(tbl.Name), limit)
+		strings.Join(selectCols, ", "), QuoteIdent(tbl.Name), limit)
 
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
@@ -105,17 +105,17 @@ func genNestedCase(ctx *GenContext, tbl helper.TableInfo, depth int) string {
 		subCtx := ctx.Descend()
 		nestedCase := genNestedCase(subCtx, tbl, depth+1)
 		return fmt.Sprintf("CASE WHEN %s IS NOT NULL THEN (%s) ELSE 'null' END AS nested_case_%d",
-			quoteIdent(col.Name), nestedCase, depth)
+			QuoteIdent(col.Name), nestedCase, depth)
 	}
 
 	// Simple CASE
 	return fmt.Sprintf("CASE WHEN %s IS NOT NULL THEN 'present' ELSE 'absent' END AS case_%d",
-		quoteIdent(col.Name), depth)
+		QuoteIdent(col.Name), depth)
 }
 
 // GenSelectWithComplexJoin generates a SELECT with potentially nested subqueries in joins.
 func GenSelectWithComplexJoin(db *sql.DB, lcg *common.LCG, maxDepth int) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tbls) < 2 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
@@ -137,8 +137,8 @@ func GenSelectWithComplexJoin(db *sql.DB, lcg *common.LCG, maxDepth int) (Select
 
 	// Select columns from both tables
 	selectCols := []string{
-		fmt.Sprintf("%s.%s", quoteIdent(tbl1.Name), quoteIdent(tbl1.Cols[0].Name)),
-		fmt.Sprintf("%s.%s", quoteIdent(tbl2.Name), quoteIdent(tbl2.Cols[0].Name)),
+		fmt.Sprintf("%s.%s", QuoteIdent(tbl1.Name), QuoteIdent(tbl1.Cols[0].Name)),
+		fmt.Sprintf("%s.%s", QuoteIdent(tbl2.Name), QuoteIdent(tbl2.Cols[0].Name)),
 	}
 
 	// Try to find common column for join condition
@@ -157,8 +157,8 @@ func GenSelectWithComplexJoin(db *sql.DB, lcg *common.LCG, maxDepth int) (Select
 
 	// Build join condition
 	joinCond := fmt.Sprintf("%s.%s = %s.%s",
-		quoteIdent(tbl1.Name), quoteIdent(joinCol1),
-		quoteIdent(tbl2.Name), quoteIdent(joinCol2))
+		QuoteIdent(tbl1.Name), QuoteIdent(joinCol1),
+		QuoteIdent(tbl2.Name), QuoteIdent(joinCol2))
 
 	// Don't add WHERE clause for joins to avoid column ambiguity
 	// (would need qualified column names which is complex)
@@ -167,11 +167,65 @@ func GenSelectWithComplexJoin(db *sql.DB, lcg *common.LCG, maxDepth int) (Select
 	limit := 1 + ctx.Intn(50)
 	sql := fmt.Sprintf("SELECT %s FROM %s INNER JOIN %s ON %s%s LIMIT %d;",
 		strings.Join(selectCols, ", "),
-		quoteIdent(tbl1.Name),
-		quoteIdent(tbl2.Name),
+		QuoteIdent(tbl1.Name),
+		QuoteIdent(tbl2.Name),
 		joinCond,
 		whereClause,
 		limit)
 
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
+}
+
+// GenSelectDeeplyNested generates a SELECT with deeply nested subqueries.
+// This creates complex queries with multiple levels of nesting for stress testing.
+func GenSelectDeeplyNested(db *sql.DB, lcg *common.LCG, maxDepth int) (SelectStmt, error) {
+	tbls, err := helper.GetAllTablesAndCols(db, "sqlite")
+	if err != nil || len(tbls) == 0 {
+		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
+	}
+
+	ctx := NewGenContext(db, lcg, maxDepth)
+
+	// Build a deeply nested query recursively
+	sql := genDeeplyNestedQuery(ctx, tbls, 0)
+
+	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
+}
+
+// genDeeplyNestedQuery recursively builds nested subqueries.
+func genDeeplyNestedQuery(ctx *GenContext, tbls []helper.TableInfo, currentDepth int) string {
+	if !ctx.CanRecurse() || len(tbls) == 0 {
+		// Base case: simple SELECT
+		tbl := tbls[ctx.Intn(len(tbls))]
+		if len(tbl.Cols) == 0 {
+			return "SELECT 1"
+		}
+		col := tbl.Cols[ctx.Intn(len(tbl.Cols))]
+		limit := 1 + ctx.Intn(10)
+		return fmt.Sprintf("SELECT %s FROM %s LIMIT %d",
+			QuoteIdent(col.Name), QuoteIdent(tbl.Name), limit)
+	}
+
+	// Recursive case: build a subquery
+	tbl := tbls[ctx.Intn(len(tbls))]
+	if len(tbl.Cols) == 0 {
+		return "SELECT 1"
+	}
+
+	// Descend to build the inner query
+	subCtx := ctx.Descend()
+	innerQuery := genDeeplyNestedQuery(subCtx, tbls, currentDepth+1)
+
+	// Wrap it with an outer query
+	col := tbl.Cols[ctx.Intn(len(tbl.Cols))]
+	limit := 1 + ctx.Intn(20)
+
+	// Optionally add WHERE clause
+	whereClause := ""
+	if ctx.Intn(2) == 0 {
+		whereClause = fmt.Sprintf(" WHERE %s IS NOT NULL", QuoteIdent(col.Name))
+	}
+
+	return fmt.Sprintf("SELECT * FROM (%s) AS nested_%d%s LIMIT %d",
+		innerQuery, currentDepth, whereClause, limit)
 }

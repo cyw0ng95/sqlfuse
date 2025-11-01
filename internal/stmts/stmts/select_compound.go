@@ -3,7 +3,7 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 )
 
 // CompoundSelectGenerator is a StmtGenerator for compound SELECT statements (UNION, INTERSECT, EXCEPT).
@@ -31,7 +31,7 @@ type CompoundSelectStmt struct {
 // According to SQLite documentation: https://sqlite.org/lang_select.html#compound_select_statements
 // Turso COMPAT.md: Yes (full support for UNION, INTERSECT, EXCEPT).
 func GenCompoundSelect(db *sql.DB, lcg *common.LCG, variant StmtType, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}
@@ -64,7 +64,7 @@ func GenCompoundSelect(db *sql.DB, lcg *common.LCG, variant StmtType, flavor Fla
 	// Generate two SELECT statements to combine
 	// Use simple SELECTs to avoid complexity and ensure column compatibility
 	var sql string
-	
+
 	// If no db, use simple fallback
 	if db == nil {
 		sql = fmt.Sprintf("SELECT 1, 'a' %s SELECT 2, 'b';", operator)

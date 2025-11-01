@@ -3,15 +3,15 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/helper"
-	"sqlsmith-go/internal/stmts/types"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
+	"sqlfuse/internal/stmts/types"
 	"strings"
 )
 
 // GenSelectWhereComplex generates a SELECT with complex WHERE clause using AND/OR combinations.
 func GenSelectWhereComplex(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tbls) == 0 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
@@ -25,7 +25,7 @@ func GenSelectWhereComplex(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 	tbl := tbls[rnd(len(tbls))]
 	if len(tbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// pick up to 3 columns for selection
@@ -74,7 +74,7 @@ func GenSelectWhereComplex(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 			// else: leave val as-is (could be unquoted or invalid, but don't modify)
 		}
 
-		conditions = append(conditions, fmt.Sprintf("%s %s %s", quoteIdent(col.Name), op, val))
+		conditions = append(conditions, fmt.Sprintf("%s %s %s", QuoteIdent(col.Name), op, val))
 	}
 
 	// Combine conditions with AND/OR
@@ -99,6 +99,6 @@ func GenSelectWhereComplex(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	}
 
 	limit := 1 + rnd(50)
-	sql := fmt.Sprintf("SELECT %s FROM %s%s LIMIT %d;", joinCols(cols), quoteIdent(tbl.Name), where, limit)
+	sql := fmt.Sprintf("SELECT %s FROM %s%s LIMIT %d;", joinCols(cols), QuoteIdent(tbl.Name), where, limit)
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }

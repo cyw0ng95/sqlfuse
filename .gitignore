@@ -78,6 +78,8 @@ output/
 /chai_embedded
 /cmd/executors/go_sqlite3_embedded/go_sqlite3_embedded
 /go_sqlite3_embedded
+/cmd/executors/duckdb_embedded/duckdb_embedded
+/duckdb_embedded
 
 # Server binary built in source directory
 /cmd/server/server

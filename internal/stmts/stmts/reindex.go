@@ -3,8 +3,8 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/helper"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
 )
 
 // ReindexGenerator is a StmtGenerator for REINDEX statements.
@@ -31,7 +31,7 @@ type ReindexStmt struct {
 // According to SQLite documentation: https://sqlite.org/lang_reindex.html
 // Turso COMPAT.md: Yes (full support).
 func GenReindex(db *sql.DB, lcg *common.LCG) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 
 	// REINDEX can be used in several ways:
 	// 1. REINDEX; (reindex all indexes)
@@ -52,7 +52,7 @@ func GenReindex(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 		sql = fmt.Sprintf("REINDEX %s;", collation)
 	} else {
 		// 60% chance: REINDEX a specific table
-		tables, err := helper.GetAllTablesAndCols(db)
+		tables, err := helper.GetAllTablesAndCols(db, "sqlite")
 		if err != nil || len(tables) == 0 {
 			// Fallback to reindexing everything
 			sql = "REINDEX;"

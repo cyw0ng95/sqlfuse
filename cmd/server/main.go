@@ -11,9 +11,9 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/executors"
-	"sqlsmith-go/internal/generators"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/executors"
+	"sqlfuse/internal/generators"
 )
 
 // ExecutorConfig describes an executable exposed to the server via config.
@@ -95,7 +95,7 @@ func main() {
 		cfg = ServerConfig{
 			Port:                "8080",
 			ExecutorsConfigPath: "./config/executors.json",
-			ServerName:          "sqlsmith-go minimal server",
+			ServerName:          "sqlfuse minimal server",
 			ServerVersion:       "0.1",
 			Job: JobConfig{
 				MaxOutputBytes: 65536, // 64KiB

@@ -3,7 +3,7 @@ package stmts
 import (
 	"testing"
 
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 )
 
 // TestGeneratorRegistry tests the generator registry functionality

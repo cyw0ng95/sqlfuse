@@ -1,7 +1,7 @@
 package stmts
 
 import (
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 )
 
 // BeginTransactionGenerator is a StmtGenerator for BEGIN TRANSACTION statements.
@@ -52,7 +52,7 @@ type TransactionStmt struct {
 // GenBeginTransaction generates a BEGIN TRANSACTION statement.
 // According to Turso COMPAT.md: Partial support (no transaction names).
 func GenBeginTransaction(lcg *common.LCG) Stmt {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 
 	// Turso supports BEGIN, BEGIN TRANSACTION, BEGIN DEFERRED, BEGIN IMMEDIATE, BEGIN EXCLUSIVE
 	// but not named transactions
@@ -76,7 +76,7 @@ func GenBeginTransaction(lcg *common.LCG) Stmt {
 // GenCommitTransaction generates a COMMIT TRANSACTION statement.
 // According to Turso COMPAT.md: Partial support (no transaction names).
 func GenCommitTransaction(lcg *common.LCG) Stmt {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 
 	// Turso supports COMMIT and COMMIT TRANSACTION but not named transactions
 	// END TRANSACTION is an alias for COMMIT TRANSACTION
@@ -96,7 +96,7 @@ func GenCommitTransaction(lcg *common.LCG) Stmt {
 // GenRollbackTransaction generates a ROLLBACK TRANSACTION statement.
 // According to Turso COMPAT.md: Yes (full support).
 func GenRollbackTransaction(lcg *common.LCG) Stmt {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 
 	// Turso supports ROLLBACK and ROLLBACK TRANSACTION but not named transactions
 	variants := []string{

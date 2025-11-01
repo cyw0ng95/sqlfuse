@@ -3,8 +3,8 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/helper"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
 )
 
 // CreateTriggerGenerator is a StmtGenerator for CREATE TRIGGER statements.
@@ -49,7 +49,7 @@ type DropTriggerStmt struct {
 // According to SQLite documentation: https://sqlite.org/lang_createtrigger.html
 // Turso COMPAT.md: Partial support (some limitations on trigger actions).
 func GenCreateTrigger(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}
@@ -58,9 +58,9 @@ func GenCreateTrigger(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, e
 	var tables []helper.TableInfo
 	var err error
 	if db != nil {
-		tables, err = helper.GetAllTablesAndCols(db)
+		tables, err = helper.GetAllTablesAndCols(db, "sqlite")
 	}
-	
+
 	if db == nil || err != nil || len(tables) == 0 {
 		// Fallback to a simple trigger without schema
 		return genCreateTriggerFallback(lcg, flavor), nil
@@ -135,7 +135,7 @@ func genCreateTriggerFallback(lcg *common.LCG, flavor FlavorConfig) *CreateTrigg
 // According to SQLite documentation: https://sqlite.org/lang_droptrigger.html
 // Turso COMPAT.md: Yes (full support).
 func GenDropTrigger(lcg *common.LCG) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 
 	// Generate trigger name (matching naming scheme from GenCreateTrigger)
 	triggerName := fmt.Sprintf("trg_%d", lcg.Uint64()%100000)

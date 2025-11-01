@@ -1,6 +1,6 @@
 package dialects
 
-import "sqlsmith-go/internal/stmts/stmts"
+import "sqlfuse/internal/stmts/stmts"
 
 // GoSQLite3FlavorConfig implements FlavorConfig for go-sqlite3 (pure SQLite3).
 // go-sqlite3 is the canonical Go SQLite driver that supports full SQLite3 features.

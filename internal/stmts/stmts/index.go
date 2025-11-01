@@ -3,8 +3,8 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/helper"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
 	"strings"
 )
 
@@ -65,9 +65,9 @@ func GenCreateIndex(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	var tables []helper.TableInfo
 	var err error
 	if db != nil {
-		tables, err = helper.GetAllTablesAndCols(db)
+		tables, err = helper.GetAllTablesAndCols(db, "sqlite")
 	}
-	
+
 	if db == nil || err != nil || len(tables) == 0 {
 		// Fallback to simple index without schema
 		return genCreateIndexFallback(lcg), nil
@@ -106,7 +106,7 @@ func GenCreateIndex(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 		col := tbl.Cols[idx]
 		// Turso supports column references only, not arbitrary expressions
 		// Optionally add ASC/DESC and COLLATE
-		colSpec := quoteIdent(col.Name)
+		colSpec := QuoteIdent(col.Name)
 
 		// 30% chance to add sort order
 		if rnd(10) < 3 {
@@ -132,7 +132,7 @@ func GenCreateIndex(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	}
 
 	sql := fmt.Sprintf("CREATE %sINDEX %s%s ON %s (%s);",
-		unique, ifNotExists, quoteIdent(indexName), quoteIdent(tbl.Name), strings.Join(indexCols, ", "))
+		unique, ifNotExists, QuoteIdent(indexName), QuoteIdent(tbl.Name), strings.Join(indexCols, ", "))
 	return &CreateIndexStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 

@@ -3,7 +3,7 @@ package dialects_test
 import (
 	"testing"
 
-	"sqlsmith-go/internal/generators/dialects"
+	"sqlfuse/internal/generators/dialects"
 )
 
 func TestTursoFlavorConfig(t *testing.T) {

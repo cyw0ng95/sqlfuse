@@ -3,7 +3,7 @@ package stmts
 import (
 	"testing"
 
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 )
 
 // TestGenSelectWithExpressions tests SELECT with various expressions

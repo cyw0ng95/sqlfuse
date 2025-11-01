@@ -3,9 +3,9 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/helper"
-	"sqlsmith-go/internal/stmts/types"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
+	"sqlfuse/internal/stmts/types"
 	"strings"
 )
 
@@ -13,7 +13,7 @@ import (
 // IMPORTANT: Uses IN with value list only, NOT subqueries.
 // Turso does NOT support IN (subquery) per COMPAT.md.
 func GenSelectWhereIn(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tbls) == 0 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
@@ -27,7 +27,7 @@ func GenSelectWhereIn(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 	tbl := tbls[rnd(len(tbls))]
 	if len(tbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// pick up to 3 columns for selection
@@ -69,9 +69,9 @@ func GenSelectWhereIn(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 		values = append(values, "NULL")
 	}
 
-	where := fmt.Sprintf(" WHERE %s IN (%s)", quoteIdent(inCol.Name), strings.Join(values, ", "))
+	where := fmt.Sprintf(" WHERE %s IN (%s)", QuoteIdent(inCol.Name), strings.Join(values, ", "))
 	limit := 1 + rnd(50)
 
-	sql := fmt.Sprintf("SELECT %s FROM %s%s LIMIT %d;", joinCols(cols), quoteIdent(tbl.Name), where, limit)
+	sql := fmt.Sprintf("SELECT %s FROM %s%s LIMIT %d;", joinCols(cols), QuoteIdent(tbl.Name), where, limit)
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }

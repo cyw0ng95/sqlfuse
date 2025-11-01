@@ -3,7 +3,7 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
-	"sqlsmith-go/internal/stmts/helper"
+	"sqlfuse/internal/stmts/helper"
 	"strings"
 )
 
@@ -74,7 +74,7 @@ func (b *SelectBuilder) SelectColumns(table helper.TableInfo, count int) *Select
 		idx := b.ctx.Intn(len(table.Cols))
 		if !selected[idx] {
 			selected[idx] = true
-			b.selectExprs = append(b.selectExprs, quoteIdent(table.Cols[idx].Name))
+			b.selectExprs = append(b.selectExprs, QuoteIdent(table.Cols[idx].Name))
 		}
 	}
 
@@ -86,7 +86,7 @@ func (b *SelectBuilder) From(tableName string) *SelectBuilder {
 	if b.err != nil {
 		return b
 	}
-	b.fromClause = quoteIdent(tableName)
+	b.fromClause = QuoteIdent(tableName)
 	return b
 }
 
@@ -100,7 +100,7 @@ func (b *SelectBuilder) FromSubquery(subquery string, alias string) *SelectBuild
 	if b.err != nil {
 		return b
 	}
-	b.fromClause = fmt.Sprintf("(%s) AS %s", subquery, quoteIdent(alias))
+	b.fromClause = fmt.Sprintf("(%s) AS %s", subquery, QuoteIdent(alias))
 	return b
 }
 
@@ -290,14 +290,14 @@ func (b *InsertBuilder) Build() (*InsertStmt, error) {
 
 	// Handle DEFAULT VALUES case
 	if len(b.columns) == 0 || len(b.values) == 0 {
-		sql := fmt.Sprintf("INSERT INTO %s DEFAULT VALUES;", quoteIdent(b.table))
+		sql := fmt.Sprintf("INSERT INTO %s DEFAULT VALUES;", QuoteIdent(b.table))
 		return &InsertStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 	}
 
 	// Build column list
 	quotedCols := make([]string, len(b.columns))
 	for i, col := range b.columns {
-		quotedCols[i] = quoteIdent(col)
+		quotedCols[i] = QuoteIdent(col)
 	}
 	colList := strings.Join(quotedCols, ", ")
 
@@ -309,7 +309,7 @@ func (b *InsertBuilder) Build() (*InsertStmt, error) {
 	valuesList := strings.Join(valueRows, ", ")
 
 	// Build SQL
-	sql := fmt.Sprintf("INSERT INTO %s (%s) VALUES %s", quoteIdent(b.table), colList, valuesList)
+	sql := fmt.Sprintf("INSERT INTO %s (%s) VALUES %s", QuoteIdent(b.table), colList, valuesList)
 
 	// Add ON CONFLICT clause if present
 	if b.onConflict != "" {
@@ -346,7 +346,7 @@ func NewRandomSelectBuilder(ctx *GenContext, db *sql.DB) *RandomSelectBuilder {
 
 // Build generates a random SELECT statement using available tables.
 func (r *RandomSelectBuilder) Build() (*SelectStmt, error) {
-	tables, err := helper.GetAllTablesAndCols(r.db)
+	tables, err := helper.GetAllTablesAndCols(r.db, r.ctx.Flavor.Name())
 	if err != nil || len(tables) == 0 {
 		return &SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
@@ -382,7 +382,7 @@ func (r *RandomSelectBuilder) Build() (*SelectStmt, error) {
 		if r.ctx.Intn(2) == 0 {
 			order = "DESC"
 		}
-		builder.OrderBy(fmt.Sprintf("%s %s", quoteIdent(col.Name), order))
+		builder.OrderBy(fmt.Sprintf("%s %s", QuoteIdent(col.Name), order))
 	}
 
 	return builder.Build()

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/helper"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
 
 	_ "github.com/tursodatabase/turso-go"
 )
@@ -172,7 +172,7 @@ func TestSpecificScalarFunctions(t *testing.T) {
 
 	lcg := common.NewLCG(5000)
 
-	tables, _ := helper.GetAllTablesAndCols(db)
+	tables, _ := helper.GetAllTablesAndCols(db, "")
 	if tables == nil {
 		tables = []helper.TableInfo{}
 	}
@@ -256,7 +256,7 @@ func TestSpecificMathFunctions(t *testing.T) {
 
 	lcg := common.NewLCG(6000)
 
-	tables, _ := helper.GetAllTablesAndCols(db)
+	tables, _ := helper.GetAllTablesAndCols(db, "")
 	if tables == nil {
 		tables = []helper.TableInfo{}
 	}
@@ -329,7 +329,7 @@ func TestSpecificAggregateFunctions(t *testing.T) {
 
 	lcg := common.NewLCG(7000)
 
-	tables, _ := helper.GetAllTablesAndCols(db)
+	tables, _ := helper.GetAllTablesAndCols(db, "")
 	if tables == nil {
 		tables = []helper.TableInfo{}
 	}
@@ -360,7 +360,7 @@ func TestSpecificAggregateFunctions(t *testing.T) {
 			// Aggregate functions need FROM clause with actual table
 			var sql string
 			if len(tables) > 0 && len(tables[0].Cols) > 0 {
-				sql = fmt.Sprintf("SELECT %s FROM %s;", funcExpr, quoteIdent(tables[0].Name))
+				sql = fmt.Sprintf("SELECT %s FROM %s;", funcExpr, QuoteIdent(tables[0].Name))
 			} else {
 				sql = fmt.Sprintf("SELECT %s;", funcExpr)
 			}
@@ -1092,9 +1092,9 @@ func TestGoSQLite3SpecificFunctionGenerators(t *testing.T) {
 	defer db.Close()
 
 	lcg := common.NewLCG(6000)
-	
+
 	// Get tables for testing
-	tables, err := helper.GetAllTablesAndCols(db)
+	tables, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil {
 		t.Fatalf("Failed to get tables: %v", err)
 	}
@@ -1172,9 +1172,9 @@ func TestGoSQLite3SpecificAggregateFunctionGenerators(t *testing.T) {
 	defer db.Close()
 
 	lcg := common.NewLCG(8000)
-	
+
 	// Get tables for testing
-	tables, err := helper.GetAllTablesAndCols(db)
+	tables, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil {
 		t.Fatalf("Failed to get tables: %v", err)
 	}
@@ -1198,7 +1198,7 @@ func TestGoSQLite3SpecificAggregateFunctionGenerators(t *testing.T) {
 			// Aggregate functions need FROM clause with actual table
 			var sql string
 			if len(tables) > 0 && len(tables[0].Cols) > 0 {
-				sql = fmt.Sprintf("SELECT %s FROM %s;", funcExpr, quoteIdent(tables[0].Name))
+				sql = fmt.Sprintf("SELECT %s FROM %s;", funcExpr, QuoteIdent(tables[0].Name))
 			} else {
 				sql = fmt.Sprintf("SELECT %s;", funcExpr)
 			}

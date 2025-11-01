@@ -2,7 +2,7 @@ package stmts
 
 import (
 	"fmt"
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 )
 
 // DropTableGenerator is a StmtGenerator for DROP TABLE statements.
@@ -38,7 +38,7 @@ func genDropTableInternal(lcg *common.LCG) (Stmt, error) {
 
 // genDropTableWithFlavor creates a DROP TABLE statement with flavor support.
 func genDropTableWithFlavor(lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	flavor = ensureFlavor(flavor)
 
 	// Use same naming scheme as GenCreateTable to sometimes target recently created tables.

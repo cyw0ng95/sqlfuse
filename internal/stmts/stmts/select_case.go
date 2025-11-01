@@ -3,15 +3,15 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/helper"
-	"sqlsmith-go/internal/stmts/types"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
+	"sqlfuse/internal/stmts/types"
 	"strings"
 )
 
 // GenSelectCase generates a SELECT with CASE expressions in the projection.
 func GenSelectCase(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tbls) == 0 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
@@ -25,7 +25,7 @@ func GenSelectCase(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 	tbl := tbls[rnd(len(tbls))]
 	if len(tbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// Pick a column for the CASE expression
@@ -38,15 +38,15 @@ func GenSelectCase(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 		val1 := types.ValueForType(caseCol.Type, lcg, caseCol.Name)
 		val2 := types.ValueForType(caseCol.Type, lcg, caseCol.Name)
 		caseExpr = fmt.Sprintf("CASE WHEN %s < %s THEN 'low' WHEN %s >= %s AND %s < %s THEN 'medium' ELSE 'high' END AS %s_category",
-			quoteIdent(caseCol.Name), val1,
-			quoteIdent(caseCol.Name), val1, quoteIdent(caseCol.Name), val2,
+			QuoteIdent(caseCol.Name), val1,
+			QuoteIdent(caseCol.Name), val1, QuoteIdent(caseCol.Name), val2,
 			caseCol.Name)
 	} else {
 		// Text/generic CASE expression
 		val := types.ValueForType(caseCol.Type, lcg, caseCol.Name)
 		caseExpr = fmt.Sprintf("CASE WHEN %s = %s THEN 'matched' WHEN %s IS NULL THEN 'null' ELSE 'other' END AS %s_status",
-			quoteIdent(caseCol.Name), val,
-			quoteIdent(caseCol.Name),
+			QuoteIdent(caseCol.Name), val,
+			QuoteIdent(caseCol.Name),
 			caseCol.Name)
 	}
 
@@ -65,10 +65,10 @@ func GenSelectCase(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 			continue
 		}
 		selected[idx] = struct{}{}
-		selectCols = append(selectCols, quoteIdent(tbl.Cols[idx].Name))
+		selectCols = append(selectCols, QuoteIdent(tbl.Cols[idx].Name))
 	}
 
 	limit := 1 + rnd(50)
-	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;", strings.Join(selectCols, ", "), quoteIdent(tbl.Name), limit)
+	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;", strings.Join(selectCols, ", "), QuoteIdent(tbl.Name), limit)
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }

@@ -1,7 +1,7 @@
 package stmts
 
 import (
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 	"strings"
 	"testing"
 )
@@ -9,9 +9,9 @@ import (
 // TestAnalyzeGeneration tests the ANALYZE statement generation.
 func TestAnalyzeGeneration(t *testing.T) {
 	lcg := common.NewLCG(42)
-	stmt, err := GenAnalyze(nil, lcg)
+	stmt, err := GenAnalyzeWithFlavor(nil, lcg, nil)
 	if err != nil {
-		t.Fatalf("GenAnalyze failed: %v", err)
+		t.Fatalf("GenAnalyzeWithFlavor failed: %v", err)
 	}
 
 	sql := stmt.SQL()
@@ -26,7 +26,7 @@ func TestAnalyzeGeneration(t *testing.T) {
 // TestVacuumGeneration tests the VACUUM statement generation.
 func TestVacuumGeneration(t *testing.T) {
 	lcg := common.NewLCG(42)
-	
+
 	// Test default flavor (Turso)
 	stmt, err := GenVacuum(nil, lcg, nil)
 	if err != nil {

@@ -3,13 +3,13 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/helper"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
 )
 
 // GenSelectHaving generates a GROUP BY with HAVING predicate.
 func GenSelectHaving(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tbls) == 0 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
@@ -23,10 +23,10 @@ func GenSelectHaving(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 	tbl := tbls[rnd(len(tbls))]
 	if len(tbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	grp := tbl.Cols[rnd(len(tbl.Cols))]
-	sql := fmt.Sprintf("SELECT %s, COUNT(1) as cnt FROM %s GROUP BY %s HAVING cnt > %d;", quoteIdent(grp.Name), quoteIdent(tbl.Name), quoteIdent(grp.Name), 1+rnd(10))
+	sql := fmt.Sprintf("SELECT %s, COUNT(1) as cnt FROM %s GROUP BY %s HAVING cnt > %d;", QuoteIdent(grp.Name), QuoteIdent(tbl.Name), QuoteIdent(grp.Name), 1+rnd(10))
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }

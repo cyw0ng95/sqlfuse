@@ -2,7 +2,7 @@ package stmts
 
 import (
 	"fmt"
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 )
 
 // PragmaValueGenerator is a function that generates the value part of a PRAGMA SQL statement.
@@ -457,15 +457,23 @@ var pragmaDefinitions = map[string]PragmaDefinition{
 
 // getSupportedPragmas returns a list of pragma names supported by the given flavor.
 // For unknown flavors, it returns the conservative set (sqlite/turso pragmas).
+// For DuckDB, it returns an empty list since DuckDB uses SET instead of PRAGMA.
 // The returned list is sorted to ensure deterministic behavior.
 func getSupportedPragmas(flavor FlavorConfig) []string {
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}
-	
+
 	flavorName := flavor.Name()
+
+	// DuckDB uses SET for configuration, not PRAGMA
+	// Return empty list to avoid executing SQLite-style PRAGMA statements
+	if flavorName == "duckdb" {
+		return []string{}
+	}
+
 	var supported []string
-	
+
 	// Collect supported pragmas
 	for name, def := range pragmaDefinitions {
 		for _, supportedFlavor := range def.SupportedFlavors {
@@ -475,7 +483,7 @@ func getSupportedPragmas(flavor FlavorConfig) []string {
 			}
 		}
 	}
-	
+
 	// If no pragmas were found (unknown flavor), return conservative set
 	if len(supported) == 0 {
 		// Use sqlite/turso conservative set for unknown flavors
@@ -488,11 +496,11 @@ func getSupportedPragmas(flavor FlavorConfig) []string {
 			}
 		}
 	}
-	
+
 	// Sort to ensure deterministic ordering
 	// This is important for LCG-based random selection
 	sortPragmaNames(supported)
-	
+
 	return supported
 }
 
@@ -522,16 +530,17 @@ func (g *PragmaGenerator) CanGenerate(ctx *GenContext) bool {
 
 // GenPragma generates a PRAGMA statement using the default flavor.
 // The set of pragmas generated depends on the database flavor:
-// - Turso/LibSQL: Only pragmas with "Yes" or "Partial" support
-//   (https://github.com/tursodatabase/turso/blob/main/COMPAT.md#pragma)
-// - go-sqlite3: Full SQLite3 pragma support
-//   (https://sqlite.org/pragma.html)
+//   - Turso/LibSQL: Only pragmas with "Yes" or "Partial" support
+//     (https://github.com/tursodatabase/turso/blob/main/COMPAT.md#pragma)
+//   - go-sqlite3: Full SQLite3 pragma support
+//     (https://sqlite.org/pragma.html)
 func GenPragma(lcg *common.LCG) Stmt {
 	return genPragmaWithFlavor(lcg, GetDefaultFlavor())
 }
 
 // genPragmaWithFlavor generates a PRAGMA statement with flavor support.
 // It generates different sets of pragmas based on the database flavor (Turso vs go-sqlite3).
+// For flavors that don't support PRAGMA (like DuckDB), returns a no-op statement.
 func genPragmaWithFlavor(lcg *common.LCG, flavor FlavorConfig) Stmt {
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
@@ -539,7 +548,12 @@ func genPragmaWithFlavor(lcg *common.LCG, flavor FlavorConfig) Stmt {
 
 	// Get pragmas supported by this flavor
 	pragmas := getSupportedPragmas(flavor)
-	
+
+	// If no pragmas are supported (e.g., DuckDB), return a no-op comment
+	if len(pragmas) == 0 {
+		return &PragmaStmt{sql: "-- PRAGMA not supported for this flavor", flavor: flavor}
+	}
+
 	// Select a random pragma from the supported list
 	p := pragmas[lcg.Intn(len(pragmas))]
 	return generatePragmaSQL(p, lcg, flavor)
@@ -553,7 +567,7 @@ func generatePragmaSQL(pragma string, lcg *common.LCG, flavor FlavorConfig) *Pra
 		// Fallback for unknown pragmas
 		return &PragmaStmt{sql: fmt.Sprintf("PRAGMA %s;", pragma), flavor: flavor}
 	}
-	
+
 	// Use the definition's value generator
 	sql := def.GenerateValue(pragma, lcg, flavor)
 	return &PragmaStmt{sql: sql, flavor: flavor}

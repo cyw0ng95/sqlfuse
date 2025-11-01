@@ -3,8 +3,8 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/helper"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
 )
 
 // AnalyzeGenerator is a StmtGenerator for ANALYZE statements.
@@ -12,7 +12,7 @@ type AnalyzeGenerator struct{}
 
 // Generate implements StmtGenerator for ANALYZE statements.
 func (g *AnalyzeGenerator) Generate(ctx *GenContext) (Stmt, error) {
-	return GenAnalyze(ctx.DB, ctx.LCG)
+	return GenAnalyzeWithFlavor(ctx.DB, ctx.LCG, ctx.Flavor)
 }
 
 // CanGenerate implements StmtGenerator. ANALYZE can always be generated.
@@ -26,12 +26,15 @@ type AnalyzeStmt struct {
 	*BaseStmt
 }
 
-// GenAnalyze generates an ANALYZE statement.
+// GenAnalyzeWithFlavor generates an ANALYZE statement with flavor support.
 // ANALYZE gathers statistics about tables and indexes to help the query optimizer.
 // According to SQLite documentation: https://sqlite.org/lang_analyze.html
 // Turso COMPAT.md: Yes (full support).
-func GenAnalyze(db *sql.DB, lcg *common.LCG) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+func GenAnalyzeWithFlavor(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
+	lcg = EnsureLCG(lcg)
+	if flavor == nil {
+		flavor = GetDefaultFlavor()
+	}
 
 	// ANALYZE can be used in several ways:
 	// 1. ANALYZE; (analyzes all tables)
@@ -47,7 +50,7 @@ func GenAnalyze(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 		sql = "ANALYZE;"
 	} else {
 		// 70% chance: ANALYZE a specific table
-		tables, err := helper.GetAllTablesAndCols(db)
+		tables, err := helper.GetAllTablesAndColsWithFlavor(db, flavor)
 		if err != nil || len(tables) == 0 {
 			// Fallback to analyzing everything
 			sql = "ANALYZE;"
@@ -59,6 +62,6 @@ func GenAnalyze(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	}
 
 	return &AnalyzeStmt{
-		BaseStmt: NewBaseStmt(sql, "analyze", GetDefaultFlavor()),
+		BaseStmt: NewBaseStmt(sql, "analyze", flavor),
 	}, nil
 }

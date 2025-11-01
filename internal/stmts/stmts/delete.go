@@ -3,9 +3,9 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/helper"
-	"sqlsmith-go/internal/stmts/types"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
+	"sqlfuse/internal/stmts/types"
 	"strings"
 )
 
@@ -36,11 +36,11 @@ func GenDelete(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 
 // genDeleteWithFlavor generates a DELETE statement with flavor support.
 func genDeleteWithFlavor(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	flavor = ensureFlavor(flavor)
 
 	// Try to get actual tables from schema
-	tables, err := helper.GetAllTablesAndCols(db)
+	tables, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tables) == 0 {
 		// Fallback to simple delete without schema
 		return genDeleteFallbackWithFlavor(lcg, flavor), nil
@@ -64,58 +64,58 @@ func genDeleteWithFlavor(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt
 			case 0:
 				// Simple equality
 				val := types.ValueForType(col.Type, lcg, col.Name)
-				cond = fmt.Sprintf("%s = %s", quoteIdent(col.Name), val)
+				cond = fmt.Sprintf("%s = %s", QuoteIdent(col.Name), val)
 			case 1:
 				// Less than
 				val := types.ValueForType(col.Type, lcg, col.Name)
-				cond = fmt.Sprintf("%s < %s", quoteIdent(col.Name), val)
+				cond = fmt.Sprintf("%s < %s", QuoteIdent(col.Name), val)
 			case 2:
 				// Greater than
 				val := types.ValueForType(col.Type, lcg, col.Name)
-				cond = fmt.Sprintf("%s > %s", quoteIdent(col.Name), val)
+				cond = fmt.Sprintf("%s > %s", QuoteIdent(col.Name), val)
 			case 3:
 				// IS NULL
-				cond = fmt.Sprintf("%s IS NULL", quoteIdent(col.Name))
+				cond = fmt.Sprintf("%s IS NULL", QuoteIdent(col.Name))
 			case 4:
 				// IS NOT NULL
-				cond = fmt.Sprintf("%s IS NOT NULL", quoteIdent(col.Name))
+				cond = fmt.Sprintf("%s IS NOT NULL", QuoteIdent(col.Name))
 			case 5:
 				// LIKE (for text columns)
 				if isTextType(col.Type) {
 					patterns := []string{"'%old%'", "'temp%'", "'%_deleted'", "'test%'"}
 					pattern := patterns[rnd(len(patterns))]
-					cond = fmt.Sprintf("%s LIKE %s", quoteIdent(col.Name), pattern)
+					cond = fmt.Sprintf("%s LIKE %s", QuoteIdent(col.Name), pattern)
 				} else {
 					val := types.ValueForType(col.Type, lcg, col.Name)
-					cond = fmt.Sprintf("%s = %s", quoteIdent(col.Name), val)
+					cond = fmt.Sprintf("%s = %s", QuoteIdent(col.Name), val)
 				}
 			case 6:
 				// NOT LIKE
 				if isTextType(col.Type) {
-					cond = fmt.Sprintf("%s NOT LIKE '%%keep%%'", quoteIdent(col.Name))
+					cond = fmt.Sprintf("%s NOT LIKE '%%keep%%'", QuoteIdent(col.Name))
 				} else {
 					val := types.ValueForType(col.Type, lcg, col.Name)
-					cond = fmt.Sprintf("%s != %s", quoteIdent(col.Name), val)
+					cond = fmt.Sprintf("%s != %s", QuoteIdent(col.Name), val)
 				}
 			case 7:
 				// BETWEEN (for numeric columns)
 				if isNumericType(col.Type) {
 					val1 := types.ValueForType(col.Type, lcg, col.Name)
 					val2 := types.ValueForType(col.Type, lcg, col.Name)
-					cond = fmt.Sprintf("%s BETWEEN %s AND %s", quoteIdent(col.Name), val1, val2)
+					cond = fmt.Sprintf("%s BETWEEN %s AND %s", QuoteIdent(col.Name), val1, val2)
 				} else {
 					val := types.ValueForType(col.Type, lcg, col.Name)
-					cond = fmt.Sprintf("%s = %s", quoteIdent(col.Name), val)
+					cond = fmt.Sprintf("%s = %s", QuoteIdent(col.Name), val)
 				}
 			case 8:
 				// NOT BETWEEN
 				if isNumericType(col.Type) {
 					val1 := types.ValueForType(col.Type, lcg, col.Name)
 					val2 := types.ValueForType(col.Type, lcg, col.Name)
-					cond = fmt.Sprintf("%s NOT BETWEEN %s AND %s", quoteIdent(col.Name), val1, val2)
+					cond = fmt.Sprintf("%s NOT BETWEEN %s AND %s", QuoteIdent(col.Name), val1, val2)
 				} else {
 					val := types.ValueForType(col.Type, lcg, col.Name)
-					cond = fmt.Sprintf("%s != %s", quoteIdent(col.Name), val)
+					cond = fmt.Sprintf("%s != %s", QuoteIdent(col.Name), val)
 				}
 			case 9:
 				// IN clause
@@ -123,29 +123,29 @@ func genDeleteWithFlavor(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt
 				for j := range vals {
 					vals[j] = types.ValueForType(col.Type, lcg, col.Name)
 				}
-				cond = fmt.Sprintf("%s IN (%s)", quoteIdent(col.Name), strings.Join(vals, ", "))
+				cond = fmt.Sprintf("%s IN (%s)", QuoteIdent(col.Name), strings.Join(vals, ", "))
 			case 10:
 				// NOT IN clause
 				vals := make([]string, 2+rnd(3))
 				for j := range vals {
 					vals[j] = types.ValueForType(col.Type, lcg, col.Name)
 				}
-				cond = fmt.Sprintf("%s NOT IN (%s)", quoteIdent(col.Name), strings.Join(vals, ", "))
+				cond = fmt.Sprintf("%s NOT IN (%s)", QuoteIdent(col.Name), strings.Join(vals, ", "))
 			case 11:
 				// Complex expression (for numeric columns)
 				if isNumericType(col.Type) {
 					val := types.ValueForType(col.Type, lcg, col.Name)
 					ops := []string{" * 2 <", " / 2 >", " + 10 =", " - 5 !="}
 					op := ops[rnd(len(ops))]
-					cond = fmt.Sprintf("%s%s %s", quoteIdent(col.Name), op, val)
+					cond = fmt.Sprintf("%s%s %s", QuoteIdent(col.Name), op, val)
 				} else {
 					val := types.ValueForType(col.Type, lcg, col.Name)
-					cond = fmt.Sprintf("%s = %s", quoteIdent(col.Name), val)
+					cond = fmt.Sprintf("%s = %s", QuoteIdent(col.Name), val)
 				}
 			default:
 				// Default to simple equality
 				val := types.ValueForType(col.Type, lcg, col.Name)
-				cond = fmt.Sprintf("%s = %s", quoteIdent(col.Name), val)
+				cond = fmt.Sprintf("%s = %s", QuoteIdent(col.Name), val)
 			}
 			whereClauses = append(whereClauses, cond)
 		}
@@ -182,7 +182,7 @@ func genDeleteWithFlavor(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt
 		limitClause = fmt.Sprintf(" LIMIT %d", 1+rnd(100))
 	}
 
-	sql := fmt.Sprintf("DELETE FROM %s%s%s;", quoteIdent(tbl.Name), where, limitClause)
+	sql := fmt.Sprintf("DELETE FROM %s%s%s;", QuoteIdent(tbl.Name), where, limitClause)
 	return &DeleteStmt{
 		BaseStmt: NewBaseStmt(sql, "delete", flavor),
 	}, nil

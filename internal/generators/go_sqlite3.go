@@ -2,8 +2,8 @@ package generators
 
 import (
 	"database/sql"
-	"sqlsmith-go/internal/generators/dialects"
-	"sqlsmith-go/internal/stmts/stmts"
+	"sqlfuse/internal/generators/dialects"
+	"sqlfuse/internal/stmts/stmts"
 )
 
 // GoSQLite3Generator is the go-sqlite3-specific generator that embeds BaseGenerator
@@ -34,17 +34,17 @@ func DefaultGoSQLite3StmtWeights() map[stmts.StmtType]uint64 {
 	w[stmts.StmtInsertOrAbort] = 15
 	w[stmts.StmtInsertOrRollback] = 10
 	w[stmts.StmtInsertOrFail] = 10
-	
+
 	// UPDATE and DELETE
 	w[stmts.StmtUpdate] = 80
 	w[stmts.StmtDelete] = 60
-	
+
 	// Basic SELECT variants
 	w[stmts.StmtSelectBasic] = 120
 	w[stmts.StmtSelectWhere] = 100
-	w[stmts.StmtSelectWhereComplex] = 60
-	w[stmts.StmtSelectWhereIn] = 50
-	w[stmts.StmtSelectSubquery] = 40
+	w[stmts.StmtSelectWhereComplex] = 80 // Increased from 60
+	w[stmts.StmtSelectWhereIn] = 70      // Increased from 50
+	w[stmts.StmtSelectSubquery] = 60     // Increased from 40
 	w[stmts.StmtSelectCase] = 40
 	w[stmts.StmtSelectAggregateComplex] = 30
 	w[stmts.StmtSelectLike] = 80
@@ -52,7 +52,7 @@ func DefaultGoSQLite3StmtWeights() map[stmts.StmtType]uint64 {
 	w[stmts.StmtSelectOrder] = 40
 	w[stmts.StmtSelectGroup] = 40
 	w[stmts.StmtSelectHaving] = 40
-	
+
 	// JOIN variants
 	w[stmts.StmtSelectJoin] = 20
 	w[stmts.StmtSelectCross] = 20
@@ -60,20 +60,21 @@ func DefaultGoSQLite3StmtWeights() map[stmts.StmtType]uint64 {
 	w[stmts.StmtSelectOuter] = 20
 	w[stmts.StmtSelectJoinUsing] = 20
 	w[stmts.StmtSelectNatural] = 20
-	
-	// Advanced SELECT with recursion/nesting
-	w[stmts.StmtSelectRecursive] = 30
-	w[stmts.StmtSelectNestedCase] = 25
-	w[stmts.StmtSelectComplexJoin] = 25
-	
+
+	// Advanced SELECT with recursion/nesting - increased for more complexity
+	w[stmts.StmtSelectRecursive] = 50    // Increased from 30
+	w[stmts.StmtSelectNestedCase] = 40   // Increased from 25
+	w[stmts.StmtSelectComplexJoin] = 40  // Increased from 25
+	w[stmts.StmtSelectDeeplyNested] = 45 // New: deeply nested subqueries
+
 	// Window functions and CTEs - Higher weights for go-sqlite3 since it supports them fully
 	// Unlike Turso which doesn't support these, go-sqlite3 does, so we emphasize them
-	w[stmts.StmtSelectWindow] = 60          // Increased from 35 in Turso
-	w[stmts.StmtSelectMultipleWindows] = 40 // Increased from 20 in Turso
-	w[stmts.StmtSelectCTE] = 50             // Increased from 30 in Turso
-	w[stmts.StmtSelectMultipleCTE] = 35     // Increased from 20 in Turso
-	w[stmts.StmtSelectRecursiveCTE] = 30    // Increased from 15 in Turso - fully supported!
-	
+	w[stmts.StmtSelectWindow] = 80          // Increased from 60
+	w[stmts.StmtSelectMultipleWindows] = 60 // Increased from 40
+	w[stmts.StmtSelectCTE] = 70             // Increased from 50
+	w[stmts.StmtSelectMultipleCTE] = 50     // Increased from 35
+	w[stmts.StmtSelectRecursiveCTE] = 45    // Increased from 30 - fully supported!
+
 	// Extension functions - go-sqlite3 specific
 	// Note: UUID, Vector functions may not be available by default in go-sqlite3
 	// So we use lower weights than Turso (which has these built-in)
@@ -83,6 +84,10 @@ func DefaultGoSQLite3StmtWeights() map[stmts.StmtType]uint64 {
 	w[stmts.StmtSelectVector] = 5  // Lower than Turso's 20 - not standard in go-sqlite3
 	w[stmts.StmtSelectTime] = 35   // Same as Turso
 	
+	// INDEXED BY clauses - full support in go-sqlite3
+	w[stmts.StmtSelectIndexedBy] = 20
+	w[stmts.StmtSelectNotIndexed] = 15
+
 	// DDL
 	w[stmts.StmtCreateTable] = 40
 	w[stmts.StmtDropTable] = 40
@@ -94,35 +99,35 @@ func DefaultGoSQLite3StmtWeights() map[stmts.StmtType]uint64 {
 	w[stmts.StmtCreateVirtualTable] = 25
 	w[stmts.StmtCreateTrigger] = 20
 	w[stmts.StmtDropTrigger] = 20
-	
+
 	// Transaction control
 	w[stmts.StmtBegin] = 25
 	w[stmts.StmtCommit] = 25
 	w[stmts.StmtRollback] = 25
 	w[stmts.StmtSavepoint] = 15
 	w[stmts.StmtRelease] = 15
-	
+
 	// Database attachment (go-sqlite3: full support)
 	w[stmts.StmtAttach] = 15
 	w[stmts.StmtDetach] = 15
-	
+
 	// Query analysis
 	w[stmts.StmtExplain] = 20
 	w[stmts.StmtExplainQueryPlan] = 20
-	
+
 	// Database maintenance
 	w[stmts.StmtAnalyze] = 15
 	w[stmts.StmtVacuum] = 10
 	w[stmts.StmtReindex] = 15
-	
+
 	// Compound SELECT statements
 	w[stmts.StmtSelectUnion] = 40
 	w[stmts.StmtSelectIntersect] = 30
 	w[stmts.StmtSelectExcept] = 30
-	
+
 	// PRAGMA - go-sqlite3 supports all SQLite3 pragmas
 	w[stmts.StmtPragma] = 50
-	
+
 	return w
 }
 

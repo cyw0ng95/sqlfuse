@@ -2,7 +2,7 @@ package stmts
 
 import (
 	"fmt"
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 )
 
 // SavepointGenerator is a StmtGenerator for SAVEPOINT statements.
@@ -42,7 +42,7 @@ type SavepointStmt struct {
 // According to SQLite documentation: https://sqlite.org/lang_savepoint.html
 // Turso COMPAT.md: Yes (full support).
 func GenSavepoint(lcg *common.LCG) Stmt {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 
 	// Generate a savepoint name
 	savepointName := fmt.Sprintf("sp_%d", lcg.Uint64()%10000)
@@ -58,7 +58,7 @@ func GenSavepoint(lcg *common.LCG) Stmt {
 // According to SQLite documentation: https://sqlite.org/lang_savepoint.html
 // Turso COMPAT.md: Yes (full support).
 func GenReleaseSavepoint(lcg *common.LCG) Stmt {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 
 	// Generate a savepoint name (matching the naming scheme from GenSavepoint)
 	savepointName := fmt.Sprintf("sp_%d", lcg.Uint64()%10000)
@@ -78,7 +78,7 @@ func GenReleaseSavepoint(lcg *common.LCG) Stmt {
 // GenRollbackToSavepoint generates a ROLLBACK TO SAVEPOINT statement.
 // This rolls back to a previously created savepoint.
 func GenRollbackToSavepoint(lcg *common.LCG) Stmt {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 
 	// Generate a savepoint name (matching the naming scheme from GenSavepoint)
 	savepointName := fmt.Sprintf("sp_%d", lcg.Uint64()%10000)

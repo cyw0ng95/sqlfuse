@@ -2,7 +2,7 @@ package stmts
 
 import (
 	"database/sql"
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 )
 
 // StmtGeneratorFactory creates statement generators based on statement type.
@@ -47,11 +47,15 @@ func (f *StmtGeneratorFactory) CreateGenerator(stmtType StmtType) StmtGenerator 
 		StmtSelectLimit, StmtSelectOrder, StmtSelectGroup, StmtSelectHaving,
 		StmtSelectJoin, StmtSelectCross, StmtSelectInner, StmtSelectOuter,
 		StmtSelectJoinUsing, StmtSelectNatural, StmtSelectRecursive,
-		StmtSelectNestedCase, StmtSelectComplexJoin, StmtSelectWindow,
+		StmtSelectNestedCase, StmtSelectComplexJoin, StmtSelectDeeplyNested, StmtSelectWindow,
 		StmtSelectMultipleWindows, StmtSelectCTE, StmtSelectMultipleCTE,
 		StmtSelectRecursiveCTE, StmtSelectJSON, StmtSelectUUID,
 		StmtSelectRegexp, StmtSelectVector, StmtSelectTime:
 		return &SelectVariantGenerator{variant: stmtType, maxDepth: f.maxDepth}
+	case StmtSelectIndexedBy:
+		return NewSelectIndexedByGenerator()
+	case StmtSelectNotIndexed:
+		return NewSelectNotIndexedGenerator()
 	case StmtCreateTable:
 		return &CreateTableGenerator{}
 	case StmtDropTable:
@@ -96,6 +100,75 @@ func (f *StmtGeneratorFactory) CreateGenerator(stmtType StmtType) StmtGenerator 
 		return &DropTriggerGenerator{}
 	case StmtSelectUnion, StmtSelectIntersect, StmtSelectExcept:
 		return &CompoundSelectGenerator{variant: stmtType}
+
+	// DuckDB-specific statements
+	case StmtCopy:
+		return &CopyGenerator{}
+	case StmtSet:
+		return &SetGenerator{}
+	case StmtReset:
+		return &ResetGenerator{}
+	case StmtCreateSchema:
+		return &CreateSchemaGenerator{}
+	case StmtDropSchema:
+		return &DropSchemaGenerator{}
+	case StmtCreateSequence:
+		return &CreateSequenceGenerator{}
+	case StmtDropSequence:
+		return &DropSequenceGenerator{}
+	case StmtCreateMacro:
+		return &CreateMacroGenerator{}
+	case StmtDropMacro:
+		return &DropMacroGenerator{}
+	case StmtCreateType:
+		return &CreateTypeGenerator{}
+	case StmtDropType:
+		return &DropTypeGenerator{}
+	case StmtDescribe:
+		return &DescribeGenerator{}
+	case StmtShow:
+		return &ShowGenerator{}
+	case StmtSummarize:
+		return &SummarizeGenerator{}
+	case StmtUse:
+		return &UseGenerator{}
+	case StmtCall:
+		return &CallGenerator{}
+	case StmtCheckpoint:
+		return &CheckpointGenerator{}
+	case StmtExportDatabase:
+		return &ExportDatabaseGenerator{}
+	case StmtImportDatabase:
+		return &ImportDatabaseGenerator{}
+	case StmtPrepare:
+		return &PrepareGenerator{}
+	case StmtExecute:
+		return &ExecuteGenerator{}
+	case StmtPivot:
+		return &PivotGenerator{}
+	case StmtUnpivot:
+		return &UnpivotGenerator{}
+	case StmtMergeInto:
+		return &MergeIntoGenerator{}
+	case StmtQualify:
+		return &QualifyGenerator{}
+	case StmtAlterDatabase:
+		return &AlterDatabaseGenerator{}
+	case StmtAlterView:
+		return &AlterViewGenerator{}
+	case StmtCreateSecret:
+		return &CreateSecretGenerator{}
+	case StmtDropSecret:
+		return &DropSecretGenerator{}
+	case StmtLoadInstall:
+		return &LoadInstallGenerator{}
+	case StmtCommentOn:
+		return &CommentOnGenerator{}
+	case StmtProfiling:
+		return &ProfilingGenerator{}
+	case StmtSetVariable:
+		return &SetVariableGenerator{}
+
 	default:
 		return nil
 	}
@@ -112,12 +185,12 @@ func (f *StmtGeneratorFactory) GenerateStmt(db *sql.DB, stmtType StmtType) (Stmt
 	if gen == nil {
 		return nil, &UnsupportedStmtTypeError{StmtType: stmtType}
 	}
-	
+
 	ctx := f.CreateContext(db)
 	if !gen.CanGenerate(ctx) {
 		return nil, &CannotGenerateError{StmtType: stmtType, Reason: "generator conditions not met"}
 	}
-	
+
 	return gen.Generate(ctx)
 }
 

@@ -3,7 +3,7 @@ package types
 import (
 	"fmt"
 	"math"
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 )
 
 // RealLiteral returns a more complex floating point literal with edge cases.

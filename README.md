@@ -1,89 +1,62 @@
-# SQLsmith-Go
+# SQLfuse
 
-A high-performance SQL query generator and fuzzer for testing SQLite-compatible database systems. SQLsmith-Go generates syntactically valid, semantically interesting SQL statements to discover bugs, edge cases, and performance issues in database implementations.
+> **Note**: This project has been developed with assistance from AI coding assistants, including GitHub Copilot and Claude. While AI tools have helped with code generation and documentation, all implementations have been reviewed and tested.
+
+A high-performance SQL query generator and fuzzer for testing database systems. SQLfuse generates syntactically valid, semantically interesting SQL statements to discover bugs, edge cases, and performance issues in both SQLite-compatible and analytical database implementations.
 
 ## Overview
 
-SQLsmith-Go is a Go implementation of the [SQLsmith](https://github.com/anse1/sqlsmith) approach to database testing through randomized query generation. Unlike traditional fuzzing that generates random bytes, SQLsmith-Go produces valid SQL statements that exercise diverse database features while respecting the constraints and capabilities of different SQLite flavors.
+SQLfuse is a Go implementation of the [SQLsmith](https://github.com/anse1/sqlsmith) approach to database testing through randomized query generation. Unlike traditional fuzzing that generates random bytes, SQLfuse produces valid SQL statements that exercise diverse database features while respecting the constraints and capabilities of different database flavors.
 
 ### Key Features
 
-- **Multi-Flavor Support**: Generates SQL compatible with different SQLite implementations (Turso LibSQL, go-sqlite3, Chai SQL)
+- **Multi-Flavor Support**: Generates SQL compatible with different database implementations (Turso LibSQL, go-sqlite3, DuckDB)
 - **Intelligent Generation**: Uses schema awareness to produce meaningful queries with valid table/column references
 - **Comprehensive Coverage**: Supports diverse SQL features including CTEs, window functions, subqueries, and complex expressions
 - **Flavor-Aware**: Adapts generated SQL to match the capabilities and constraints of the target database
 - **Parallel Execution**: Multi-worker architecture for high-throughput fuzzing
 - **Web Interface**: Vue.js-based frontend for monitoring and controlling fuzzing jobs
 - **Modular Architecture**: Clean separation between generators, executors, and statement builders
+- **Impedance Matching**: Automatically blacklists problematic statement types based on error rates (inspired by original SQLsmith)
+- **Statistics Tracking**: Comprehensive metrics on generation/execution rates, error patterns, and AST complexity
+- **Depth-Based Generation**: Probabilistic recursion control for varied query complexity
 
 ## Architecture
 
-### Component Overview
+SQLfuse uses a modular architecture with clear separation of concerns:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        SQLsmith-Go                           │
+│                        SQLfuse                              │
 ├─────────────────────────────────────────────────────────────┤
 │                                                              │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐  │
-│  │  Executors   │───▶│  Generators  │───▶│  Statement   │  │
-│  │              │    │              │    │  Builders    │  │
-│  │ • Turso      │    │ • Base       │    │              │  │
-│  │ • go-sqlite3 │    │ • Turso      │    │ • SELECT     │  │
-│  │ • Chai       │    │ • go-sqlite3 │    │ • INSERT     │  │
-│  │ • HTTP API   │    │              │    │ • UPDATE     │  │
-│  └──────────────┘    └──────────────┘    │ • DELETE     │  │
-│                                           │ • PRAGMA     │  │
-│  ┌──────────────┐    ┌──────────────┐    │ • CREATE     │  │
-│  │   Dialects   │    │   Frontend   │    │ • ...        │  │
-│  │              │    │              │    └──────────────┘  │
-│  │ • Feature    │    │ • Vue.js     │                      │
-│  │   Detection  │    │ • Vuetify    │                      │
-│  │ • SQL        │    │ • Job Ctrl   │                      │
-│  │   Validation │    │              │                      │
-│  └──────────────┘    └──────────────┘                      │
+│  Executors  ──▶  Generators  ──▶  Statement Builders       │
+│  (Turso, go-sqlite3, DuckDB, HTTP API)                      │
+│                                                              │
+│  Dialects   ──▶  Frontend                                   │
+│  (Feature detection, SQL validation)  (Vue.js web UI)       │
 │                                                              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Design Patterns
+**Core Components:**
 
-**1. Flavor-Based Polymorphism**
+- **Executors**: Database-specific implementations that execute generated SQL against target databases
+- **Generators**: Flavor-aware SQL generators using composition-based design with `BaseGenerator`
+- **Statement Builders**: Database-agnostic SQL construction using factory and builder patterns
+- **Dialects**: FlavorConfig implementations defining database-specific feature support
+- **Frontend**: Vue.js interface for job management and monitoring
 
-The architecture uses dialect configurations (`FlavorConfig`) to adapt SQL generation to specific database capabilities:
+**Key Design Patterns:**
 
-```go
-type FlavorConfig interface {
-    Name() string
-    SupportsFeature(feature string) bool
-    ValidateSQL(sql string) error
-}
-```
+- **Flavor-Based Polymorphism**: Dialect configurations adapt SQL to database capabilities
+- **Composition over Inheritance**: Generators embed `BaseGenerator` for shared functionality
+- **Workspace Isolation**: Go workspaces keep executor binaries focused (8.9MB to 156MB)
 
-Each database flavor (Turso, go-sqlite3) has its own configuration defining supported features, allowing the generator to produce only compatible SQL.
-
-**2. Composition-Based Generators**
-
-Generators use Go's embedding pattern to share common functionality while maintaining flavor-specific customization:
-
-```go
-type TursoGenerator struct {
-    *BaseGenerator
-    flavorConfig FlavorConfig
-}
-```
-
-The `BaseGenerator` handles LCG-based randomness, statement selection, and recursion depth, while specific generators define statement weights and capabilities.
-
-**3. Workspace-Based Dependency Isolation**
-
-The project uses Go workspaces to ensure each executor includes only its required database driver:
-
-- **turso_embedded**: 155MB (includes turso-go)
-- **go_sqlite3_embedded**: 8.6MB (includes go-sqlite3 + CGo SQLite)
-- **server**: 11MB (no database drivers)
-
-This keeps binaries focused and reduces deployment size.
+For detailed architecture documentation, see:
+- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)**: Generator architecture and patterns
+- **[DESIGN_PATTERNS.md](docs/DESIGN_PATTERNS.md)**: Factory, strategy, and builder patterns
+- **[WORKSPACE.md](docs/WORKSPACE.md)**: Go workspace structure and dependency isolation
 
 ## Quick Start
 
@@ -105,6 +78,7 @@ bash build.sh
 # Outputs:
 # - output/turso_embedded_executor
 # - output/go_sqlite3_embedded_executor
+# - output/duckdb_embedded_executor
 # - output/server
 ```
 
@@ -136,6 +110,18 @@ bash build.sh
   --verbose
 ```
 
+**DuckDB Executor:**
+
+```bash
+# Analytical database fuzzing with DuckDB
+./output/duckdb_embedded_executor \
+  --dsn "" \
+  --seed 42 \
+  --queries 1000 \
+  --workers 4 \
+  --verbose
+```
+
 **HTTP Server:**
 
 ```bash
@@ -161,7 +147,7 @@ bash build.sh
 
 ### Randomness & Reproducibility
 
-SQLsmith-Go uses a Linear Congruential Generator (LCG) for deterministic randomness:
+SQLfuse uses a Linear Congruential Generator (LCG) for deterministic randomness:
 
 - **Seeded**: All generation is reproducible given the same seed
 - **Token-Based**: Tracks PRNG consumption for profiling
@@ -219,15 +205,26 @@ PRAGMA foreign_keys = ON;          -- Extended pragmas
 PRAGMA auto_vacuum = INCREMENTAL;  -- Storage management
 ```
 
+**DuckDB** (Analytical database with extensive SQL features):
+```sql
+-- Rich analytical functions
+SELECT *, ROW_NUMBER() OVER (PARTITION BY category ORDER BY price DESC)
+FROM products;
+
+-- Advanced window functions with FILTER
+SELECT AVG(price) FILTER (WHERE in_stock) OVER (PARTITION BY category)
+FROM products;
+```
+
 ## Project Structure
 
 ```
-sqlsmith-go/
+sqlfuse/
 ├── cmd/
 │   ├── executors/
 │   │   ├── turso_embedded/      # Turso LibSQL executor
 │   │   ├── go_sqlite3_embedded/ # go-sqlite3 executor
-│   │   └── chai_embedded/       # Chai SQL executor
+│   │   └── duckdb_embedded/     # DuckDB executor
 │   └── server/                  # HTTP API server
 │
 ├── internal/
@@ -237,14 +234,16 @@ sqlsmith-go/
 │   │   ├── dialects/           # Flavor configurations
 │   │   ├── base_generator.go  # Common generator logic
 │   │   ├── turso.go           # Turso-specific generator
-│   │   └── go_sqlite3.go      # go-sqlite3 generator
+│   │   ├── go_sqlite3.go      # go-sqlite3 generator
+│   │   └── duckdb.go          # DuckDB generator
 │   └── stmts/
 │       ├── stmts/              # Statement builders
 │       └── types/              # SQL type generators
 │
 ├── assets/                      # Database schemas & configs
 │   ├── turso/init.sql
-│   └── go_sqlite3/init.sql
+│   ├── go_sqlite3/init.sql
+│   └── duckdb/init.sql
 │
 ├── config/                      # Server & executor configs
 ├── docs/                        # Architecture documentation
@@ -266,102 +265,17 @@ bash build.sh --test
 
 ### Adding a New Database Flavor
 
-1. **Create Flavor Configuration** (`internal/generators/dialects/mydb.go`):
+To add support for a new database:
 
-```go
-package dialects
+1. Create dialect configuration in `internal/generators/dialects/mydb.go`
+2. Implement generator in `internal/generators/mydb.go`
+3. Create executor in `cmd/executors/mydb_embedded/main.go`
+4. Add to workspace in `go.work`
 
-type MyDBFlavorConfig struct{}
-
-func (m *MyDBFlavorConfig) Name() string {
-    return "mydb"
-}
-
-func (m *MyDBFlavorConfig) SupportsFeature(feature string) bool {
-    switch feature {
-    case "window_functions":
-        return true
-    case "regexp":
-        return false
-    default:
-        return true
-    }
-}
-
-func (m *MyDBFlavorConfig) ValidateSQL(sql string) error {
-    return nil
-}
-
-func NewMyDBFlavorConfig() stmts.FlavorConfig {
-    return &MyDBFlavorConfig{}
-}
-```
-
-2. **Create Generator** (`internal/generators/mydb.go`):
-
-```go
-package generators
-
-type MyDBGenerator struct {
-    *BaseGenerator
-    flavorConfig stmts.FlavorConfig
-}
-
-func NewMyDBGenerator(seed uint64) *MyDBGenerator {
-    g := &MyDBGenerator{
-        BaseGenerator: NewBaseGenerator(seed),
-        flavorConfig:  dialects.NewMyDBFlavorConfig(),
-    }
-    g.SetWeights(DefaultMyDBStmtWeights())
-    g.initGenMap()
-    return g
-}
-
-func (g *MyDBGenerator) Name() string {
-    return "mydb"
-}
-```
-
-3. **Create Executor** (`cmd/executors/mydb_embedded/main.go`):
-
-```go
-package main
-
-import (
-    "database/sql"
-    "sqlsmith-go/internal/executors"
-    "sqlsmith-go/internal/generators"
-    _ "github.com/mydb/driver"
-)
-
-func main() {
-    // Standard executor pattern...
-    executors.Run(
-        "MyDB Executor",
-        &flags,
-        func(dsn string) (*sql.DB, error) {
-            return sql.Open("mydb", dsn)
-        },
-        func(seed uint64) generators.Generator {
-            return generators.NewMyDBGenerator(seed)
-        },
-        printSchema,
-    )
-}
-```
-
-4. **Add to Workspace** (`go.work`):
-
-```go
-use ./cmd/executors/mydb_embedded
-```
-
-### Code Organization Principles
-
-- **Executors**: Database-specific; handle connection, execution, error reporting
-- **Generators**: Flavor-specific; define weights and capabilities
-- **Dialects**: Feature detection; define what SQL is valid for a flavor
-- **Statement Builders**: Database-agnostic; generate SQL based on dialect constraints
+For detailed step-by-step instructions with code examples, see:
+- **[ARCHITECTURE.md](docs/ARCHITECTURE.md#adding-a-new-generator)**: Generator implementation guide
+- **[DIALECTS_README.md](docs/DIALECTS_README.md#adding-a-new-dialect)**: Dialect configuration guide
+- **[WORKSPACE.md](docs/WORKSPACE.md#adding-a-new-executor)**: Workspace setup guide
 
 ## Use Cases
 
@@ -465,7 +379,7 @@ A Vue.js-based interface for interactive fuzzing across multiple database flavor
 
 ### Features
 
-- **Multi-Flavor Support**: Select from different database executors (Turso, go-sqlite3, Chai) with visual flavor indicators
+- **Multi-Flavor Support**: Select from different database executors (Turso, go-sqlite3, DuckDB) with visual flavor indicators
 - **Job Management**: Start, stop, and monitor fuzzing jobs with real-time status updates
 - **Live Output**: View stdout/stderr output from running jobs
 - **Executor Selection**: Dropdown shows both executor name and flavor (e.g., "turso_embedded (turso)")
@@ -534,7 +448,7 @@ pnpm run build
 {
   "port": "8080",
   "executors_config_path": "./config/executors.json",
-  "server_name": "sqlsmith-go server",
+  "server_name": "sqlfuse server",
   "server_version": "0.1",
   "job": {
     "max_output_bytes": 65536,
@@ -549,18 +463,18 @@ pnpm run build
 [
   {
     "executor": "turso_embedded",
-    "path": "./output/turso_embedded",
+    "path": "./output/turso_embedded_executor",
     "flavor": "turso"
   },
   {
     "executor": "go_sqlite3_embedded",
-    "path": "./output/go_sqlite3_embedded",
+    "path": "./output/go_sqlite3_embedded_executor",
     "flavor": "go-sqlite3"
   },
   {
-    "executor": "chai_embedded",
-    "path": "./output/chai_embedded",
-    "flavor": "chai"
+    "executor": "duckdb_embedded",
+    "path": "./output/duckdb_embedded_executor",
+    "flavor": "duckdb"
   }
 ]
 ```
@@ -575,9 +489,21 @@ Comprehensive documentation is available in the `docs/` directory:
 - **[WORKSPACE.md](docs/WORKSPACE.md)**: Go workspace structure and module layout
 - **[PRAGMA_SUPPORT.md](docs/PRAGMA_SUPPORT.md)**: Flavor-specific PRAGMA generation
 - **[DIALECTS_README.md](docs/DIALECTS_README.md)**: Database dialect system
+- **[DUCKDB_IMPLEMENTATION.md](docs/DUCKDB_IMPLEMENTATION.md)**: DuckDB SQL feature implementation
 - **[DESIGN_PATTERNS.md](docs/DESIGN_PATTERNS.md)**: Code organization patterns
 - **[DESIGN_IMPROVEMENTS.md](docs/DESIGN_IMPROVEMENTS.md)**: Planned enhancements
 - **[WEB_UI_USAGE.md](docs/WEB_UI_USAGE.md)**: Web interface usage guide
+- **[SQLSMITH_COMPARISON.md](docs/SQLSMITH_COMPARISON.md)**: Comparison with original SQLsmith and implementation of key ideas
+- **[SQL_STATEMENT_ENHANCEMENT.md](docs/SQL_STATEMENT_ENHANCEMENT.md)**: SQLite statement generation enhancements
+- **[REFACTORING_SUMMARY.md](docs/REFACTORING_SUMMARY.md)**: Design pattern refactoring summary
+
+## Examples
+
+Example programs demonstrating various features are available in the `examples/` directory:
+
+- **[impedance_example.go](examples/impedance_example.go)**: Demonstrates impedance matching and statistics tracking
+
+See [examples/README.md](examples/README.md) for more information.
 
 ## Performance Characteristics
 
@@ -622,7 +548,7 @@ Contributions are welcome! Areas of interest:
 
 ## License
 
-[Add license information here]
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Related Projects
 

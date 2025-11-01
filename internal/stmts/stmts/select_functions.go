@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"strings"
 
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/helper"
-	"sqlsmith-go/internal/stmts/types"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
+	"sqlfuse/internal/stmts/types"
 )
 
 // GenSelectWithScalarFunction generates a SELECT statement with scalar SQL functions
 func GenSelectWithScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db)
+	tables, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tables) == 0 {
 		// No tables available, use literal values
 		return genSelectScalarFunctionLiteral(lcg), nil
@@ -74,7 +74,7 @@ func GenSelectWithScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error
 	funcIdx := rnd(len(scalarFuncs))
 	funcExpr := scalarFuncs[funcIdx](lcg, tables)
 
-	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;", funcExpr, quoteIdent(tbl.Name), 1+rnd(10))
+	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;", funcExpr, QuoteIdent(tbl.Name), 1+rnd(10))
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
@@ -172,7 +172,7 @@ func genCoalesceFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 	}
 	col := tbl.Cols[lcg.Intn(len(tbl.Cols))]
 	defaultVal := types.ValueForType(col.Type, lcg, col.Name)
-	return fmt.Sprintf("coalesce(%s, %s)", quoteIdent(col.Name), defaultVal)
+	return fmt.Sprintf("coalesce(%s, %s)", QuoteIdent(col.Name), defaultVal)
 }
 
 func genConcatFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
@@ -183,7 +183,7 @@ func genConcatFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 			tbl := tbls[lcg.Intn(len(tbls))]
 			if len(tbl.Cols) > 0 {
 				col := tbl.Cols[lcg.Intn(len(tbl.Cols))]
-				args[i] = quoteIdent(col.Name)
+				args[i] = QuoteIdent(col.Name)
 				continue
 			}
 		}
@@ -231,7 +231,7 @@ func genIfnullFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 	}
 	col := tbl.Cols[lcg.Intn(len(tbl.Cols))]
 	defaultVal := types.ValueForType(col.Type, lcg, col.Name)
-	return fmt.Sprintf("ifnull(%s, %s)", quoteIdent(col.Name), defaultVal)
+	return fmt.Sprintf("ifnull(%s, %s)", QuoteIdent(col.Name), defaultVal)
 }
 
 func genIifFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
@@ -512,7 +512,7 @@ func genTypeofFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 	tbl := tbls[lcg.Intn(len(tbls))]
 	if len(tbl.Cols) > 0 {
 		col := tbl.Cols[lcg.Intn(len(tbl.Cols))]
-		return fmt.Sprintf("typeof(%s)", quoteIdent(col.Name))
+		return fmt.Sprintf("typeof(%s)", QuoteIdent(col.Name))
 	}
 	return "typeof(123)"
 }
@@ -571,7 +571,7 @@ func genLikelihoodFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 		tbl := tbls[lcg.Intn(len(tbls))]
 		if len(tbl.Cols) > 0 {
 			col := tbl.Cols[lcg.Intn(len(tbl.Cols))]
-			return fmt.Sprintf("likelihood(%s, %s)", quoteIdent(col.Name), prob)
+			return fmt.Sprintf("likelihood(%s, %s)", QuoteIdent(col.Name), prob)
 		}
 	}
 	return fmt.Sprintf("likelihood(1, %s)", prob)
@@ -582,7 +582,7 @@ func genLikelyFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 		tbl := tbls[lcg.Intn(len(tbls))]
 		if len(tbl.Cols) > 0 {
 			col := tbl.Cols[lcg.Intn(len(tbl.Cols))]
-			return fmt.Sprintf("likely(%s)", quoteIdent(col.Name))
+			return fmt.Sprintf("likely(%s)", QuoteIdent(col.Name))
 		}
 	}
 	return "likely(1)"
@@ -593,7 +593,7 @@ func genUnlikelyFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 		tbl := tbls[lcg.Intn(len(tbls))]
 		if len(tbl.Cols) > 0 {
 			col := tbl.Cols[lcg.Intn(len(tbl.Cols))]
-			return fmt.Sprintf("unlikely(%s)", quoteIdent(col.Name))
+			return fmt.Sprintf("unlikely(%s)", QuoteIdent(col.Name))
 		}
 	}
 	return "unlikely(0)"
@@ -714,7 +714,7 @@ func genSqliteOffsetFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 	// This function requires a column reference from a real query
 	if len(tbls) > 0 && len(tbls[0].Cols) > 0 {
 		col := tbls[0].Cols[lcg.Intn(len(tbls[0].Cols))]
-		return fmt.Sprintf("sqlite_offset(%s)", quoteIdent(col.Name))
+		return fmt.Sprintf("sqlite_offset(%s)", QuoteIdent(col.Name))
 	}
 	// Fallback - this will likely fail at runtime but is syntactically valid
 	return "sqlite_offset(1)"
@@ -722,7 +722,7 @@ func genSqliteOffsetFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 
 // GenSelectWithMathFunction generates a SELECT statement with mathematical SQL functions
 func GenSelectWithMathFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db)
+	tables, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tables) == 0 {
 		return genSelectMathFunctionLiteral(lcg), nil
 	}
@@ -765,7 +765,7 @@ func GenSelectWithMathFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) 
 	funcIdx := rnd(len(mathFuncs))
 	funcExpr := mathFuncs[funcIdx](lcg, tables)
 
-	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;", funcExpr, quoteIdent(tbl.Name), 1+rnd(10))
+	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;", funcExpr, QuoteIdent(tbl.Name), 1+rnd(10))
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
@@ -964,7 +964,7 @@ func genTruncFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 
 // GenSelectWithAggregateFunction generates a SELECT statement with aggregate SQL functions
 func GenSelectWithAggregateFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db)
+	tables, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tables) == 0 {
 		return genSelectAggregateFunctionLiteral(lcg), nil
 	}
@@ -987,7 +987,7 @@ func GenSelectWithAggregateFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, er
 	funcIdx := rnd(len(aggFuncs))
 	funcExpr := aggFuncs[funcIdx](lcg, tables)
 
-	sql := fmt.Sprintf("SELECT %s FROM %s;", funcExpr, quoteIdent(tbl.Name))
+	sql := fmt.Sprintf("SELECT %s FROM %s;", funcExpr, QuoteIdent(tbl.Name))
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
@@ -1021,7 +1021,7 @@ func genCountFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 		return "count(1)"
 	}
 	col := tbl.Cols[lcg.Intn(len(tbl.Cols))]
-	return fmt.Sprintf("count(%s)", quoteIdent(col.Name))
+	return fmt.Sprintf("count(%s)", QuoteIdent(col.Name))
 }
 
 func genCountStarFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
@@ -1094,7 +1094,7 @@ func genJSONGroupArrayFunction(lcg *common.LCG, tbls []helper.TableInfo) string 
 		return "json_group_array(1)"
 	}
 	col := tbl.Cols[lcg.Intn(len(tbl.Cols))]
-	return fmt.Sprintf("json_group_array(%s)", quoteIdent(col.Name))
+	return fmt.Sprintf("json_group_array(%s)", QuoteIdent(col.Name))
 }
 
 func genJSONGroupObjectFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
@@ -1108,15 +1108,15 @@ func genJSONGroupObjectFunction(lcg *common.LCG, tbls []helper.TableInfo) string
 		// Need at least 2 columns for key and value
 		if len(tbl.Cols) == 1 {
 			col := tbl.Cols[0]
-			return fmt.Sprintf("json_group_object(%s, %s)", quoteIdent(col.Name), quoteIdent(col.Name))
+			return fmt.Sprintf("json_group_object(%s, %s)", QuoteIdent(col.Name), QuoteIdent(col.Name))
 		}
 		return "json_group_object('key', 'value')"
 	}
-	
+
 	// Use two different columns for key and value
 	keyCol := tbl.Cols[lcg.Intn(len(tbl.Cols))]
 	valueCol := tbl.Cols[lcg.Intn(len(tbl.Cols))]
-	return fmt.Sprintf("json_group_object(%s, %s)", quoteIdent(keyCol.Name), quoteIdent(valueCol.Name))
+	return fmt.Sprintf("json_group_object(%s, %s)", QuoteIdent(keyCol.Name), QuoteIdent(valueCol.Name))
 }
 
 // GenSelectWithDateTimeFunction generates a SELECT statement with date/time SQL functions
@@ -1364,7 +1364,7 @@ func findNumericColumn(tbls []helper.TableInfo, lcg *common.LCG) string {
 	for _, tbl := range tbls {
 		for _, col := range tbl.Cols {
 			if isNumericType(col.Type) {
-				numericCols = append(numericCols, quoteIdent(col.Name))
+				numericCols = append(numericCols, QuoteIdent(col.Name))
 			}
 		}
 	}
@@ -1379,7 +1379,7 @@ func findTextColumn(tbls []helper.TableInfo, lcg *common.LCG) string {
 	for _, tbl := range tbls {
 		for _, col := range tbl.Cols {
 			if isTextType(col.Type) {
-				textCols = append(textCols, quoteIdent(col.Name))
+				textCols = append(textCols, QuoteIdent(col.Name))
 			}
 		}
 	}
@@ -1394,7 +1394,7 @@ func findBlobColumn(tbls []helper.TableInfo, lcg *common.LCG) string {
 	for _, tbl := range tbls {
 		for _, col := range tbl.Cols {
 			if isBlobType(col.Type) {
-				blobCols = append(blobCols, quoteIdent(col.Name))
+				blobCols = append(blobCols, QuoteIdent(col.Name))
 			}
 		}
 	}
@@ -1408,7 +1408,7 @@ func findAnyColumn(tbls []helper.TableInfo, lcg *common.LCG) string {
 	var allCols []string
 	for _, tbl := range tbls {
 		for _, col := range tbl.Cols {
-			allCols = append(allCols, quoteIdent(col.Name))
+			allCols = append(allCols, QuoteIdent(col.Name))
 		}
 	}
 	if len(allCols) == 0 {
@@ -1484,7 +1484,7 @@ func genUUIDBlobFunction(lcg *common.LCG) string {
 
 // GenSelectWithRegexpFunction generates a SELECT statement with regexp extension functions
 func GenSelectWithRegexpFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db)
+	tables, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tables) == 0 {
 		return genSelectRegexpFunctionLiteral(lcg), nil
 	}
@@ -1798,13 +1798,13 @@ func genSQLiteDateWithModifiers(lcg *common.LCG) string {
 		"'weekday 0'", // Sunday
 		"'weekday 1'", // Monday
 	}
-	
+
 	// Sometimes use single modifier, sometimes multiple
 	if lcg.Intn(2) == 0 {
 		modifier := modifiers[lcg.Intn(len(modifiers))]
 		return fmt.Sprintf("date('now', %s)", modifier)
 	}
-	
+
 	// Use multiple modifiers
 	mod1 := modifiers[lcg.Intn(len(modifiers))]
 	mod2 := modifiers[lcg.Intn(len(modifiers))]
@@ -1821,7 +1821,7 @@ func genSQLiteTimeWithModifiers(lcg *common.LCG) string {
 		"'+1 second'",
 		"'-1 second'",
 	}
-	
+
 	modifier := modifiers[lcg.Intn(len(modifiers))]
 	return fmt.Sprintf("time('12:00:00', %s)", modifier)
 }
@@ -1838,13 +1838,13 @@ func genSQLiteDatetimeWithModifiers(lcg *common.LCG) string {
 		"'start of year'",
 		"'start of day'",
 	}
-	
+
 	// Sometimes use single modifier, sometimes multiple
 	if lcg.Intn(2) == 0 {
 		modifier := modifiers[lcg.Intn(len(modifiers))]
 		return fmt.Sprintf("datetime('now', %s)", modifier)
 	}
-	
+
 	// Use multiple modifiers
 	mod1 := modifiers[lcg.Intn(len(modifiers))]
 	mod2 := modifiers[lcg.Intn(len(modifiers))]
@@ -1867,7 +1867,7 @@ func genSQLiteStrftimeWithFormat(lcg *common.LCG) string {
 		"'%Y-%m-%d'", // ISO date
 		"'%H:%M:%S'", // ISO time
 	}
-	
+
 	format := formats[lcg.Intn(len(formats))]
 	return fmt.Sprintf("strftime(%s, 'now')", format)
 }
@@ -1875,7 +1875,7 @@ func genSQLiteStrftimeWithFormat(lcg *common.LCG) string {
 // GenSelectWithGoSQLite3ScalarFunction generates a SELECT statement with go-sqlite3 specific core functions.
 // These functions are only supported by full SQLite3 (via go-sqlite3) and not by Turso LibSQL.
 func GenSelectWithGoSQLite3ScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db)
+	tables, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tables) == 0 {
 		// No tables available, use literal values
 		return genSelectGoSQLite3ScalarFunctionLiteral(lcg), nil
@@ -1895,14 +1895,14 @@ func GenSelectWithGoSQLite3ScalarFunction(db *sql.DB, lcg *common.LCG) (SelectSt
 	funcIdx := rnd(len(scalarFuncs))
 	funcExpr := scalarFuncs[funcIdx](lcg, tables)
 
-	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;", funcExpr, quoteIdent(tbl.Name), 1+rnd(10))
+	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;", funcExpr, QuoteIdent(tbl.Name), 1+rnd(10))
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
 // GenSelectWithGoSQLite3AggregateFunction generates a SELECT statement with go-sqlite3 specific aggregate functions.
 // These functions are only supported by full SQLite3 (via go-sqlite3) and may not be available in Turso LibSQL.
 func GenSelectWithGoSQLite3AggregateFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db)
+	tables, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tables) == 0 {
 		// No tables available, use literal values
 		return genSelectGoSQLite3AggregateFunctionLiteral(lcg), nil
@@ -1920,7 +1920,7 @@ func GenSelectWithGoSQLite3AggregateFunction(db *sql.DB, lcg *common.LCG) (Selec
 	funcIdx := rnd(len(aggFuncs))
 	funcExpr := aggFuncs[funcIdx](lcg, tables)
 
-	sql := fmt.Sprintf("SELECT %s FROM %s;", funcExpr, quoteIdent(tbl.Name))
+	sql := fmt.Sprintf("SELECT %s FROM %s;", funcExpr, QuoteIdent(tbl.Name))
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 

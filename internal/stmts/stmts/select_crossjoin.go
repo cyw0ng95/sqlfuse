@@ -3,13 +3,13 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/helper"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
 )
 
 // GenSelectCrossJoin generates a SELECT across two tables using CROSS JOIN.
 func GenSelectCrossJoin(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tbls) < 2 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
@@ -37,12 +37,12 @@ func GenSelectCrossJoin(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	maxA := min(2, len(t1.Cols))
 	for k := 0; k < maxA; k++ {
 		c := t1.Cols[rnd(len(t1.Cols))]
-		cols = append(cols, fmt.Sprintf("a.%s", quoteIdent(c.Name)))
+		cols = append(cols, fmt.Sprintf("a.%s", QuoteIdent(c.Name)))
 	}
 	maxB := min(2, len(t2.Cols))
 	for k := 0; k < maxB; k++ {
 		c := t2.Cols[rnd(len(t2.Cols))]
-		cols = append(cols, fmt.Sprintf("b.%s", quoteIdent(c.Name)))
+		cols = append(cols, fmt.Sprintf("b.%s", QuoteIdent(c.Name)))
 	}
 	if len(cols) == 0 {
 		cols = append(cols, "*")
@@ -50,7 +50,7 @@ func GenSelectCrossJoin(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 	limit := 1 + rnd(50)
 	sql := fmt.Sprintf("SELECT %s FROM %s AS a CROSS JOIN %s AS b LIMIT %d;",
-		joinStrings(cols, ", "), quoteIdent(t1.Name), quoteIdent(t2.Name), limit)
+		joinStrings(cols, ", "), QuoteIdent(t1.Name), QuoteIdent(t2.Name), limit)
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 

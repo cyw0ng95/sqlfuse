@@ -3,15 +3,15 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/helper"
-	"sqlsmith-go/internal/stmts/types"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
+	"sqlfuse/internal/stmts/types"
 	"strings"
 )
 
 // GenSelectWithCTE generates a SELECT statement with Common Table Expression (WITH clause)
 func GenSelectWithCTE(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db)
+	tables, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tables) == 0 {
 		return genSelectCTELiteral(lcg), nil
 	}
@@ -37,7 +37,7 @@ func GenSelectWithCTE(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 			continue
 		}
 		selected[idx] = struct{}{}
-		cteSelectCols = append(cteSelectCols, quoteIdent(tbl.Cols[idx].Name))
+		cteSelectCols = append(cteSelectCols, QuoteIdent(tbl.Cols[idx].Name))
 	}
 
 	// Add optional WHERE clause to CTE
@@ -45,11 +45,11 @@ func GenSelectWithCTE(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	if rnd(2) == 0 && len(tbl.Cols) > 0 {
 		col := tbl.Cols[rnd(len(tbl.Cols))]
 		val := types.ValueForType(col.Type, lcg, col.Name)
-		cteWhere = fmt.Sprintf(" WHERE %s > %s", quoteIdent(col.Name), val)
+		cteWhere = fmt.Sprintf(" WHERE %s > %s", QuoteIdent(col.Name), val)
 	}
 
 	cteQuery := fmt.Sprintf("SELECT %s FROM %s%s",
-		strings.Join(cteSelectCols, ", "), quoteIdent(tbl.Name), cteWhere)
+		strings.Join(cteSelectCols, ", "), QuoteIdent(tbl.Name), cteWhere)
 
 	// Main query that uses the CTE
 	mainSelectCols := "*"
@@ -68,7 +68,7 @@ func GenSelectWithCTE(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 	limit := 1 + rnd(50)
 	sql := fmt.Sprintf("WITH %s AS (%s) SELECT %s FROM %s%s LIMIT %d;",
-		quoteIdent(cteName), cteQuery, mainSelectCols, quoteIdent(cteName), mainWhere, limit)
+		QuoteIdent(cteName), cteQuery, mainSelectCols, QuoteIdent(cteName), mainWhere, limit)
 
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
@@ -86,7 +86,7 @@ func genSelectCTELiteral(lcg *common.LCG) SelectStmt {
 
 // GenSelectWithMultipleCTE generates a SELECT with multiple CTEs
 func GenSelectWithMultipleCTE(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db)
+	tables, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tables) == 0 {
 		return genSelectMultipleCTELiteral(lcg), nil
 	}
@@ -109,17 +109,17 @@ func GenSelectWithMultipleCTE(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	numCols1 := min(2, len(tbl1.Cols))
 	cols1 := make([]string, 0, numCols1)
 	for i := 0; i < numCols1 && i < len(tbl1.Cols); i++ {
-		cols1 = append(cols1, quoteIdent(tbl1.Cols[i].Name))
+		cols1 = append(cols1, QuoteIdent(tbl1.Cols[i].Name))
 	}
 
 	cte1Query := fmt.Sprintf("SELECT %s FROM %s LIMIT %d",
-		strings.Join(cols1, ", "), quoteIdent(tbl1.Name), 10+rnd(40))
+		strings.Join(cols1, ", "), QuoteIdent(tbl1.Name), 10+rnd(40))
 
 	// Second CTE - can reference first CTE or another table
 	var cte2Query string
 	if rnd(2) == 0 {
 		// Reference first CTE
-		cte2Query = fmt.Sprintf("SELECT * FROM %s WHERE ROWID %% 2 = 0", quoteIdent(cte1Name))
+		cte2Query = fmt.Sprintf("SELECT * FROM %s WHERE ROWID %% 2 = 0", QuoteIdent(cte1Name))
 	} else {
 		// Use another table
 		tbl2 := tables[rnd(len(tables))]
@@ -127,10 +127,10 @@ func GenSelectWithMultipleCTE(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 			numCols2 := min(2, len(tbl2.Cols))
 			cols2 := make([]string, 0, numCols2)
 			for i := 0; i < numCols2 && i < len(tbl2.Cols); i++ {
-				cols2 = append(cols2, quoteIdent(tbl2.Cols[i].Name))
+				cols2 = append(cols2, QuoteIdent(tbl2.Cols[i].Name))
 			}
 			cte2Query = fmt.Sprintf("SELECT %s FROM %s LIMIT %d",
-				strings.Join(cols2, ", "), quoteIdent(tbl2.Name), 5+rnd(20))
+				strings.Join(cols2, ", "), QuoteIdent(tbl2.Name), 5+rnd(20))
 		} else {
 			cte2Query = "SELECT 1 AS id, 'test' AS value"
 		}
@@ -142,19 +142,19 @@ func GenSelectWithMultipleCTE(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	switch combineType {
 	case 0:
 		// SELECT from first CTE only
-		mainQuery = fmt.Sprintf("SELECT * FROM %s", quoteIdent(cte1Name))
+		mainQuery = fmt.Sprintf("SELECT * FROM %s", QuoteIdent(cte1Name))
 	case 1:
 		// SELECT from second CTE only
-		mainQuery = fmt.Sprintf("SELECT * FROM %s", quoteIdent(cte2Name))
+		mainQuery = fmt.Sprintf("SELECT * FROM %s", QuoteIdent(cte2Name))
 	default:
 		// UNION both CTEs
 		mainQuery = fmt.Sprintf("SELECT * FROM %s UNION SELECT * FROM %s",
-			quoteIdent(cte1Name), quoteIdent(cte2Name))
+			QuoteIdent(cte1Name), QuoteIdent(cte2Name))
 	}
 
 	limit := 1 + rnd(50)
 	sql := fmt.Sprintf("WITH %s AS (%s), %s AS (%s) %s LIMIT %d;",
-		quoteIdent(cte1Name), cte1Query, quoteIdent(cte2Name), cte2Query, mainQuery, limit)
+		QuoteIdent(cte1Name), cte1Query, QuoteIdent(cte2Name), cte2Query, mainQuery, limit)
 
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
@@ -184,7 +184,7 @@ func genSelectWithRecursiveCTEInternal(ctx *GenContext) (SelectStmt, error) {
 		// For flavors that don't support RECURSIVE (like Turso),
 		// generate a regular CTE with multiple SELECT UNION instead
 		sql := fmt.Sprintf("WITH %s AS (SELECT 1 AS n UNION ALL SELECT 2 UNION ALL SELECT 3) SELECT * FROM %s;",
-			quoteIdent(cteName), quoteIdent(cteName))
+			QuoteIdent(cteName), QuoteIdent(cteName))
 		return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 	}
 
@@ -193,15 +193,15 @@ func genSelectWithRecursiveCTEInternal(ctx *GenContext) (SelectStmt, error) {
 	recursivePatterns := []string{
 		// Count from 1 to N
 		fmt.Sprintf("WITH RECURSIVE %s(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM %s WHERE n < %d) SELECT * FROM %s;",
-			quoteIdent(cteName), quoteIdent(cteName), 5+rnd(15), quoteIdent(cteName)),
+			QuoteIdent(cteName), QuoteIdent(cteName), 5+rnd(15), QuoteIdent(cteName)),
 
 		// Fibonacci-like sequence
 		fmt.Sprintf("WITH RECURSIVE %s(a, b) AS (SELECT 0, 1 UNION ALL SELECT b, a+b FROM %s WHERE b < %d) SELECT * FROM %s;",
-			quoteIdent(cteName), quoteIdent(cteName), 100+rnd(900), quoteIdent(cteName)),
+			QuoteIdent(cteName), QuoteIdent(cteName), 100+rnd(900), QuoteIdent(cteName)),
 
 		// Powers of 2
 		fmt.Sprintf("WITH RECURSIVE %s(n, val) AS (SELECT 1, 1 UNION ALL SELECT n+1, val*2 FROM %s WHERE n < %d) SELECT * FROM %s;",
-			quoteIdent(cteName), quoteIdent(cteName), 5+rnd(10), quoteIdent(cteName)),
+			QuoteIdent(cteName), QuoteIdent(cteName), 5+rnd(10), QuoteIdent(cteName)),
 	}
 
 	sql := recursivePatterns[rnd(len(recursivePatterns))]

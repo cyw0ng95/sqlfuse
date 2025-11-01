@@ -5,10 +5,10 @@ import (
 	"os"
 	"strings"
 
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/executors"
-	"sqlsmith-go/internal/generators"
-	"sqlsmith-go/internal/stmts/helper"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/executors"
+	"sqlfuse/internal/generators"
+	"sqlfuse/internal/stmts/helper"
 
 	"github.com/spf13/cobra"
 	_ "github.com/tursodatabase/turso-go"
@@ -40,7 +40,7 @@ func main() {
 }
 
 func print_schema(db *sql.DB) {
-	tables, err := helper.GetAllTablesAndCols(db)
+	tables, err := helper.GetAllTablesAndCols(db, "turso")
 	if err != nil {
 		common.Logger.Error().Err(err).Msg("Failed to get tables")
 		os.Exit(1)

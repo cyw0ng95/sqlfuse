@@ -2,7 +2,7 @@ package stmts
 
 import (
 	"database/sql"
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 )
 
 // GenSelectJoin dispatches to one of the join variants supported by SQLite/Turso.

@@ -2,7 +2,7 @@ package stmts
 
 import (
 	"fmt"
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 )
 
 // AlterTableGenerator is a StmtGenerator for ALTER TABLE statements.
@@ -36,7 +36,7 @@ func GenAlterTable(lcg *common.LCG) (Stmt, error) {
 
 // genAlterTableInternal is the internal implementation used by both old and new interfaces.
 func genAlterTableInternal(lcg *common.LCG) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	flavor := GetDefaultFlavor()
 
 	op := lcg.Intn(3)
@@ -57,7 +57,7 @@ func genAlterTableInternal(lcg *common.LCG) (Stmt, error) {
 		newTbl := fmt.Sprintf("tbl_%d", lcg.Uint64()%1000000)
 		sql = fmt.Sprintf("ALTER TABLE \"%s\" RENAME TO \"%s\";", tbl, newTbl)
 	}
-	
+
 	return &AlterTableStmt{
 		BaseStmt: NewBaseStmt(sql, "alter_table", flavor),
 	}, nil

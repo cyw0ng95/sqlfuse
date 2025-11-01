@@ -2,7 +2,7 @@ package stmts
 
 import (
 	"fmt"
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 )
 
 // DropViewGenerator is a StmtGenerator for DROP VIEW statements.
@@ -32,7 +32,7 @@ func GenDropView(lcg *common.LCG) (Stmt, error) {
 
 // genDropViewInternal is the internal implementation used by both old and new interfaces.
 func genDropViewInternal(lcg *common.LCG) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 
 	view := fmt.Sprintf("view_%d", lcg.Uint64()%1000000)
 	sql := fmt.Sprintf("DROP VIEW IF EXISTS \"%s\";", view)

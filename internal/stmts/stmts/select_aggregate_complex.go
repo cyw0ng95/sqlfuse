@@ -3,14 +3,14 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/helper"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
 	"strings"
 )
 
 // GenSelectAggregateComplex generates a SELECT with multiple aggregate functions.
 func GenSelectAggregateComplex(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tbls) == 0 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
@@ -24,7 +24,7 @@ func GenSelectAggregateComplex(db *sql.DB, lcg *common.LCG) (SelectStmt, error) 
 
 	tbl := tbls[rnd(len(tbls))]
 	if len(tbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// Build multiple aggregate expressions
@@ -68,7 +68,7 @@ func GenSelectAggregateComplex(db *sql.DB, lcg *common.LCG) (SelectStmt, error) 
 		key := fmt.Sprintf("%s(%s)", aggFunc, col.Name)
 		if !used[key] {
 			aggregates = append(aggregates, fmt.Sprintf("%s(%s) AS %s_%s",
-				aggFunc, quoteIdent(col.Name), strings.ToLower(aggFunc), col.Name))
+				aggFunc, QuoteIdent(col.Name), strings.ToLower(aggFunc), col.Name))
 			used[key] = true
 		}
 	}
@@ -83,11 +83,11 @@ func GenSelectAggregateComplex(db *sql.DB, lcg *common.LCG) (SelectStmt, error) 
 	if rnd(2) == 0 && len(tbl.Cols) > 1 {
 		// Find a non-numeric column for grouping (or any column)
 		groupCol := tbl.Cols[rnd(len(tbl.Cols))]
-		groupBy = fmt.Sprintf(" GROUP BY %s", quoteIdent(groupCol.Name))
+		groupBy = fmt.Sprintf(" GROUP BY %s", QuoteIdent(groupCol.Name))
 		// Add the grouping column to the select list
-		aggregates = append([]string{quoteIdent(groupCol.Name)}, aggregates...)
+		aggregates = append([]string{QuoteIdent(groupCol.Name)}, aggregates...)
 	}
 
-	sql := fmt.Sprintf("SELECT %s FROM %s%s;", strings.Join(aggregates, ", "), quoteIdent(tbl.Name), groupBy)
+	sql := fmt.Sprintf("SELECT %s FROM %s%s;", strings.Join(aggregates, ", "), QuoteIdent(tbl.Name), groupBy)
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }

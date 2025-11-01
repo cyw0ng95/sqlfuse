@@ -131,12 +131,18 @@ type PragmaStmt struct {
 	flavor FlavorConfig
 }
 
-func (p *PragmaStmt) SQL() string           { return p.sql }
-func (p *PragmaStmt) Type() string          { return "pragma" }
-func (p *PragmaStmt) Flavor() FlavorConfig  { return p.flavor }
+// NewPragmaStmt creates a new PRAGMA statement with the given SQL and flavor.
+func NewPragmaStmt(sql string, flavor FlavorConfig) *PragmaStmt {
+	return &PragmaStmt{sql: sql, flavor: flavor}
+}
 
-// Helper function to check if database has tables (used by generators that need tables).
-func hasTables(db *sql.DB) bool {
+func (p *PragmaStmt) SQL() string          { return p.sql }
+func (p *PragmaStmt) Type() string         { return "pragma" }
+func (p *PragmaStmt) Flavor() FlavorConfig { return p.flavor }
+
+// HasTables checks if the database has any user tables.
+// This is used by generators that require existing tables.
+func HasTables(db *sql.DB) bool {
 	if db == nil {
 		return false
 	}
@@ -147,6 +153,11 @@ func hasTables(db *sql.DB) bool {
 		return false
 	}
 	return count > 0
+}
+
+// hasTables is deprecated: use HasTables instead.
+func hasTables(db *sql.DB) bool {
+	return HasTables(db)
 }
 
 // GenerateStmt is a convenience function that generates a statement using a named generator.

@@ -3,13 +3,13 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/helper"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
 )
 
 // GenSelectLimit generates a SELECT with a LIMIT clause (different limit ranges).
 func GenSelectLimit(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tbls) == 0 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
@@ -23,7 +23,7 @@ func GenSelectLimit(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 	tbl := tbls[rnd(len(tbls))]
 	if len(tbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// pick columns
@@ -33,6 +33,6 @@ func GenSelectLimit(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	}
 
 	limit := 1 + rnd(1000)
-	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;", joinCols(cols), quoteIdent(tbl.Name), limit)
+	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;", joinCols(cols), QuoteIdent(tbl.Name), limit)
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }

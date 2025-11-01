@@ -2,7 +2,7 @@ package stmts
 
 import (
 	"database/sql"
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 )
 
 // InsertVariantGenerator generates different variants of INSERT statements.

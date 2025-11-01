@@ -4,10 +4,10 @@ This project uses Go workspaces to split dependencies across different executors
 
 ## Workspace Layout
 
-The workspace is defined in `go.work` and consists of 5 modules:
+The workspace is defined in `go.work` and consists of 6 modules:
 
 ```
-sqlsmith-go/
+sqlfuse/
 ├── go.work                          # Workspace definition
 ├── internal/                        # Shared internal packages
 │   ├── go.mod
@@ -22,7 +22,11 @@ sqlsmith-go/
 │   │   │   ├── go.mod
 │   │   │   ├── go.sum
 │   │   │   └── main.go
-│   │   └── chai_embedded/           # Chai SQL executor
+│   │   ├── duckdb_embedded/         # DuckDB executor
+│   │   │   ├── go.mod
+│   │   │   ├── go.sum
+│   │   │   └── main.go
+│   │   └── chai_embedded/           # Chai SQL executor (WIP - not built)
 │   │       ├── go.mod
 │   │       ├── go.sum
 │   │       └── main.go
@@ -33,9 +37,11 @@ sqlsmith-go/
 │       └── job_ctrl.go
 ```
 
+**Note:** The `chai_embedded` executor exists in the workspace but is not currently built or functional. The Chai SQL driver import is commented out in `cmd/executors/chai_embedded/main.go` (line 15), and the executor is excluded from the build script. It remains as a placeholder for potential future implementation.
+
 ## Module Dependencies
 
-### internal module (`sqlsmith-go/internal`)
+### internal module (`sqlfuse/internal`)
 Shared code used by all executors and server. Contains:
 - `common/` - Logger, LCG random number generator
 - `executors/` - Shared executor logic
@@ -52,45 +58,49 @@ Shared code used by all executors and server. Contains:
 **Test dependencies:**
 - `github.com/tursodatabase/turso-go` - Used in test files only
 
-### turso_embedded executor (`sqlsmith-go/cmd/executors/turso_embedded`)
+### turso_embedded executor (`sqlfuse/cmd/executors/turso_embedded`)
 Fuzzer for Turso LibSQL database.
 
 **Direct dependencies:**
 - `github.com/tursodatabase/turso-go` - Turso database driver
 - `github.com/spf13/cobra` - CLI framework
-- `sqlsmith-go/internal` - Shared code (via replace directive)
+- `sqlfuse/internal` - Shared code (via replace directive)
 
 **Binary includes:** ONLY turso-go (verified with `go version -m`)
 
-### go_sqlite3_embedded executor (`sqlsmith-go/cmd/executors/go_sqlite3_embedded`)
+### go_sqlite3_embedded executor (`sqlfuse/cmd/executors/go_sqlite3_embedded`)
 Fuzzer for SQLite via go-sqlite3.
 
 **Direct dependencies:**
 - `github.com/mattn/go-sqlite3` - SQLite database driver
 - `github.com/spf13/cobra` - CLI framework
-- `sqlsmith-go/internal` - Shared code (via replace directive)
+- `sqlfuse/internal` - Shared code (via replace directive)
 
 **Binary includes:** ONLY go-sqlite3 (verified with `go version -m`)
 
-### chai_embedded executor (`sqlsmith-go/cmd/executors/chai_embedded`)
-Fuzzer for Chai SQL database (driver currently commented out).
+### duckdb_embedded executor (`sqlfuse/cmd/executors/duckdb_embedded`)
+Fuzzer for DuckDB analytical database.
 
 **Direct dependencies:**
+- `github.com/marcboeker/go-duckdb` - DuckDB database driver
 - `github.com/spf13/cobra` - CLI framework
-- `sqlsmith-go/internal` - Shared code (via replace directive)
+- `sqlfuse/internal` - Shared code (via replace directive)
 
-### server (`sqlsmith-go/cmd/server`)
+**Binary includes:** ONLY go-duckdb (verified with `go version -m`)
+
+### server (`sqlfuse/cmd/server`)
 HTTP API server for managing fuzzing jobs.
 
 **Direct dependencies:**
 - `github.com/labstack/echo/v4` - HTTP framework
-- `sqlsmith-go/internal` - Shared code (via replace directive)
+- `sqlfuse/internal` - Shared code (via replace directive)
 
 ## Benefits of Workspace Structure
 
 1. **Dependency Isolation**: Each executor only includes its required database driver
-   - turso_embedded: 155MB (includes turso-go)
-   - go_sqlite3_embedded: 8.4MB (includes go-sqlite3)
+   - turso_embedded: 156MB (includes turso-go)
+   - go_sqlite3_embedded: 8.9MB (includes go-sqlite3)
+   - duckdb_embedded: 48MB (includes go-duckdb)
    - server: 11MB (no database drivers)
 
 2. **Code Reuse**: Shared internal packages are in one place, referenced via replace directives
@@ -112,6 +122,7 @@ bash build.sh
 This builds:
 - `output/turso_embedded_executor`
 - `output/go_sqlite3_embedded_executor`
+- `output/duckdb_embedded_executor`
 - `output/server`
 
 ### Build individual modules:
@@ -121,6 +132,9 @@ cd cmd/executors/turso_embedded && go build -o ../../../output/turso_embedded_ex
 
 # Build go-sqlite3 executor
 cd cmd/executors/go_sqlite3_embedded && go build -o ../../../output/go_sqlite3_embedded_executor .
+
+# Build duckdb executor
+cd cmd/executors/duckdb_embedded && go build -o ../../../output/duckdb_embedded_executor .
 
 # Build server
 cd cmd/server && go build -o ../../output/server .
@@ -144,17 +158,17 @@ bash build.sh --test
 1. Create new directory: `cmd/executors/my_executor/`
 2. Create `go.mod`:
    ```go
-   module sqlsmith-go/cmd/executors/my_executor
+   module sqlfuse/cmd/executors/my_executor
    
    go 1.24.9
    
    require (
        github.com/my/database-driver vX.Y.Z
        github.com/spf13/cobra v1.10.1
-       sqlsmith-go/internal v0.0.0
+       sqlfuse/internal v0.0.0
    )
    
-   replace sqlsmith-go/internal => ../../../internal
+   replace sqlfuse/internal => ../../../internal
    ```
 3. Create `main.go` (see existing executors for examples)
 4. Add to `go.work`:

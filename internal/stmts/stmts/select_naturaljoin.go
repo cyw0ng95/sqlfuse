@@ -3,13 +3,13 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/helper"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
 )
 
 // GenSelectNaturalJoin generates a SELECT with NATURAL JOIN between two tables.
 func GenSelectNaturalJoin(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "sqlite")
 	if err != nil || len(tbls) < 2 {
 		return SelectStmt{sql: "SELECT 1;", flavor: GetDefaultFlavor()}, nil
 	}
@@ -30,6 +30,6 @@ func GenSelectNaturalJoin(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	t2 := tbls[j]
 	limit := 1 + rnd(50)
 	// NATURAL JOIN merges common columns automatically; select * keeps it simple.
-	sql := fmt.Sprintf("SELECT * FROM %s NATURAL JOIN %s LIMIT %d;", quoteIdent(t1.Name), quoteIdent(t2.Name), limit)
+	sql := fmt.Sprintf("SELECT * FROM %s NATURAL JOIN %s LIMIT %d;", QuoteIdent(t1.Name), QuoteIdent(t2.Name), limit)
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }

@@ -1,9 +1,10 @@
 go 1.24.9
 
 use (
-	./internal
-	./cmd/executors/turso_embedded
-	./cmd/executors/go_sqlite3_embedded
 	./cmd/executors/chai_embedded
+	./cmd/executors/duckdb_embedded
+	./cmd/executors/go_sqlite3_embedded
+	./cmd/executors/turso_embedded
 	./cmd/server
+	./internal
 )

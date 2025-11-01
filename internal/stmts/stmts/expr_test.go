@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/helper"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
 
 	_ "github.com/tursodatabase/turso-go"
 )
@@ -56,7 +56,7 @@ func TestGenCastExpr(t *testing.T) {
 	db := setupTestDBForExpr(t)
 	defer db.Close()
 
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil {
 		t.Fatalf("Failed to get tables: %v", err)
 	}
@@ -98,7 +98,7 @@ func TestGenBetweenExpr(t *testing.T) {
 	db := setupTestDBForExpr(t)
 	defer db.Close()
 
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil {
 		t.Fatalf("Failed to get tables: %v", err)
 	}
@@ -173,7 +173,7 @@ func TestGenGlobExpr(t *testing.T) {
 	db := setupTestDBForExpr(t)
 	defer db.Close()
 
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil {
 		t.Fatalf("Failed to get tables: %v", err)
 	}
@@ -252,7 +252,7 @@ func TestGenIsDistinctFromExpr(t *testing.T) {
 	db := setupTestDBForExpr(t)
 	defer db.Close()
 
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil {
 		t.Fatalf("Failed to get tables: %v", err)
 	}
@@ -295,7 +295,7 @@ func TestGenCollateExpr(t *testing.T) {
 	db := setupTestDBForExpr(t)
 	defer db.Close()
 
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil {
 		t.Fatalf("Failed to get tables: %v", err)
 	}
@@ -345,7 +345,7 @@ func TestGenUnaryExpr(t *testing.T) {
 	db := setupTestDBForExpr(t)
 	defer db.Close()
 
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil {
 		t.Fatalf("Failed to get tables: %v", err)
 	}
@@ -392,7 +392,7 @@ func TestGenBinaryExpr(t *testing.T) {
 	db := setupTestDBForExpr(t)
 	defer db.Close()
 
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil {
 		t.Fatalf("Failed to get tables: %v", err)
 	}
@@ -435,7 +435,7 @@ func TestGenParenthesizedExpr(t *testing.T) {
 	db := setupTestDBForExpr(t)
 	defer db.Close()
 
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil {
 		t.Fatalf("Failed to get tables: %v", err)
 	}
@@ -477,7 +477,7 @@ func TestGenIsNullExpr(t *testing.T) {
 	db := setupTestDBForExpr(t)
 	defer db.Close()
 
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil {
 		t.Fatalf("Failed to get tables: %v", err)
 	}
@@ -552,7 +552,7 @@ func TestGenRandomExpr(t *testing.T) {
 	db := setupTestDBForExpr(t)
 	defer db.Close()
 
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil {
 		t.Fatalf("Failed to get tables: %v", err)
 	}
@@ -583,7 +583,7 @@ func TestGenRegexpExpr(t *testing.T) {
 	db := setupTestDBForExpr(t)
 	defer db.Close()
 
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil {
 		t.Fatalf("Failed to get tables: %v", err)
 	}
@@ -627,7 +627,7 @@ func TestGenMatchExpr(t *testing.T) {
 	db := setupTestDBForExpr(t)
 	defer db.Close()
 
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil {
 		t.Fatalf("Failed to get tables: %v", err)
 	}
@@ -671,7 +671,7 @@ func TestGenInSubqueryExpr(t *testing.T) {
 	db := setupTestDBForExpr(t)
 	defer db.Close()
 
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil {
 		t.Fatalf("Failed to get tables: %v", err)
 	}
@@ -715,7 +715,7 @@ func TestGenExistsSubqueryExpr(t *testing.T) {
 	db := setupTestDBForExpr(t)
 	defer db.Close()
 
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil {
 		t.Fatalf("Failed to get tables: %v", err)
 	}
@@ -759,7 +759,7 @@ func TestGenFilterExpr(t *testing.T) {
 	db := setupTestDBForExpr(t)
 	defer db.Close()
 
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil {
 		t.Fatalf("Failed to get tables: %v", err)
 	}
@@ -796,7 +796,7 @@ func TestGenOverExpr(t *testing.T) {
 	db := setupTestDBForExpr(t)
 	defer db.Close()
 
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil {
 		t.Fatalf("Failed to get tables: %v", err)
 	}
@@ -831,7 +831,7 @@ func TestExpressionDeterminism(t *testing.T) {
 	db := setupTestDBForExpr(t)
 	defer db.Close()
 
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil {
 		t.Fatalf("Failed to get tables: %v", err)
 	}

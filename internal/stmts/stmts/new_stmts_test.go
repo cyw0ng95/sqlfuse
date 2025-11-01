@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 )
 
 // TestGenBeginTransaction tests BEGIN TRANSACTION statement generation

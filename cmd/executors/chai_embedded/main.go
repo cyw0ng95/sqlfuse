@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/executors"
-	"sqlsmith-go/internal/generators"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/executors"
+	"sqlfuse/internal/generators"
 
 	// _ "github.com/chaisql/chai"
 	"github.com/spf13/cobra"

@@ -2,7 +2,7 @@ package stmts
 
 import (
 	"fmt"
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 )
 
 // ExampleStmtGeneratorFactory_basic demonstrates basic usage of the Factory pattern.
@@ -202,4 +202,3 @@ func ExampleStmtGeneratorFactory_CreateGenerator() {
 	// INSERT generator created
 	// Invalid generator returned nil
 }
-

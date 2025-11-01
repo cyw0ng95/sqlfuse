@@ -2,7 +2,7 @@ package stmts
 
 import (
 	"fmt"
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 	"strings"
 )
 
@@ -39,22 +39,22 @@ func genCreateTableInternal(lcg *common.LCG) (Stmt, error) {
 
 // genCreateTableWithFlavor creates a CREATE TABLE statement with flavor support.
 func genCreateTableWithFlavor(lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	flavor = ensureFlavor(flavor)
 
 	// choose number of columns 1..4
 	n := 1 + lcg.Intn(4)
 	cols := make([]string, 0, n)
-	
+
 	// Base types supported by all SQLite flavors
 	types := []string{"INTEGER", "TEXT", "REAL", "BLOB"}
-	
+
 	// For go-sqlite3 flavor, JSON type is fully supported via JSON1 extension
 	// which is enabled by default in standard SQLite builds
 	if flavor != nil && flavor.Name() == "go-sqlite3" {
 		types = append(types, "JSON")
 	}
-	
+
 	for i := 0; i < n; i++ {
 		colName := fmt.Sprintf("col%d", i+1)
 		typeIdx := lcg.Intn(len(types))

@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"sqlsmith-go/internal/common"
-	"sqlsmith-go/internal/stmts/helper"
+	"sqlfuse/internal/common"
+	"sqlfuse/internal/stmts/helper"
 )
 
 // TestNoUnsupportedFeatures verifies that the generator NEVER produces
@@ -119,7 +119,7 @@ func TestBinaryOperatorCompliance(t *testing.T) {
 	ctx := NewGenContext(db, common.NewLCG(42), 2)
 	eg := NewExprGenerator(ctx)
 
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil {
 		t.Fatalf("Failed to get tables: %v", err)
 	}
@@ -163,7 +163,7 @@ func TestCollateOnlyDefaultCollations(t *testing.T) {
 	ctx := NewGenContext(db, common.NewLCG(42), 2)
 	eg := NewExprGenerator(ctx)
 
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil {
 		t.Fatalf("Failed to get tables: %v", err)
 	}
@@ -244,7 +244,7 @@ func TestExpressionTypeCompliance(t *testing.T) {
 	ctx := NewGenContext(db, common.NewLCG(42), 2)
 	eg := NewExprGenerator(ctx)
 
-	tbls, err := helper.GetAllTablesAndCols(db)
+	tbls, err := helper.GetAllTablesAndCols(db, "")
 	if err != nil {
 		t.Fatalf("Failed to get tables: %v", err)
 	}

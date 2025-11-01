@@ -1,7 +1,7 @@
 package stmts
 
 import (
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 	"strings"
 	"testing"
 )
@@ -306,4 +306,3 @@ func TestStmtFlavorPropagation(t *testing.T) {
 		}
 	}
 }
-

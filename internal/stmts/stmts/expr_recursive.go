@@ -2,8 +2,8 @@ package stmts
 
 import (
 	"fmt"
-	"sqlsmith-go/internal/stmts/helper"
-	"sqlsmith-go/internal/stmts/types"
+	"sqlfuse/internal/stmts/helper"
+	"sqlfuse/internal/stmts/types"
 	"strings"
 )
 
@@ -25,17 +25,18 @@ func (eg *ExprGenerator) GenWhereExpr(tbls []helper.TableInfo) string {
 	}
 
 	// Choose whether to generate a simple or complex expression
-	if !eg.ctx.CanRecurse() || eg.ctx.Intn(3) == 0 {
+	// With increased recursion depth, we generate complex expressions more frequently
+	if !eg.ctx.CanRecurse() || eg.ctx.Intn(4) == 0 {
 		// Generate simple condition
 		return eg.genSimpleCondition(tbls)
 	}
 
 	// Generate complex condition with AND/OR
-	numConditions := 2 + eg.ctx.Intn(2) // 2-3 conditions
+	numConditions := 2 + eg.ctx.Intn(3) // 2-4 conditions (increased from 2-3)
 	conditions := make([]string, 0, numConditions)
 
 	for i := 0; i < numConditions; i++ {
-		if eg.ctx.CanRecurse() && eg.ctx.Intn(4) == 0 {
+		if eg.ctx.CanRecurse() && eg.ctx.Intn(3) == 0 {
 			// Occasionally nest deeper
 			subCtx := eg.ctx.Descend()
 			subGen := NewExprGenerator(subCtx)
@@ -86,7 +87,7 @@ func (eg *ExprGenerator) genSimpleCondition(tbls []helper.TableInfo) string {
 	}
 	op := operators[eg.ctx.Intn(len(operators))]
 
-	return fmt.Sprintf("%s %s %s", quoteIdent(col.Name), op, val)
+	return fmt.Sprintf("%s %s %s", QuoteIdent(col.Name), op, val)
 }
 
 // GenSelectExpr generates a SELECT list expression, potentially with nested expressions.
@@ -99,7 +100,8 @@ func (eg *ExprGenerator) GenSelectExpr(tbls []helper.TableInfo, maxExprs int) []
 	numExprs := 1 + eg.ctx.Intn(maxExprs)
 
 	for i := 0; i < numExprs; i++ {
-		if eg.ctx.CanRecurse() && eg.ctx.Intn(3) == 0 {
+		// Increased probability of complex expressions for more complexity
+		if eg.ctx.CanRecurse() && eg.ctx.Intn(2) == 0 {
 			// Generate a complex expression (CASE, arithmetic, etc.)
 			expr := eg.genComplexExpr(tbls)
 			if expr != "" {
@@ -110,7 +112,7 @@ func (eg *ExprGenerator) GenSelectExpr(tbls []helper.TableInfo, maxExprs int) []
 			tbl := tbls[eg.ctx.Intn(len(tbls))]
 			if len(tbl.Cols) > 0 {
 				col := tbl.Cols[eg.ctx.Intn(len(tbl.Cols))]
-				exprs = append(exprs, quoteIdent(col.Name))
+				exprs = append(exprs, QuoteIdent(col.Name))
 			}
 		}
 	}
@@ -154,7 +156,7 @@ func (eg *ExprGenerator) genCaseExpr(tbls []helper.TableInfo) string {
 
 	// Simple CASE expression
 	return fmt.Sprintf("CASE WHEN %s = %s THEN 1 ELSE 0 END",
-		quoteIdent(col.Name), val)
+		QuoteIdent(col.Name), val)
 }
 
 // genArithmeticExpr generates an arithmetic expression.
@@ -178,7 +180,7 @@ func (eg *ExprGenerator) genArithmeticExpr(tbls []helper.TableInfo) string {
 	op := operators[eg.ctx.Intn(len(operators))]
 	val := eg.ctx.Intn(100) + 1
 
-	return fmt.Sprintf("%s %s %d", quoteIdent(col.Name), op, val)
+	return fmt.Sprintf("%s %s %d", QuoteIdent(col.Name), op, val)
 }
 
 // genFunctionExpr generates a function call expression.
@@ -192,7 +194,7 @@ func (eg *ExprGenerator) genFunctionExpr(tbls []helper.TableInfo) string {
 	}
 
 	col := tbl.Cols[eg.ctx.Intn(len(tbl.Cols))]
-	return fmt.Sprintf("%s(%s)", fn, quoteIdent(col.Name))
+	return fmt.Sprintf("%s(%s)", fn, QuoteIdent(col.Name))
 }
 
 // GenSubquery generates a SELECT subquery, potentially recursive.
@@ -203,7 +205,7 @@ func (eg *ExprGenerator) GenSubquery(tbls []helper.TableInfo) string {
 
 	tbl := tbls[eg.ctx.Intn(len(tbls))]
 	if len(tbl.Cols) == 0 {
-		return fmt.Sprintf("SELECT * FROM %s LIMIT 1", quoteIdent(tbl.Name))
+		return fmt.Sprintf("SELECT * FROM %s LIMIT 1", QuoteIdent(tbl.Name))
 	}
 
 	// Select a few columns
@@ -215,7 +217,7 @@ func (eg *ExprGenerator) GenSubquery(tbls []helper.TableInfo) string {
 		idx := eg.ctx.Intn(len(tbl.Cols))
 		if !used[idx] {
 			used[idx] = true
-			cols = append(cols, quoteIdent(tbl.Cols[idx].Name))
+			cols = append(cols, QuoteIdent(tbl.Cols[idx].Name))
 		}
 	}
 
@@ -236,5 +238,5 @@ func (eg *ExprGenerator) GenSubquery(tbls []helper.TableInfo) string {
 
 	limit := 1 + eg.ctx.Intn(10)
 	return fmt.Sprintf("SELECT %s FROM %s%s LIMIT %d",
-		strings.Join(cols, ", "), quoteIdent(tbl.Name), where, limit)
+		strings.Join(cols, ", "), QuoteIdent(tbl.Name), where, limit)
 }

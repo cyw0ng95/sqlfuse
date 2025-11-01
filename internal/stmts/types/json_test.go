@@ -2,7 +2,7 @@ package types
 
 import (
 	"encoding/json"
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 	"strings"
 	"testing"
 )

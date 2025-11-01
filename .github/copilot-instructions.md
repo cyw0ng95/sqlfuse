@@ -1,4 +1,4 @@
-# SQLsmith-Go AI Coding Instructions
+# SQLfuse AI Coding Instructions
 
 ## Project Overview
 This is a Go implementation of SQLsmith - a SQL query generator/fuzzer for testing database systems. The project supports multiple SQLite-compatible database flavors with different feature sets and compatibility constraints.
@@ -9,6 +9,7 @@ This is a Go implementation of SQLsmith - a SQL query generator/fuzzer for testi
 The project supports multiple database flavors, each with different SQL feature sets:
 - **Turso LibSQL**: SQLite-compatible with some restrictions (see [COMPAT.md](https://github.com/tursodatabase/turso/blob/main/COMPAT.md))
 - **go-sqlite3**: Full SQLite3 support via `github.com/mattn/go-sqlite3`
+- **DuckDB**: Analytical database with extensive SQL features
 - **Default/Unknown**: Conservative mode (Turso-compatible subset for safety)
 
 ### Flavor Configuration
@@ -31,14 +32,16 @@ The project supports multiple database flavors, each with different SQL feature 
 cmd/executors/               # Database executor implementations
 ├── turso_embedded/         # Turso LibSQL executor
 ├── go_sqlite3_embedded/    # go-sqlite3 executor
-└── chai_embedded/          # Chai SQL executor
+└── duckdb_embedded/        # DuckDB executor
 internal/
 ├── generators/             # SQL statement generators
 │   ├── dialects/          # Flavor-specific configurations
 │   │   ├── turso.go       # Turso LibSQL flavor config
-│   │   └── go_sqlite3.go  # go-sqlite3 flavor config
+│   │   ├── go_sqlite3.go  # go-sqlite3 flavor config
+│   │   └── duckdb.go      # DuckDB flavor config
 │   ├── go_sqlite3.go      # go-sqlite3 generator
-│   └── turso.go           # Turso generator (base)
+│   ├── turso.go           # Turso generator (base)
+│   └── duckdb.go          # DuckDB generator
 └── stmts/stmts/           # Statement generation logic
     ├── pragma.go          # Flavor-aware PRAGMA generation
     └── ...                # Other statement types
@@ -125,7 +128,7 @@ Each executor can be built independently:
 ### Container Development
 Use the provided Containerfile for consistent environment:
 ```bash
-podman build -t sqlsmith-go .
+podman build -t sqlfuse .
 # Containerfile uses Fedora 43 with Go, git, and make
 ```
 

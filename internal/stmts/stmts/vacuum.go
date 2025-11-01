@@ -3,7 +3,7 @@ package stmts
 import (
 	"database/sql"
 	"fmt"
-	"sqlsmith-go/internal/common"
+	"sqlfuse/internal/common"
 )
 
 // VacuumGenerator is a StmtGenerator for VACUUM statements.
@@ -30,7 +30,7 @@ type VacuumStmt struct {
 // According to SQLite documentation: https://sqlite.org/lang_vacuum.html
 // Turso COMPAT.md: Partial support (VACUUM only, no VACUUM INTO).
 func GenVacuum(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}
