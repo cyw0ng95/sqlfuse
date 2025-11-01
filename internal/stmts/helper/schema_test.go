@@ -7,6 +7,15 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+// MockFlavorConfig implements FlavorConfig for testing
+type MockFlavorConfig struct {
+	name string
+}
+
+func (m *MockFlavorConfig) Name() string {
+	return m.name
+}
+
 // TestGetAllTablesAndColsWithDBType verifies that GetAllTablesAndCols
 // correctly uses the passed database type instead of detecting it.
 func TestGetAllTablesAndColsWithDBType(t *testing.T) {
@@ -149,3 +158,182 @@ func TestGetAllTablesAndColsNilDB(t *testing.T) {
 		t.Errorf("Expected 'database connection is nil' error, got: %v", err)
 	}
 }
+
+// TestGetAllTablesAndColsWithFlavor_NilFlavor tests nil flavor handling
+func TestGetAllTablesAndColsWithFlavor_NilFlavor(t *testing.T) {
+	db, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		t.Fatalf("Failed to open database: %v", err)
+	}
+	defer db.Close()
+
+	_, err = db.Exec(`CREATE TABLE test (id INTEGER)`)
+	if err != nil {
+		t.Fatalf("Failed to create test table: %v", err)
+	}
+
+	// Nil flavor should default to SQLite behavior
+	tables, err := GetAllTablesAndColsWithFlavor(db, nil)
+	if err != nil {
+		t.Errorf("Expected no error with nil flavor, got: %v", err)
+	}
+
+	if len(tables) != 1 {
+		t.Errorf("Expected 1 table, got %d", len(tables))
+	}
+}
+
+// TestGetAllTablesAndColsWithFlavor_SQLiteFlavors tests SQLite flavor variants
+func TestGetAllTablesAndColsWithFlavor_SQLiteFlavors(t *testing.T) {
+	db, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		t.Fatalf("Failed to open database: %v", err)
+	}
+	defer db.Close()
+
+	_, err = db.Exec(`CREATE TABLE products (id INTEGER, name TEXT, price REAL)`)
+	if err != nil {
+		t.Fatalf("Failed to create test table: %v", err)
+	}
+
+	flavors := []string{"sqlite", "go-sqlite3", "turso"}
+
+	for _, flavorName := range flavors {
+		t.Run(flavorName, func(t *testing.T) {
+			flavor := &MockFlavorConfig{name: flavorName}
+			tables, err := GetAllTablesAndColsWithFlavor(db, flavor)
+			if err != nil {
+				t.Errorf("Unexpected error for %s flavor: %v", flavorName, err)
+			}
+
+			if len(tables) != 1 {
+				t.Errorf("Expected 1 table, got %d", len(tables))
+			}
+
+			if len(tables) > 0 {
+				if tables[0].Name != "products" {
+					t.Errorf("Expected table 'products', got '%s'", tables[0].Name)
+				}
+				if len(tables[0].Cols) != 3 {
+					t.Errorf("Expected 3 columns, got %d", len(tables[0].Cols))
+				}
+			}
+		})
+	}
+}
+
+// TestGetAllTablesAndCols_SpecialCharacters tests table names with special characters
+func TestGetAllTablesAndCols_SpecialCharacters(t *testing.T) {
+	db, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		t.Fatalf("Failed to open database: %v", err)
+	}
+	defer db.Close()
+
+	// Create table with single quote in name
+	_, err = db.Exec(`CREATE TABLE "test'table" (id INTEGER)`)
+	if err != nil {
+		t.Fatalf("Failed to create test table: %v", err)
+	}
+
+	tables, err := GetAllTablesAndCols(db, "sqlite")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	if len(tables) != 1 {
+		t.Errorf("Expected 1 table, got %d", len(tables))
+	}
+
+	if len(tables) > 0 && tables[0].Name != "test'table" {
+		t.Errorf("Expected table name with quote, got '%s'", tables[0].Name)
+	}
+}
+
+// TestGetAllTablesAndCols_MultipleTables tests handling of multiple tables
+func TestGetAllTablesAndCols_MultipleTables(t *testing.T) {
+	db, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		t.Fatalf("Failed to open database: %v", err)
+	}
+	defer db.Close()
+
+	_, err = db.Exec(`
+		CREATE TABLE users (id INTEGER, name TEXT);
+		CREATE TABLE orders (id INTEGER, user_id INTEGER, amount REAL);
+		CREATE TABLE products (id INTEGER, title TEXT);
+	`)
+	if err != nil {
+		t.Fatalf("Failed to create test tables: %v", err)
+	}
+
+	tables, err := GetAllTablesAndCols(db, "sqlite")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	if len(tables) != 3 {
+		t.Errorf("Expected 3 tables, got %d", len(tables))
+	}
+
+	// Verify each table has columns
+	for _, table := range tables {
+		if len(table.Cols) == 0 {
+			t.Errorf("Table %s has no columns", table.Name)
+		}
+	}
+}
+
+// TestGetAllTablesAndCols_EmptyDatabase tests database with no user tables
+func TestGetAllTablesAndCols_EmptyDatabase(t *testing.T) {
+	db, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		t.Fatalf("Failed to open database: %v", err)
+	}
+	defer db.Close()
+
+	_, err = GetAllTablesAndCols(db, "sqlite")
+	if err == nil {
+		t.Error("Expected error for empty database, got nil")
+	}
+	
+	if err != nil && err.Error() != "no user tables found in database" {
+		t.Errorf("Expected 'no user tables found' error, got: %v", err)
+	}
+}
+
+// TestColumnInfo_StructFields tests ColumnInfo struct fields
+func TestColumnInfo_StructFields(t *testing.T) {
+	col := ColumnInfo{
+		Name: "test_col",
+		Type: "INTEGER",
+	}
+
+	if col.Name != "test_col" {
+		t.Errorf("Expected column name 'test_col', got '%s'", col.Name)
+	}
+
+	if col.Type != "INTEGER" {
+		t.Errorf("Expected column type 'INTEGER', got '%s'", col.Type)
+	}
+}
+
+// TestTableInfo_StructFields tests TableInfo struct fields
+func TestTableInfo_StructFields(t *testing.T) {
+	table := TableInfo{
+		Name: "test_table",
+		Cols: []ColumnInfo{
+			{Name: "id", Type: "INTEGER"},
+			{Name: "name", Type: "TEXT"},
+		},
+	}
+
+	if table.Name != "test_table" {
+		t.Errorf("Expected table name 'test_table', got '%s'", table.Name)
+	}
+
+	if len(table.Cols) != 2 {
+		t.Errorf("Expected 2 columns, got %d", len(table.Cols))
+	}
+}
+
