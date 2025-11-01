@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	
+	"sqlfuse/internal/stmts/stmts"
 )
 
 func TestNewCmdExecutor(t *testing.T) {
@@ -275,10 +277,15 @@ func TestStringsHasDotDot(t *testing.T) {
 }
 
 func TestWeightSetter_Interface(t *testing.T) {
-	// This test verifies that the WeightSetter interface is properly defined
-	// by attempting to use it with a mock implementation
+	// This test verifies that the WeightSetter interface can be implemented
+	// The interface requires SetWeights with StmtType map
 	
-	type MockWeightSetter struct{}
-	
-	var _ interface{} = (*MockWeightSetter)(nil)
+	var _ WeightSetter = (*mockWeightSetter)(nil)
+}
+
+// mockWeightSetter is a minimal implementation of WeightSetter for testing
+type mockWeightSetter struct{}
+
+func (m *mockWeightSetter) SetWeights(weights map[stmts.StmtType]uint64) {
+	// Minimal implementation for interface compliance
 }

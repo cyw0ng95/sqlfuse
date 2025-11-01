@@ -148,10 +148,8 @@ func TestRealLiteral_ValidFormat(t *testing.T) {
 			t.Errorf("RealLiteral should produce valid float string, got %q: %v", v, err)
 		}
 		
-		// Should be finite
-		if !math.IsInf(val, 0) && !math.IsNaN(val) {
-			// Valid finite number
-		} else {
+		// Should be finite (not Inf or NaN)
+		if math.IsInf(val, 0) || math.IsNaN(val) {
 			t.Errorf("RealLiteral should produce finite values, got %q", v)
 		}
 	}

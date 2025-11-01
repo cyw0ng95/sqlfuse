@@ -103,10 +103,7 @@ func TestStringLiteral_NoUnescapedQuotes(t *testing.T) {
 		// Count single quotes
 		singleQuoteCount := strings.Count(inner, "'")
 		
-		// All single quotes in the middle should be escaped (appear as '')
-		_ = strings.Count(inner, "''") // doubleQuoteCount not used, just checking format
-		
-		// Number of single quotes should be even (all escaped)
+		// Number of single quotes should be even (all escaped as '')
 		if singleQuoteCount%2 != 0 {
 			t.Errorf("Found unescaped quote in string literal %q", s)
 		}
