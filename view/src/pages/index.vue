@@ -50,8 +50,14 @@
           </v-card-actions>
         </v-card>
 
+        <!-- Weight Editor component -->
+        <WeightEditor 
+          :generator-stmts="generators.stmts"
+          @weights-changed="handleWeightsChanged"
+        />
+
         <!-- Job manager component -->
-        <JobManager />
+        <JobManager :custom-weights="customWeights" />
 
         <v-card class="modern-card" elevation="8">
           <v-card-title class="d-flex align-center bg-gradient-secondary">
@@ -90,11 +96,13 @@
 <script setup>
   import { computed, onMounted, ref } from 'vue'
   import JobManager from '../components/JobManager.vue'
+  import WeightEditor from '../components/WeightEditor.vue'
   import { API_BASE_URL } from '../config.js'
 
   const health = ref({})
   const info = ref({})
   const generators = ref({})
+  const customWeights = ref(null)
 
   async function fetchJson (path) {
     const url = path.startsWith('http://') || path.startsWith('https://') ? path : `${API_BASE_URL}${path}`
@@ -156,6 +164,11 @@
     lines.unshift(`Total tokens: ${total}`)
     return lines.join('\n')
   })
+
+  // Handle weights changed from WeightEditor
+  function handleWeightsChanged (weights) {
+    customWeights.value = weights
+  }
 
   onMounted(() => {
     getHealth()

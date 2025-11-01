@@ -2,6 +2,7 @@ package executors
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -14,7 +15,13 @@ import (
 
 	"sqlfuse/internal/common"
 	"sqlfuse/internal/generators"
+	"sqlfuse/internal/stmts/stmts"
 )
+
+// WeightSetter is an interface for generators that support custom weights
+type WeightSetter interface {
+	SetWeights(weights map[stmts.StmtType]uint64)
+}
 
 // Executor is a simple command-line based executor abstraction.
 // Implementations represent an executable binary and can build an *exec.Cmd for running it.
@@ -101,6 +108,22 @@ func Run(startMsg string, flags *CommonFlags, connect func(dsn string) (*sql.DB,
 		baseSeed = uint64(time.Now().UnixNano())
 	}
 
+	// Parse custom weights if provided
+	var customWeights map[stmts.StmtType]uint64
+	if strings.TrimSpace(flags.Weights) != "" {
+		var weightsMap map[string]uint64
+		if err := json.Unmarshal([]byte(flags.Weights), &weightsMap); err != nil {
+			common.Logger.Error().Err(err).Msg("Failed to parse weights JSON")
+			os.Exit(1)
+		}
+		// Convert string keys to StmtType
+		customWeights = make(map[stmts.StmtType]uint64, len(weightsMap))
+		for k, v := range weightsMap {
+			customWeights[stmts.StmtType(k)] = v
+		}
+		common.Logger.Info().Msgf("Using custom weights with %d statement types", len(customWeights))
+	}
+
 	var wg sync.WaitGroup
 	wg.Add(workers)
 	tokenCh := make(chan uint64, workers)
@@ -110,6 +133,14 @@ func Run(startMsg string, flags *CommonFlags, connect func(dsn string) (*sql.DB,
 			defer wg.Done()
 			// each worker gets a deterministic seed derived from base
 			gen := genFactory(baseSeed + uint64(workerID))
+			
+			// Apply custom weights if provided
+			if customWeights != nil {
+				if ws, ok := gen.(WeightSetter); ok {
+					ws.SetWeights(customWeights)
+				}
+			}
+			
 			for i := 0; i < queries; i++ {
 				query := gen.GenerateWithDB(conn)
 				_, execErr := conn.Exec(query)

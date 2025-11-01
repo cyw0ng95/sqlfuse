@@ -12,6 +12,7 @@ type CommonFlags struct {
 	Queries     int
 	Seed        int64
 	Verbose     bool
+	Weights     string // JSON-encoded weights map (optional)
 }
 
 // AddCommonFlags registers the standard executor flags onto the provided cobra command,
@@ -24,4 +25,5 @@ func AddCommonFlags(cmd *cobra.Command, f *CommonFlags, defaultInitSQL string) {
 	cmd.Flags().IntVarP(&f.Queries, "queries", "q", 10, "Number of queries per worker")
 	cmd.Flags().Int64VarP(&f.Seed, "seed", "s", 0, "Seed for fuzzing (0 means random)")
 	cmd.Flags().BoolVarP(&f.Verbose, "verbose", "v", false, "Show SQL queries being executed")
+	cmd.Flags().StringVar(&f.Weights, "weights", "", "JSON-encoded statement weights (optional, e.g., '{\"insert\":100,\"select_basic\":200}')")
 }

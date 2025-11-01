@@ -14,5 +14,6 @@ declare module 'vue' {
     JobManager: typeof import('./src/components/JobManager.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    WeightEditor: typeof import('./src/components/WeightEditor.vue')['default']
   }
 }

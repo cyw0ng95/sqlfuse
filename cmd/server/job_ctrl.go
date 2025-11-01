@@ -141,14 +141,15 @@ func RegisterJobRoutes(e *echo.Echo) {
 	loadJobs()
 
 	// POST /job/new accepts either:
-	// { "executor": "turso_embedded", "args": ["--workers", "4"], "seed": 123 }
+	// { "executor": "turso_embedded", "args": ["--workers", "4"], "seed": 123, "weights": {"insert": 100} }
 	// or legacy: { "cmd": "turso_embedded --workers 4", "seed": 123 }
 	e.POST("/job/new", func(c echo.Context) error {
 		var req struct {
-			Cmd      string   `json:"cmd"`
-			Executor string   `json:"executor"`
-			Args     []string `json:"args"`
-			Seed     *int64   `json:"seed,omitempty"`
+			Cmd      string              `json:"cmd"`
+			Executor string              `json:"executor"`
+			Args     []string            `json:"args"`
+			Seed     *int64              `json:"seed,omitempty"`
+			Weights  map[string]uint64   `json:"weights,omitempty"`
 		}
 		if err := c.Bind(&req); err != nil {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
@@ -211,6 +212,16 @@ func RegisterJobRoutes(e *echo.Echo) {
 			if !found {
 				cmdObj.Args = append(cmdObj.Args, seedArg)
 			}
+		}
+
+		// Add weights flag if custom weights provided
+		if req.Weights != nil && len(req.Weights) > 0 {
+			weightsJSON, err := json.Marshal(req.Weights)
+			if err != nil {
+				return c.JSON(http.StatusBadRequest, map[string]string{"error": fmt.Sprintf("invalid weights format: %v", err)})
+			}
+			weightsArg := "--weights=" + string(weightsJSON)
+			cmdObj.Args = append(cmdObj.Args, weightsArg)
 		}
 
 		// debug: print final args to stderr
