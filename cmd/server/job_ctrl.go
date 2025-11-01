@@ -14,6 +14,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -42,6 +43,7 @@ type Job struct {
 	Status    JobStatus  `json:"status"`
 	PID       int        `json:"pid,omitempty"`
 	ExitCode  *int       `json:"exit_code,omitempty"`
+	Signal    *string    `json:"signal,omitempty"`    // Signal that killed the process, if any
 	StartedAt *time.Time `json:"started_at,omitempty"`
 	EndedAt   *time.Time `json:"ended_at,omitempty"`
 
@@ -62,6 +64,7 @@ type JobMeta struct {
 	Status    JobStatus  `json:"status"`
 	PID       int        `json:"pid,omitempty"`
 	ExitCode  *int       `json:"exit_code,omitempty"`
+	Signal    *string    `json:"signal,omitempty"`
 	StartedAt *time.Time `json:"started_at,omitempty"`
 	EndedAt   *time.Time `json:"ended_at,omitempty"`
 }
@@ -103,6 +106,7 @@ func saveJobs() {
 			Status:    j.Status,
 			PID:       j.PID,
 			ExitCode:  j.ExitCode,
+			Signal:    j.Signal,
 			StartedAt: j.StartedAt,
 			EndedAt:   j.EndedAt,
 		}
@@ -135,6 +139,7 @@ func loadJobs() {
 			Status:           m.Status,
 			PID:              m.PID,
 			ExitCode:         m.ExitCode,
+			Signal:           m.Signal,
 			StartedAt:        m.StartedAt,
 			EndedAt:          m.EndedAt,
 			logSubscribers:   make(map[*websocket.Conn]bool),
@@ -398,6 +403,14 @@ func RegisterJobRoutes(e *echo.Echo) {
 				if cmdToRun.ProcessState != nil {
 					exit := cmdToRun.ProcessState.ExitCode()
 					j.ExitCode = &exit
+					
+					// Check if process was killed by a signal
+					if ws, ok := cmdToRun.ProcessState.Sys().(syscall.WaitStatus); ok {
+						if ws.Signaled() {
+							sig := ws.Signal().String()
+							j.Signal = &sig
+						}
+					}
 				}
 				if j.Status != JobStopped {
 					j.Status = JobFailed
@@ -405,8 +418,12 @@ func RegisterJobRoutes(e *echo.Echo) {
 				jobMu.Unlock()
 				saveJobs()
 				
-				// Send completion message to subscribers
-				j.broadcastLogMessage("status", fmt.Sprintf("Job failed with exit code: %v", j.ExitCode))
+				// Send completion message to subscribers with signal info
+				failureMsg := fmt.Sprintf("Job failed with exit code: %v", j.ExitCode)
+				if j.Signal != nil {
+					failureMsg = fmt.Sprintf("Job failed - killed by signal: %s (exit code: %v)", *j.Signal, j.ExitCode)
+				}
+				j.broadcastLogMessage("status", failureMsg)
 				return
 			}
 
@@ -452,6 +469,9 @@ func RegisterJobRoutes(e *echo.Echo) {
 		}
 		if job.ExitCode != nil {
 			resp["exit_code"] = *job.ExitCode
+		}
+		if job.Signal != nil {
+			resp["signal"] = *job.Signal
 		}
 		jobMu.Unlock()
 		return c.JSON(http.StatusOK, resp)
@@ -509,6 +529,9 @@ func RegisterJobRoutes(e *echo.Echo) {
 		}
 		if job.ExitCode != nil {
 			resp["exit_code"] = *job.ExitCode
+		}
+		if job.Signal != nil {
+			resp["signal"] = *job.Signal
 		}
 		if job.StartedAt != nil {
 			resp["started_at"] = job.StartedAt.Format(time.RFC3339)
