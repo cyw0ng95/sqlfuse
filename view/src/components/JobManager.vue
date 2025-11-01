@@ -97,6 +97,24 @@
           <v-btn color="info" prepend-icon="mdi-text-box" variant="tonal" @click="fetchInfo">
             Info
           </v-btn>
+          <v-btn 
+            v-if="!streamingLogs && queryID" 
+            color="success" 
+            prepend-icon="mdi-broadcast" 
+            variant="tonal" 
+            @click="startStreaming"
+          >
+            Stream Logs
+          </v-btn>
+          <v-btn 
+            v-if="streamingLogs" 
+            color="warning" 
+            prepend-icon="mdi-broadcast-off" 
+            variant="tonal" 
+            @click="disconnectLogStream"
+          >
+            Stop Stream
+          </v-btn>
           <v-btn color="error" prepend-icon="mdi-stop-circle" variant="tonal" @click="stopJob">
             Stop
           </v-btn>
@@ -117,6 +135,26 @@
         <div v-if="status.exit_code != null" class="text-caption">
           <v-icon size="small">mdi-exit-to-app</v-icon> Exit Code: {{ status.exit_code }}
         </div>
+      </div>
+
+      <!-- Streaming logs display -->
+      <div v-if="streamingLogs || streamLogs.length > 0" class="mt-4">
+        <v-card elevation="2">
+          <v-card-title class="d-flex align-center bg-gradient-stream">
+            <v-icon class="mr-2">mdi-broadcast</v-icon>
+            Streaming Logs
+            <v-spacer />
+            <v-chip v-if="streamingLogs" color="success" size="small" variant="flat">
+              <v-icon start>mdi-circle</v-icon>
+              Live
+            </v-chip>
+          </v-card-title>
+          <v-card-text class="pa-0">
+            <div class="stream-container">
+              <pre class="stream-pre" v-for="(log, index) in streamLogs" :key="index"><span :class="`log-${log.stream}`">{{ log.data }}</span></pre>
+            </div>
+          </v-card-text>
+        </v-card>
       </div>
 
       <div v-if="infoData" class="mt-4">
@@ -152,8 +190,8 @@
 </template>
 
 <script setup>
-  import { onMounted, ref } from 'vue'
-  import { API_BASE_URL } from '../config.js'
+  import { onMounted, onUnmounted, ref } from 'vue'
+  import { API_BASE_URL, WS_BASE_URL } from '../config.js'
 
   const props = defineProps({
     customWeights: {
@@ -172,6 +210,11 @@
   const queryID = ref('')
   const status = ref(null)
   const infoData = ref(null)
+  
+  // WebSocket streaming support
+  const streamingLogs = ref(false)
+  const streamLogs = ref([])
+  let logWebSocket = null
 
   async function fetchJson (path, opts) {
     const url = path.startsWith('http://') || path.startsWith('https://') ? path : `${API_BASE_URL}${path}`
@@ -201,6 +244,57 @@
     getExecutors()
   })
 
+  onUnmounted(() => {
+    disconnectLogStream()
+  })
+
+  function connectLogStream(jobID) {
+    // Disconnect existing stream if any
+    disconnectLogStream()
+    
+    streamLogs.value = []
+    streamingLogs.value = true
+    
+    const wsUrl = `${WS_BASE_URL}/job/logs/stream?id=${encodeURIComponent(jobID)}`
+    logWebSocket = new WebSocket(wsUrl)
+    
+    logWebSocket.onopen = () => {
+      console.log('WebSocket connected for job', jobID)
+    }
+    
+    logWebSocket.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data)
+        streamLogs.value.push({
+          stream: msg.stream,
+          data: msg.data,
+          timestamp: new Date().toISOString()
+        })
+      } catch (err) {
+        console.error('Failed to parse WebSocket message:', err)
+      }
+    }
+    
+    logWebSocket.onerror = (error) => {
+      console.error('WebSocket error:', error)
+      streamingLogs.value = false
+    }
+    
+    logWebSocket.onclose = () => {
+      console.log('WebSocket closed')
+      streamingLogs.value = false
+      logWebSocket = null
+    }
+  }
+  
+  function disconnectLogStream() {
+    if (logWebSocket) {
+      logWebSocket.close()
+      logWebSocket = null
+    }
+    streamingLogs.value = false
+  }
+
   async function createJob () {
     createError.value = ''
     if (!selectedExecutor.value) {
@@ -225,6 +319,11 @@
     }
     lastID.value = data.id || ''
     queryID.value = lastID.value
+    
+    // Start streaming logs for the new job
+    if (lastID.value) {
+      connectLogStream(lastID.value)
+    }
   }
 
   async function fetchStatus () {
@@ -256,6 +355,14 @@
     }
     // refresh status
     await fetchStatus()
+    
+    // Disconnect stream when job is stopped
+    disconnectLogStream()
+  }
+  
+  function startStreaming () {
+    if (!queryID.value) return
+    connectLogStream(queryID.value)
   }
 
   function clear () {
@@ -266,6 +373,8 @@
     status.value = null
     infoData.value = null
     createError.value = ''
+    streamLogs.value = []
+    disconnectLogStream()
   }
 </script>
 
@@ -325,5 +434,39 @@
 
 .gap-2 {
   gap: 8px;
+}
+
+.bg-gradient-stream {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white !important;
+}
+
+.stream-container {
+  max-height: 500px;
+  overflow-y: auto;
+  background-color: #1e1e1e;
+  padding: 16px;
+}
+
+.stream-pre {
+  color: #d4d4d4;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.log-stdout {
+  color: #4ec9b0;
+}
+
+.log-stderr {
+  color: #f48771;
+}
+
+.log-status {
+  color: #dcdcaa;
+  font-weight: bold;
 }
 </style>

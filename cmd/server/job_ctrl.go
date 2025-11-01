@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -14,6 +16,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 
 	"sqlfuse/internal/executors"
@@ -45,6 +48,10 @@ type Job struct {
 	Stderr bytes.Buffer `json:"-"`
 
 	cmd *exec.Cmd `json:"-"`
+	
+	// WebSocket support for streaming logs
+	logSubscribers   map[*websocket.Conn]bool
+	subscribersMutex sync.Mutex
 }
 
 // JobMeta is the persisted representation of a job (no buffers/cmd)
@@ -62,6 +69,13 @@ var (
 	jobStore     = make(map[string]*Job)
 	jobMu        sync.Mutex
 	jobIDCounter uint64
+	
+	// WebSocket upgrader
+	upgrader = websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool {
+			return true // Allow all origins for development
+		},
+	}
 )
 
 // helper to truncate output for responses
@@ -115,13 +129,14 @@ func loadJobs() {
 	for _, m := range metas {
 		// only restore metadata; stdout/stderr/cmd remain empty
 		jobStore[m.ID] = &Job{
-			ID:        m.ID,
-			Cmd:       m.Cmd,
-			Status:    m.Status,
-			PID:       m.PID,
-			ExitCode:  m.ExitCode,
-			StartedAt: m.StartedAt,
-			EndedAt:   m.EndedAt,
+			ID:               m.ID,
+			Cmd:              m.Cmd,
+			Status:           m.Status,
+			PID:              m.PID,
+			ExitCode:         m.ExitCode,
+			StartedAt:        m.StartedAt,
+			EndedAt:          m.EndedAt,
+			logSubscribers:   make(map[*websocket.Conn]bool),
 		}
 		// update jobIDCounter to avoid collisions
 		if v, err := strconv.ParseUint(m.ID, 10, 64); err == nil {
@@ -129,6 +144,54 @@ func loadJobs() {
 				jobIDCounter = v
 			}
 		}
+	}
+}
+
+// broadcastLogMessage sends a log message to all WebSocket subscribers of a job
+func (j *Job) broadcastLogMessage(stream string, data string) {
+	j.subscribersMutex.Lock()
+	defer j.subscribersMutex.Unlock()
+	
+	msg := map[string]string{
+		"stream": stream,
+		"data":   data,
+	}
+	msgBytes, _ := json.Marshal(msg)
+	
+	for conn := range j.logSubscribers {
+		if err := conn.WriteMessage(websocket.TextMessage, msgBytes); err != nil {
+			// Remove failed connection
+			conn.Close()
+			delete(j.logSubscribers, conn)
+		}
+	}
+}
+
+// addLogSubscriber adds a WebSocket connection to receive log updates
+func (j *Job) addLogSubscriber(conn *websocket.Conn) {
+	j.subscribersMutex.Lock()
+	defer j.subscribersMutex.Unlock()
+	j.logSubscribers[conn] = true
+}
+
+// removeLogSubscriber removes a WebSocket connection from log updates
+func (j *Job) removeLogSubscriber(conn *websocket.Conn) {
+	j.subscribersMutex.Lock()
+	defer j.subscribersMutex.Unlock()
+	delete(j.logSubscribers, conn)
+}
+
+// streamReader reads from a reader and broadcasts lines to WebSocket subscribers
+func streamReader(j *Job, stream string, reader io.Reader, buffer *bytes.Buffer) {
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		line := scanner.Text() + "\n"
+		
+		// Write to buffer
+		buffer.WriteString(line)
+		
+		// Broadcast to WebSocket subscribers
+		j.broadcastLogMessage(stream, line)
 	}
 }
 
@@ -238,9 +301,10 @@ func RegisterJobRoutes(e *echo.Echo) {
 			fullCmd = fullCmd + " --seed=" + strconv.FormatInt(*req.Seed, 10)
 		}
 		job := &Job{
-			ID:     id,
-			Cmd:    fullCmd,
-			Status: JobPending,
+			ID:             id,
+			Cmd:            fullCmd,
+			Status:         JobPending,
+			logSubscribers: make(map[*websocket.Conn]bool),
 		}
 
 		jobMu.Lock()
@@ -261,8 +325,29 @@ func RegisterJobRoutes(e *echo.Echo) {
 			saveJobs()
 
 			j.cmd = cmdToRun
-			cmdToRun.Stdout = &j.Stdout
-			cmdToRun.Stderr = &j.Stderr
+			
+			// Create pipes for stdout and stderr to enable streaming
+			stdoutPipe, err := cmdToRun.StdoutPipe()
+			if err != nil {
+				jobMu.Lock()
+				j.Status = JobFailed
+				end := time.Now()
+				j.EndedAt = &end
+				jobMu.Unlock()
+				saveJobs()
+				return
+			}
+			
+			stderrPipe, err := cmdToRun.StderrPipe()
+			if err != nil {
+				jobMu.Lock()
+				j.Status = JobFailed
+				end := time.Now()
+				j.EndedAt = &end
+				jobMu.Unlock()
+				saveJobs()
+				return
+			}
 
 			if err := cmdToRun.Start(); err != nil {
 				jobMu.Lock()
@@ -281,8 +366,26 @@ func RegisterJobRoutes(e *echo.Echo) {
 				saveJobs()
 			}
 
+			// Stream stdout and stderr concurrently
+			var wg sync.WaitGroup
+			wg.Add(2)
+			
+			go func() {
+				defer wg.Done()
+				streamReader(j, "stdout", stdoutPipe, &j.Stdout)
+			}()
+			
+			go func() {
+				defer wg.Done()
+				streamReader(j, "stderr", stderrPipe, &j.Stderr)
+			}()
+
 			// wait for completion
-			err := cmdToRun.Wait()
+			err = cmdToRun.Wait()
+			
+			// Wait for all output to be processed
+			wg.Wait()
+			
 			end := time.Now()
 			jobMu.Lock()
 			j.EndedAt = &end
@@ -296,6 +399,9 @@ func RegisterJobRoutes(e *echo.Echo) {
 				}
 				jobMu.Unlock()
 				saveJobs()
+				
+				// Send completion message to subscribers
+				j.broadcastLogMessage("status", fmt.Sprintf("Job failed with exit code: %v", j.ExitCode))
 				return
 			}
 
@@ -306,6 +412,9 @@ func RegisterJobRoutes(e *echo.Echo) {
 			j.Status = JobDone
 			jobMu.Unlock()
 			saveJobs()
+			
+			// Send completion message to subscribers
+			j.broadcastLogMessage("status", "Job completed successfully")
 		}(job, cmdObj)
 
 		return c.JSON(http.StatusAccepted, map[string]string{"id": id})
@@ -404,5 +513,77 @@ func RegisterJobRoutes(e *echo.Echo) {
 		}
 		jobMu.Unlock()
 		return c.JSON(http.StatusOK, resp)
+	})
+
+	// WebSocket endpoint for streaming job logs
+	// GET /job/logs/stream?id=123
+	e.GET("/job/logs/stream", func(c echo.Context) error {
+		id := c.QueryParam("id")
+		if id == "" {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "id is required"})
+		}
+
+		jobMu.Lock()
+		job, ok := jobStore[id]
+		jobMu.Unlock()
+		if !ok {
+			return c.JSON(http.StatusNotFound, map[string]string{"error": "job not found"})
+		}
+
+		// Upgrade HTTP connection to WebSocket
+		ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
+		if err != nil {
+			return err
+		}
+		defer ws.Close()
+
+		// Add this connection as a subscriber
+		job.addLogSubscriber(ws)
+		defer job.removeLogSubscriber(ws)
+
+		// Send initial status message
+		statusMsg := map[string]string{
+			"stream": "status",
+			"data":   fmt.Sprintf("Connected to job %s (status: %s)", id, job.Status),
+		}
+		if msgBytes, err := json.Marshal(statusMsg); err == nil {
+			ws.WriteMessage(websocket.TextMessage, msgBytes)
+		}
+
+		// Send existing logs if any
+		jobMu.Lock()
+		stdoutBytes := append([]byte(nil), job.Stdout.Bytes()...)
+		stderrBytes := append([]byte(nil), job.Stderr.Bytes()...)
+		jobMu.Unlock()
+
+		if len(stdoutBytes) > 0 {
+			historyMsg := map[string]string{
+				"stream": "stdout",
+				"data":   string(stdoutBytes),
+			}
+			if msgBytes, err := json.Marshal(historyMsg); err == nil {
+				ws.WriteMessage(websocket.TextMessage, msgBytes)
+			}
+		}
+
+		if len(stderrBytes) > 0 {
+			historyMsg := map[string]string{
+				"stream": "stderr",
+				"data":   string(stderrBytes),
+			}
+			if msgBytes, err := json.Marshal(historyMsg); err == nil {
+				ws.WriteMessage(websocket.TextMessage, msgBytes)
+			}
+		}
+
+		// Keep connection alive and handle pings
+		for {
+			_, _, err := ws.ReadMessage()
+			if err != nil {
+				break
+			}
+		}
+
+		return nil
 	})
 }
