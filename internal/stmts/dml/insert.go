@@ -118,7 +118,7 @@ func GenInsertBulk(db *sql.DB, lcgOrRand interface{}) (stmts.Stmt, error) {
 
 // GenUpsert generates an INSERT ... ON CONFLICT(...) DO UPDATE statement when possible.
 func GenUpsert(db *sql.DB, lcgOrRand interface{}) (stmts.Stmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db, "sqlite")
+	tables, err := helper.GetAllTablesAndCols(db, stmts.GetDefaultFlavor().Name())
 	if err != nil || len(tables) == 0 {
 		return nil, fmt.Errorf("no tables for upsert: %v", err)
 	}

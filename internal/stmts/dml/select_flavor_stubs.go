@@ -131,7 +131,7 @@ func GenSelectWithMultipleWindowsWithFlavor(db *sql.DB, lcg *common.LCG, flavor 
 
 // GenSelectWithCTEWithFlavor is a flavor-aware version of GenSelectWithCTE
 func GenSelectWithCTEWithFlavor(db *sql.DB, lcg *common.LCG, flavor stmts.FlavorConfig) (SelectStmt, error) {
-	return GenSelectWithCTE(db, lcg)
+	return GenSelectWithCTE(db, lcg, flavor)
 }
 
 // GenSelectWithMultipleCTEWithFlavor is a flavor-aware version of GenSelectWithMultipleCTE

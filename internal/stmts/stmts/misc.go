@@ -118,12 +118,11 @@ func GenExportDatabase(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, 
 		flavor = GetDefaultFlavor()
 	}
 
-	exportPath := fmt.Sprintf("/tmp/export_%d", lcg.Uint64()%10000)
+	// Use a relative export directory to avoid OS-specific absolute paths
+	exportPath := fmt.Sprintf("export_%d", lcg.Uint64()%10000)
 
 	var sql string
-	choice := lcg.Intn(2)
-
-	if choice == 0 {
+	if lcg.Intn(2) == 0 {
 		// Export to directory
 		sql = fmt.Sprintf("EXPORT DATABASE '%s';", exportPath)
 	} else {
@@ -199,17 +198,16 @@ func GenPrepare(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) 
 	stmtName := fmt.Sprintf("stmt_%d", lcg.Uint64()%10000)
 
 	var sql string
-	choice := lcg.Intn(3)
-
-	if choice == 0 {
-		// Simple SELECT
+	switch lcg.Intn(3) {
+	case 0:
+		// Simple SELECT with parameter
 		sql = fmt.Sprintf("PREPARE %s AS SELECT $1;", stmtName)
-	} else if choice == 1 {
-		// INSERT with parameters
-		sql = fmt.Sprintf("PREPARE %s AS INSERT INTO temp_table VALUES ($1, $2);", stmtName)
-	} else {
-		// SELECT with WHERE clause
-		sql = fmt.Sprintf("PREPARE %s AS SELECT * FROM temp_table WHERE id = $1;", stmtName)
+	case 1:
+		// INSERT using VALUES target (no table dependency)
+		sql = fmt.Sprintf("PREPARE %s AS SELECT * FROM (VALUES ($1, $2)) v(a,b);", stmtName)
+	default:
+		// Filter over VALUES so no external table is needed
+		sql = fmt.Sprintf("PREPARE %s AS SELECT * FROM (VALUES (1),(2),(3)) v(id) WHERE id = $1;", stmtName)
 	}
 
 	return &PrepareStmt{
