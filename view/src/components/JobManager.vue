@@ -135,6 +135,9 @@
         <div v-if="status.exit_code != null" class="text-caption">
           <v-icon size="small">mdi-exit-to-app</v-icon> Exit Code: {{ status.exit_code }}
         </div>
+        <div v-if="status.signal" class="text-caption error-text">
+          <v-icon size="small" color="error">mdi-alert-octagon</v-icon> Killed by Signal: {{ status.signal }}
+        </div>
       </div>
 
       <!-- Streaming logs display -->
@@ -414,6 +417,11 @@
   padding: 16px;
   border-radius: 8px;
   border: 1px solid #e0e0e0;
+}
+
+.error-text {
+  color: #d32f2f;
+  font-weight: 500;
 }
 
 .output-pre {
