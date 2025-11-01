@@ -65,12 +65,11 @@ cd internal && go test ./...
 - sqlfuse/internal/common: PASS
 - sqlfuse/internal/generators: PASS
 - sqlfuse/internal/generators/dialects: PASS
-- sqlfuse/internal/stmts/ddl: no test files
-- sqlfuse/internal/stmts/dml: no test files
 - sqlfuse/internal/stmts/helper: PASS (3/3 tests)
-- sqlfuse/internal/stmts/other: no test files
 - sqlfuse/internal/stmts/stmts: PASS
 - sqlfuse/internal/stmts/types: PASS
+
+**Note**: The redundant packages `internal/stmts/ddl`, `internal/stmts/dml`, and `internal/stmts/other` have been removed as part of the package simplification effort. These were duplicate wrappers around the main `stmts` package.
 
 ### Executor Build Verification
 ```bash
