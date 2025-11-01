@@ -23,74 +23,40 @@ SQLfuse is a Go implementation of the [SQLsmith](https://github.com/anse1/sqlsmi
 
 ## Architecture
 
-### Component Overview
+SQLfuse uses a modular architecture with clear separation of concerns:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        SQLfuse                           │
+│                        SQLfuse                              │
 ├─────────────────────────────────────────────────────────────┤
 │                                                              │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐  │
-│  │  Executors   │───▶│  Generators  │───▶│  Statement   │  │
-│  │              │    │              │    │  Builders    │  │
-│  │ • Turso      │    │ • Base       │    │              │  │
-│  │ • go-sqlite3 │    │ • Turso      │    │ • SELECT     │  │
-
-│  │ • DuckDB     │    │ • go-sqlite3 │    │ • INSERT     │  │
-│  │ • HTTP API   │    │ • DuckDB     │    │ • UPDATE     │  │
-│  └──────────────┘    └──────────────┘    │ • DELETE     │  │
-│                                           │ • PRAGMA     │  │
-│                                           │ • CREATE     │  │
-│  ┌──────────────┐    ┌──────────────┐    │ • ...        │  │
-│  │   Dialects   │    │   Frontend   │    └──────────────┘  │
-│  │ • Feature    │    │ • Vue.js     │                      │
-│  │   Detection  │    │ • Vuetify    │                      │
-│  │ • SQL        │    │ • Job Ctrl   │                      │
-│  │   Validation │    │              │                      │
-│  └──────────────┘    └──────────────┘                      │
+│  Executors  ──▶  Generators  ──▶  Statement Builders       │
+│  (Turso, go-sqlite3, DuckDB, HTTP API)                      │
+│                                                              │
+│  Dialects   ──▶  Frontend                                   │
+│  (Feature detection, SQL validation)  (Vue.js web UI)       │
 │                                                              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Design Patterns
+**Core Components:**
 
-**1. Flavor-Based Polymorphism**
+- **Executors**: Database-specific implementations that execute generated SQL against target databases
+- **Generators**: Flavor-aware SQL generators using composition-based design with `BaseGenerator`
+- **Statement Builders**: Database-agnostic SQL construction using factory and builder patterns
+- **Dialects**: FlavorConfig implementations defining database-specific feature support
+- **Frontend**: Vue.js interface for job management and monitoring
 
-The architecture uses dialect configurations (`FlavorConfig`) to adapt SQL generation to specific database capabilities:
+**Key Design Patterns:**
 
-```go
-type FlavorConfig interface {
-    Name() string
-    SupportsFeature(feature string) bool
-    ValidateSQL(sql string) error
-}
-```
+- **Flavor-Based Polymorphism**: Dialect configurations adapt SQL to database capabilities
+- **Composition over Inheritance**: Generators embed `BaseGenerator` for shared functionality
+- **Workspace Isolation**: Go workspaces keep executor binaries focused (8.9MB to 156MB)
 
-Each database flavor (Turso, go-sqlite3) has its own configuration defining supported features, allowing the generator to produce only compatible SQL.
-
-**2. Composition-Based Generators**
-
-Generators use Go's embedding pattern to share common functionality while maintaining flavor-specific customization:
-
-```go
-type TursoGenerator struct {
-    *BaseGenerator
-    flavorConfig FlavorConfig
-}
-```
-
-The `BaseGenerator` handles LCG-based randomness, statement selection, and recursion depth, while specific generators define statement weights and capabilities.
-
-**3. Workspace-Based Dependency Isolation**
-
-The project uses Go workspaces to ensure each executor includes only its required database driver:
-
-- **turso_embedded**: 156MB (includes turso-go)
-- **go_sqlite3_embedded**: 8.9MB (includes go-sqlite3 + CGo SQLite)
-- **duckdb_embedded**: 48MB (includes go-duckdb)
-- **server**: 11MB (no database drivers)
-
-This keeps binaries focused and reduces deployment size.
+For detailed architecture documentation, see:
+- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)**: Generator architecture and patterns
+- **[DESIGN_PATTERNS.md](docs/DESIGN_PATTERNS.md)**: Factory, strategy, and builder patterns
+- **[WORKSPACE.md](docs/WORKSPACE.md)**: Go workspace structure and dependency isolation
 
 ## Quick Start
 
@@ -299,102 +265,17 @@ bash build.sh --test
 
 ### Adding a New Database Flavor
 
-1. **Create Flavor Configuration** (`internal/generators/dialects/mydb.go`):
+To add support for a new database:
 
-```go
-package dialects
+1. Create dialect configuration in `internal/generators/dialects/mydb.go`
+2. Implement generator in `internal/generators/mydb.go`
+3. Create executor in `cmd/executors/mydb_embedded/main.go`
+4. Add to workspace in `go.work`
 
-type MyDBFlavorConfig struct{}
-
-func (m *MyDBFlavorConfig) Name() string {
-    return "mydb"
-}
-
-func (m *MyDBFlavorConfig) SupportsFeature(feature string) bool {
-    switch feature {
-    case "window_functions":
-        return true
-    case "regexp":
-        return false
-    default:
-        return true
-    }
-}
-
-func (m *MyDBFlavorConfig) ValidateSQL(sql string) error {
-    return nil
-}
-
-func NewMyDBFlavorConfig() stmts.FlavorConfig {
-    return &MyDBFlavorConfig{}
-}
-```
-
-2. **Create Generator** (`internal/generators/mydb.go`):
-
-```go
-package generators
-
-type MyDBGenerator struct {
-    *BaseGenerator
-    flavorConfig stmts.FlavorConfig
-}
-
-func NewMyDBGenerator(seed uint64) *MyDBGenerator {
-    g := &MyDBGenerator{
-        BaseGenerator: NewBaseGenerator(seed),
-        flavorConfig:  dialects.NewMyDBFlavorConfig(),
-    }
-    g.SetWeights(DefaultMyDBStmtWeights())
-    g.initGenMap()
-    return g
-}
-
-func (g *MyDBGenerator) Name() string {
-    return "mydb"
-}
-```
-
-3. **Create Executor** (`cmd/executors/mydb_embedded/main.go`):
-
-```go
-package main
-
-import (
-    "database/sql"
-    "sqlfuse/internal/executors"
-    "sqlfuse/internal/generators"
-    _ "github.com/mydb/driver"
-)
-
-func main() {
-    // Standard executor pattern...
-    executors.Run(
-        "MyDB Executor",
-        &flags,
-        func(dsn string) (*sql.DB, error) {
-            return sql.Open("mydb", dsn)
-        },
-        func(seed uint64) generators.Generator {
-            return generators.NewMyDBGenerator(seed)
-        },
-        printSchema,
-    )
-}
-```
-
-4. **Add to Workspace** (`go.work`):
-
-```go
-use ./cmd/executors/mydb_embedded
-```
-
-### Code Organization Principles
-
-- **Executors**: Database-specific; handle connection, execution, error reporting
-- **Generators**: Flavor-specific; define weights and capabilities
-- **Dialects**: Feature detection; define what SQL is valid for a flavor
-- **Statement Builders**: Database-agnostic; generate SQL based on dialect constraints
+For detailed step-by-step instructions with code examples, see:
+- **[ARCHITECTURE.md](docs/ARCHITECTURE.md#adding-a-new-generator)**: Generator implementation guide
+- **[DIALECTS_README.md](docs/DIALECTS_README.md#adding-a-new-dialect)**: Dialect configuration guide
+- **[WORKSPACE.md](docs/WORKSPACE.md#adding-a-new-executor)**: Workspace setup guide
 
 ## Use Cases
 
