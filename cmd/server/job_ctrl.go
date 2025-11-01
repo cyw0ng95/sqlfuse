@@ -19,6 +19,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 
+	"sqlfuse/internal/common"
 	"sqlfuse/internal/executors"
 )
 
@@ -156,7 +157,11 @@ func (j *Job) broadcastLogMessage(stream string, data string) {
 		"stream": stream,
 		"data":   data,
 	}
-	msgBytes, _ := json.Marshal(msg)
+	msgBytes, err := json.Marshal(msg)
+	if err != nil {
+		// This should rarely happen with simple string maps, but handle it
+		return
+	}
 	
 	for conn := range j.logSubscribers {
 		if err := conn.WriteMessage(websocket.TextMessage, msgBytes); err != nil {
@@ -576,11 +581,25 @@ func RegisterJobRoutes(e *echo.Echo) {
 			}
 		}
 
-		// Keep connection alive and handle pings
+		// Keep connection alive and handle ping/pong
+		ws.SetPongHandler(func(string) error {
+			return nil
+		})
+		
 		for {
-			_, _, err := ws.ReadMessage()
+			msgType, msg, err := ws.ReadMessage()
 			if err != nil {
 				break
+			}
+			// Handle ping messages by responding with pong
+			if msgType == websocket.PingMessage {
+				if err := ws.WriteMessage(websocket.PongMessage, nil); err != nil {
+					break
+				}
+			}
+			// Log unexpected messages for debugging
+			if msgType == websocket.TextMessage || msgType == websocket.BinaryMessage {
+				common.Logger.Debug().Msgf("Received unexpected message from client: %s", string(msg))
 			}
 		}
 
