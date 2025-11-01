@@ -494,6 +494,7 @@ Comprehensive documentation is available in the `docs/` directory:
 - **[DESIGN_IMPROVEMENTS.md](docs/DESIGN_IMPROVEMENTS.md)**: Planned enhancements
 - **[WEB_UI_USAGE.md](docs/WEB_UI_USAGE.md)**: Web interface usage guide
 - **[SQLSMITH_COMPARISON.md](docs/SQLSMITH_COMPARISON.md)**: Comparison with original SQLsmith and implementation of key ideas
+- **[SQLRIGHT_INTEGRATION.md](docs/SQLRIGHT_INTEGRATION.md)**: Oracle-based validation for detecting logical bugs (inspired by SQLRight)
 - **[SQL_STATEMENT_ENHANCEMENT.md](docs/SQL_STATEMENT_ENHANCEMENT.md)**: SQLite statement generation enhancements
 - **[REFACTORING_SUMMARY.md](docs/REFACTORING_SUMMARY.md)**: Design pattern refactoring summary
 
@@ -553,12 +554,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Related Projects
 
 - **[SQLsmith](https://github.com/anse1/sqlsmith)**: Original C++ implementation for PostgreSQL
+- **[SQLRight](https://github.com/PSU-Security-Universe/sqlright)**: Coverage-guided SQL fuzzing with oracle-based validation
 - **[SQLancer](https://github.com/sqlancer/sqlancer)**: Java-based database testing with logical validation
 - **[go-fuzz](https://github.com/dvyukov/go-fuzz)**: Coverage-guided fuzzing for Go programs
 
 ## Acknowledgments
 
 - Original SQLsmith approach by Andreas Seltenreich
+- SQLRight research by Yu Liang, Song Liu, and Hong Hu for oracle-based validation techniques
 - SQLite project for comprehensive SQL implementation
 - Turso team for LibSQL compatibility documentation
 - Go community for excellent database/sql abstraction
