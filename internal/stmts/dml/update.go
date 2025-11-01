@@ -49,7 +49,7 @@ func genUpdateWithFlavor(db *sql.DB, lcg *common.LCG, flavor stmts.FlavorConfig)
 	}
 
 	// Try to get actual tables from schema
-	tables, err := helper.GetAllTablesAndCols(db, "sqlite")
+	tables, err := helper.GetAllTablesAndCols(db, flavor.Name())
 	if err != nil || len(tables) == 0 {
 		// Fallback to simple update without schema
 		return genUpdateFallbackWithFlavor(lcg, flavor), nil
@@ -309,12 +309,5 @@ func genLiteral(lcg *common.LCG) string {
 }
 
 func join(a []string, sep string) string {
-	if len(a) == 0 {
-		return ""
-	}
-	res := a[0]
-	for i := 1; i < len(a); i++ {
-		res += sep + a[i]
-	}
-	return res
+	return strings.Join(a, sep)
 }

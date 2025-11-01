@@ -3,6 +3,7 @@ package other
 import (
 	"sqlfuse/internal/stmts/stmts"
 	"fmt"
+	"sort"
 	"sqlfuse/internal/common"
 )
 
@@ -506,17 +507,8 @@ func getSupportedPragmas(flavor stmts.FlavorConfig) []string {
 }
 
 // sortPragmaNames sorts pragma names in place to ensure deterministic behavior.
-// Using a simple selection sort to avoid importing sort package.
 func sortPragmaNames(names []string) {
-	for i := 0; i < len(names); i++ {
-		minIdx := i
-		for j := i + 1; j < len(names); j++ {
-			if names[j] < names[minIdx] {
-				minIdx = j
-			}
-		}
-		names[i], names[minIdx] = names[minIdx], names[i]
-	}
+	sort.Strings(names)
 }
 
 // Generate implements stmts.StmtGenerator for PRAGMA statements.

@@ -17,7 +17,7 @@ func (g *MergeIntoGenerator) Generate(ctx *GenContext) (Stmt, error) {
 
 // CanGenerate implements StmtGenerator. MERGE INTO requires tables.
 func (g *MergeIntoGenerator) CanGenerate(ctx *GenContext) bool {
-	return hasTables(ctx.DB)
+	return HasTables(ctx.DB)
 }
 
 // MergeIntoStmt represents a MERGE INTO statement.

@@ -73,7 +73,7 @@ func GenSelectWithScalarFunction(db *sql.DB, lcg *common.LCG) (SelectStmt, error
 	}
 
 	funcIdx := rnd(len(scalarFuncs))
-	funcExpr := scalarFuncs[funcIdx](lcg, tables)
+	funcExpr := scalarFuncs[funcIdx](lcg, []helper.TableInfo{tbl})
 
 	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;", funcExpr, stmts.QuoteIdent(tbl.Name), 1+rnd(10))
 	return SelectStmt{sql: sql, flavor: stmts.GetDefaultFlavor()}, nil
@@ -684,9 +684,9 @@ func genFormatFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 				return fmt.Sprintf("format(%s, %s)", format, col)
 			}
 		}
-		return "format('%s', 'test')"
+		return fmt.Sprintf("format(%s, 'test')", format)
 	} else if format == "'%f'" {
-		return fmt.Sprintf("format('%s', %f)", "%f", 3.14+float64(lcg.Intn(100))/10.0)
+		return fmt.Sprintf("format(%s, %f)", format, 3.14+float64(lcg.Intn(100))/10.0)
 	}
 	return "format('%d', 42)"
 }
@@ -1032,14 +1032,16 @@ func genCountStarFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 func genGroupConcatFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
 	col := findTextColumn(tbls, lcg)
 	if col == "" {
-		return "group_concat('test')"
+		return "group_concat(substr('test',1,64))"
 	}
+	// limit each concatenated element to 64 chars to avoid excessive memory usage
+	limited := fmt.Sprintf("substr(%s,1,64)", col)
 	if lcg.Intn(2) == 0 {
-		return fmt.Sprintf("group_concat(%s)", col)
+		return fmt.Sprintf("group_concat(%s)", limited)
 	}
 	separators := []string{",", "|", ";", " "}
 	sep := separators[lcg.Intn(len(separators))]
-	return fmt.Sprintf("group_concat(%s, '%s')", col, sep)
+	return fmt.Sprintf("group_concat(%s, '%s')", limited, sep)
 }
 
 func genStringAggFunction(lcg *common.LCG, tbls []helper.TableInfo) string {
@@ -1350,7 +1352,8 @@ func genJSONValidFunction(lcg *common.LCG) string {
 	if lcg.Intn(2) == 0 {
 		return "json_valid('{\"valid\":true}')"
 	}
-	return "json_valid('not valid json')"
+	// Use a syntactically valid SQL string literal that is invalid JSON structure for expected false
+	return "json_valid('{invalid}')"
 }
 
 func genJSONQuoteFunction(lcg *common.LCG) string {

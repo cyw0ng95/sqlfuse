@@ -193,15 +193,22 @@ func (j *Job) removeLogSubscriber(conn *websocket.Conn) {
 
 // streamReader reads from a reader and broadcasts lines to WebSocket subscribers
 func streamReader(j *Job, stream string, reader io.Reader, buffer *bytes.Buffer) {
-	scanner := bufio.NewScanner(reader)
-	for scanner.Scan() {
-		line := scanner.Text() + "\n"
-		
-		// Write to buffer
-		buffer.WriteString(line)
-		
-		// Broadcast to WebSocket subscribers
-		j.broadcastLogMessage(stream, line)
+	br := bufio.NewReader(reader)
+	for {
+		line, err := br.ReadString('\n')
+		if len(line) > 0 {
+			// Write to buffer
+			buffer.WriteString(line)
+			// Broadcast to WebSocket subscribers
+			j.broadcastLogMessage(stream, line)
+		}
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			// On read error, break to avoid tight loop
+			break
+		}
 	}
 }
 
@@ -580,27 +587,36 @@ func RegisterJobRoutes(e *echo.Echo) {
 
 		// Send existing logs if any
 		jobMu.Lock()
-		stdoutBytes := append([]byte(nil), job.Stdout.Bytes()...)
-		stderrBytes := append([]byte(nil), job.Stderr.Bytes()...)
+		// Create readers for the buffers to stream historical logs without large allocations.
+		stdoutReader := bytes.NewReader(job.Stdout.Bytes())
+		stderrReader := bytes.NewReader(job.Stderr.Bytes())
 		jobMu.Unlock()
 
-		if len(stdoutBytes) > 0 {
+		// Stream historical stdout line-by-line
+		stdoutScanner := bufio.NewScanner(stdoutReader)
+		for stdoutScanner.Scan() {
 			historyMsg := map[string]string{
 				"stream": "stdout",
-				"data":   string(stdoutBytes),
+				"data":   stdoutScanner.Text() + "\n",
 			}
 			if msgBytes, err := json.Marshal(historyMsg); err == nil {
-				ws.WriteMessage(websocket.TextMessage, msgBytes)
+				if err := ws.WriteMessage(websocket.TextMessage, msgBytes); err != nil {
+					break // Stop sending if client disconnects
+				}
 			}
 		}
 
-		if len(stderrBytes) > 0 {
+		// Stream historical stderr line-by-line
+		stderrScanner := bufio.NewScanner(stderrReader)
+		for stderrScanner.Scan() {
 			historyMsg := map[string]string{
 				"stream": "stderr",
-				"data":   string(stderrBytes),
+				"data":   stderrScanner.Text() + "\n",
 			}
 			if msgBytes, err := json.Marshal(historyMsg); err == nil {
-				ws.WriteMessage(websocket.TextMessage, msgBytes)
+				if err := ws.WriteMessage(websocket.TextMessage, msgBytes); err != nil {
+					break // Stop sending if client disconnects
+				}
 			}
 		}
 

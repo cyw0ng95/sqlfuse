@@ -11,8 +11,11 @@ import (
 )
 
 // GenSelectWithCTE generates a SELECT statement with Common Table Expression (WITH clause)
-func GenSelectWithCTE(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db, "sqlite")
+func GenSelectWithCTE(db *sql.DB, lcg *common.LCG, flavor stmts.FlavorConfig) (SelectStmt, error) {
+	if flavor == nil {
+		flavor = stmts.GetDefaultFlavor()
+	}
+	tables, err := helper.GetAllTablesAndCols(db, flavor.Name())
 	if err != nil || len(tables) == 0 {
 		return genSelectCTELiteral(lcg), nil
 	}
@@ -71,7 +74,7 @@ func GenSelectWithCTE(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	sql := fmt.Sprintf("WITH %s AS (%s) SELECT %s FROM %s%s LIMIT %d;",
 		stmts.QuoteIdent(cteName), cteQuery, mainSelectCols, stmts.QuoteIdent(cteName), mainWhere, limit)
 
-	return SelectStmt{sql: sql, flavor: stmts.GetDefaultFlavor()}, nil
+	return SelectStmt{sql: sql, flavor: flavor}, nil
 }
 
 // genSelectCTELiteral generates a simple CTE with literal values
@@ -87,7 +90,7 @@ func genSelectCTELiteral(lcg *common.LCG) SelectStmt {
 
 // GenSelectWithMultipleCTE generates a SELECT with multiple CTEs
 func GenSelectWithMultipleCTE(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
-	tables, err := helper.GetAllTablesAndCols(db, "sqlite")
+	tables, err := helper.GetAllTablesAndCols(db, stmts.GetDefaultFlavor().Name())
 	if err != nil || len(tables) == 0 {
 		return genSelectMultipleCTELiteral(lcg), nil
 	}
