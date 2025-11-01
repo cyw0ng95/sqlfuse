@@ -31,7 +31,7 @@ type ReindexStmt struct {
 // According to SQLite documentation: https://sqlite.org/lang_reindex.html
 // Turso COMPAT.md: Yes (full support).
 func GenReindex(db *sql.DB, lcg *common.LCG) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 
 	// REINDEX can be used in several ways:
 	// 1. REINDEX; (reindex all indexes)

@@ -32,7 +32,7 @@ type CopyStmt struct {
 // COPY is DuckDB's primary mechanism for importing/exporting data.
 // Reference: https://duckdb.org/docs/stable/sql/statements/copy
 func GenCopy(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}

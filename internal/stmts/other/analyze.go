@@ -27,12 +27,6 @@ type AnalyzeStmt struct {
 	*stmts.BaseStmt
 }
 
-// GenAnalyze generates an ANALYZE statement using the default SQLite flavor.
-// DEPRECATED: Use GenAnalyzeWithFlavor to specify the database flavor.
-func GenAnalyze(db *sql.DB, lcg *common.LCG) (stmts.Stmt, error) {
-	return GenAnalyzeWithFlavor(db, lcg, nil)
-}
-
 // GenAnalyzeWithFlavor generates an ANALYZE statement with flavor support.
 // ANALYZE gathers statistics about tables and indexes to help the query optimizer.
 // According to SQLite documentation: https://sqlite.org/lang_analyze.html

@@ -31,7 +31,7 @@ type CompoundSelectStmt struct {
 // According to SQLite documentation: https://sqlite.org/lang_select.html#compound_select_statements
 // Turso COMPAT.md: Yes (full support for UNION, INTERSECT, EXCEPT).
 func GenCompoundSelect(db *sql.DB, lcg *common.LCG, variant StmtType, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}

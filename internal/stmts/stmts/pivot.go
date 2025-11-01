@@ -29,7 +29,7 @@ type PivotStmt struct {
 // PIVOT transforms rows into columns.
 // Reference: https://duckdb.org/docs/stable/sql/statements/pivot
 func GenPivot(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}
@@ -104,7 +104,7 @@ type UnpivotStmt struct {
 // UNPIVOT transforms columns into rows.
 // Reference: https://duckdb.org/docs/stable/sql/statements/unpivot
 func GenUnpivot(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}

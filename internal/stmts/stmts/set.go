@@ -28,7 +28,7 @@ type SetStmt struct {
 // SET is DuckDB's way of configuring database settings.
 // Reference: https://duckdb.org/docs/stable/sql/statements/set
 func GenSet(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}
@@ -79,7 +79,7 @@ type ResetStmt struct {
 // RESET returns a setting to its default value.
 // Reference: https://duckdb.org/docs/stable/sql/statements/set
 func GenReset(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}

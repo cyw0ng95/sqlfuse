@@ -23,11 +23,11 @@ func GenSelectGroupBy(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 	tbl := tbls[rnd(len(tbls))]
 	if len(tbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// pick a group by column and an aggregate
 	grp := tbl.Cols[rnd(len(tbl.Cols))]
-	sql := fmt.Sprintf("SELECT %s, COUNT(1) FROM %s GROUP BY %s;", quoteIdent(grp.Name), quoteIdent(tbl.Name), quoteIdent(grp.Name))
+	sql := fmt.Sprintf("SELECT %s, COUNT(1) FROM %s GROUP BY %s;", QuoteIdent(grp.Name), QuoteIdent(tbl.Name), QuoteIdent(grp.Name))
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }

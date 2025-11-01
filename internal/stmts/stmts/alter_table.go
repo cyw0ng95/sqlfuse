@@ -36,7 +36,7 @@ func GenAlterTable(lcg *common.LCG) (Stmt, error) {
 
 // genAlterTableInternal is the internal implementation used by both old and new interfaces.
 func genAlterTableInternal(lcg *common.LCG) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	flavor := GetDefaultFlavor()
 
 	op := lcg.Intn(3)

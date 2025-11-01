@@ -34,7 +34,7 @@ type ExplainStmt struct {
 // wrapping another SQL statement.
 // According to Turso COMPAT.md: Yes (full support).
 func GenExplain(db *sql.DB, lcg *common.LCG) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 
 	// If no db is provided, generate a simple EXPLAIN for fallback
 	if db == nil {
@@ -111,7 +111,7 @@ func GenExplain(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 
 // GenExplainQueryPlan generates an EXPLAIN QUERY PLAN statement specifically.
 func GenExplainQueryPlan(db *sql.DB, lcg *common.LCG) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 
 	// If no db is provided, generate a simple EXPLAIN for fallback
 	if db == nil {

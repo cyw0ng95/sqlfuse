@@ -27,7 +27,7 @@ func GenSelectSubquery(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	// Pick a table for the subquery
 	tbl := tbls[rnd(len(tbls))]
 	if len(tbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// Select columns from subquery (pick 1-3 columns)
@@ -56,7 +56,7 @@ func GenSelectSubquery(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	innerLimit := 1 + rnd(20)
 	subquery := fmt.Sprintf("(SELECT %s FROM %s LIMIT %d) AS subq",
 		joinCols(cols),
-		quoteIdent(tbl.Name),
+		QuoteIdent(tbl.Name),
 		innerLimit)
 
 	// Optionally add a WHERE clause to the outer query
@@ -64,7 +64,7 @@ func GenSelectSubquery(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	if rnd(2) == 0 && len(cols) > 0 {
 		col := cols[rnd(len(cols))]
 		val := types.ValueForType(col.Type, lcg, col.Name)
-		where = fmt.Sprintf(" WHERE %s IS NOT NULL OR %s = %s", quoteIdent(col.Name), quoteIdent(col.Name), val)
+		where = fmt.Sprintf(" WHERE %s IS NOT NULL OR %s = %s", QuoteIdent(col.Name), QuoteIdent(col.Name), val)
 	}
 
 	limit := 1 + rnd(50)

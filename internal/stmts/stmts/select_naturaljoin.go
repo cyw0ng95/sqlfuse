@@ -30,6 +30,6 @@ func GenSelectNaturalJoin(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	t2 := tbls[j]
 	limit := 1 + rnd(50)
 	// NATURAL JOIN merges common columns automatically; select * keeps it simple.
-	sql := fmt.Sprintf("SELECT * FROM %s NATURAL JOIN %s LIMIT %d;", quoteIdent(t1.Name), quoteIdent(t2.Name), limit)
+	sql := fmt.Sprintf("SELECT * FROM %s NATURAL JOIN %s LIMIT %d;", QuoteIdent(t1.Name), QuoteIdent(t2.Name), limit)
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }

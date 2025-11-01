@@ -49,7 +49,7 @@ func (eg *ExprGenerator) GenCastExpr(tbls []helper.TableInfo) string {
 	targetTypes := []string{"INTEGER", "TEXT", "REAL", "BLOB"}
 	targetType := targetTypes[eg.ctx.Intn(len(targetTypes))]
 
-	return fmt.Sprintf("CAST(%s AS %s)", quoteIdent(col.Name), targetType)
+	return fmt.Sprintf("CAST(%s AS %s)", QuoteIdent(col.Name), targetType)
 }
 
 // GenBetweenExpr generates a BETWEEN expression: expr (NOT) BETWEEN val1 AND val2
@@ -92,7 +92,7 @@ func (eg *ExprGenerator) GenBetweenExpr(tbls []helper.TableInfo, useNot bool) st
 		notClause = "NOT "
 	}
 
-	return fmt.Sprintf("%s %sBETWEEN %s AND %s", quoteIdent(col.Name), notClause, val1, val2)
+	return fmt.Sprintf("%s %sBETWEEN %s AND %s", QuoteIdent(col.Name), notClause, val1, val2)
 }
 
 // GenGlobExpr generates a GLOB expression: expr (NOT) GLOB pattern
@@ -137,7 +137,7 @@ func (eg *ExprGenerator) GenGlobExpr(tbls []helper.TableInfo, useNot bool) strin
 		notClause = "NOT "
 	}
 
-	return fmt.Sprintf("%s %sGLOB '%s'", quoteIdent(col.Name), notClause, pattern)
+	return fmt.Sprintf("%s %sGLOB '%s'", QuoteIdent(col.Name), notClause, pattern)
 }
 
 // GenIsDistinctFromExpr generates an IS (NOT) DISTINCT FROM expression
@@ -172,7 +172,7 @@ func (eg *ExprGenerator) GenIsDistinctFromExpr(tbls []helper.TableInfo, useNot b
 		notClause = "NOT "
 	}
 
-	return fmt.Sprintf("%s IS %sDISTINCT FROM %s", quoteIdent(col.Name), notClause, compareVal)
+	return fmt.Sprintf("%s IS %sDISTINCT FROM %s", QuoteIdent(col.Name), notClause, compareVal)
 }
 
 // GenCollateExpr generates a COLLATE expression: expr COLLATE collation_name
@@ -208,7 +208,7 @@ func (eg *ExprGenerator) GenCollateExpr(tbls []helper.TableInfo) string {
 	collations := []string{"BINARY", "NOCASE", "RTRIM"}
 	collation := collations[eg.ctx.Intn(len(collations))]
 
-	return fmt.Sprintf("%s COLLATE %s", quoteIdent(col.Name), collation)
+	return fmt.Sprintf("%s COLLATE %s", QuoteIdent(col.Name), collation)
 }
 
 // GenUnaryExpr generates a unary operator expression: +expr, -expr, ~expr, NOT expr
@@ -247,13 +247,13 @@ func (eg *ExprGenerator) GenUnaryExpr(tbls []helper.TableInfo) string {
 		// NOT works with boolean expressions
 		col := tbl.Cols[eg.ctx.Intn(len(tbl.Cols))]
 		val := types.ValueForType(col.Type, eg.ctx.LCG, col.Name)
-		return fmt.Sprintf("NOT (%s = %s)", quoteIdent(col.Name), val)
+		return fmt.Sprintf("NOT (%s = %s)", QuoteIdent(col.Name), val)
 	}
 
 	// +, -, ~ work with numeric values
 	if len(numericCols) > 0 {
 		col := numericCols[eg.ctx.Intn(len(numericCols))]
-		return fmt.Sprintf("%s%s", op, quoteIdent(col.Name))
+		return fmt.Sprintf("%s%s", op, QuoteIdent(col.Name))
 	}
 
 	// Fallback to literal
@@ -298,7 +298,7 @@ func (eg *ExprGenerator) GenBinaryExpr(tbls []helper.TableInfo) string {
 			col1 = numericCols[eg.ctx.Intn(len(numericCols))]
 			col2 = numericCols[eg.ctx.Intn(len(numericCols))]
 			op = numericOps[eg.ctx.Intn(len(numericOps))]
-			return fmt.Sprintf("%s %s %s", quoteIdent(col1.Name), op, quoteIdent(col2.Name))
+			return fmt.Sprintf("%s %s %s", QuoteIdent(col1.Name), op, QuoteIdent(col2.Name))
 		}
 		op = numericOps[eg.ctx.Intn(len(numericOps))]
 		return fmt.Sprintf("1 %s 2", op)
@@ -307,7 +307,7 @@ func (eg *ExprGenerator) GenBinaryExpr(tbls []helper.TableInfo) string {
 		col1 = tbl.Cols[eg.ctx.Intn(len(tbl.Cols))]
 		val := types.ValueForType(col1.Type, eg.ctx.LCG, col1.Name)
 		op = comparisonOps[eg.ctx.Intn(len(comparisonOps))]
-		return fmt.Sprintf("%s %s %s", quoteIdent(col1.Name), op, val)
+		return fmt.Sprintf("%s %s %s", QuoteIdent(col1.Name), op, val)
 
 	default: // Logical operators
 		col1 = tbl.Cols[eg.ctx.Intn(len(tbl.Cols))]
@@ -315,7 +315,7 @@ func (eg *ExprGenerator) GenBinaryExpr(tbls []helper.TableInfo) string {
 		val1 := types.ValueForType(col1.Type, eg.ctx.LCG, col1.Name)
 		val2 := types.ValueForType(col2.Type, eg.ctx.LCG, col2.Name)
 		op = logicalOps[eg.ctx.Intn(len(logicalOps))]
-		return fmt.Sprintf("(%s = %s) %s (%s = %s)", quoteIdent(col1.Name), val1, op, quoteIdent(col2.Name), val2)
+		return fmt.Sprintf("(%s = %s) %s (%s = %s)", QuoteIdent(col1.Name), val1, op, QuoteIdent(col2.Name), val2)
 	}
 }
 
@@ -333,7 +333,7 @@ func (eg *ExprGenerator) GenParenthesizedExpr(tbls []helper.TableInfo) string {
 	col := tbl.Cols[eg.ctx.Intn(len(tbl.Cols))]
 	val := types.ValueForType(col.Type, eg.ctx.LCG, col.Name)
 
-	return fmt.Sprintf("(%s = %s)", quoteIdent(col.Name), val)
+	return fmt.Sprintf("(%s = %s)", QuoteIdent(col.Name), val)
 }
 
 // GenIsNullExpr generates IS (NOT) NULL expression
@@ -356,9 +356,9 @@ func (eg *ExprGenerator) GenIsNullExpr(tbls []helper.TableInfo, useNot bool) str
 	col := tbl.Cols[eg.ctx.Intn(len(tbl.Cols))]
 
 	if useNot {
-		return fmt.Sprintf("%s IS NOT NULL", quoteIdent(col.Name))
+		return fmt.Sprintf("%s IS NOT NULL", QuoteIdent(col.Name))
 	}
-	return fmt.Sprintf("%s IS NULL", quoteIdent(col.Name))
+	return fmt.Sprintf("%s IS NULL", QuoteIdent(col.Name))
 }
 
 // GenRegexpExpr generates a REGEXP expression: expr (NOT) REGEXP pattern
@@ -405,7 +405,7 @@ func (eg *ExprGenerator) GenRegexpExpr(tbls []helper.TableInfo, useNot bool) str
 		notClause = "NOT "
 	}
 
-	return fmt.Sprintf("%s %sREGEXP '%s'", quoteIdent(col.Name), notClause, pattern)
+	return fmt.Sprintf("%s %sREGEXP '%s'", QuoteIdent(col.Name), notClause, pattern)
 }
 
 // GenMatchExpr generates a MATCH expression: expr (NOT) MATCH pattern
@@ -451,7 +451,7 @@ func (eg *ExprGenerator) GenMatchExpr(tbls []helper.TableInfo, useNot bool) stri
 		notClause = "NOT "
 	}
 
-	return fmt.Sprintf("%s %sMATCH '%s'", quoteIdent(col.Name), notClause, pattern)
+	return fmt.Sprintf("%s %sMATCH '%s'", QuoteIdent(col.Name), notClause, pattern)
 }
 
 // GenInSubqueryExpr generates an IN (subquery) expression: expr (NOT) IN (SELECT ...)
@@ -475,14 +475,14 @@ func (eg *ExprGenerator) GenInSubqueryExpr(tbls []helper.TableInfo, useNot bool)
 	col := tbl.Cols[eg.ctx.Intn(len(tbl.Cols))]
 
 	// Generate a simple subquery
-	subquery := fmt.Sprintf("SELECT %s FROM %s LIMIT 5", quoteIdent(col.Name), quoteIdent(tbl.Name))
+	subquery := fmt.Sprintf("SELECT %s FROM %s LIMIT 5", QuoteIdent(col.Name), QuoteIdent(tbl.Name))
 
 	notClause := ""
 	if useNot {
 		notClause = "NOT "
 	}
 
-	return fmt.Sprintf("%s %sIN (%s)", quoteIdent(col.Name), notClause, subquery)
+	return fmt.Sprintf("%s %sIN (%s)", QuoteIdent(col.Name), notClause, subquery)
 }
 
 // GenExistsSubqueryExpr generates an EXISTS (subquery) expression: (NOT) EXISTS (SELECT ...)
@@ -502,9 +502,9 @@ func (eg *ExprGenerator) GenExistsSubqueryExpr(tbls []helper.TableInfo, useNot b
 	if len(tbl.Cols) > 0 {
 		col := tbl.Cols[eg.ctx.Intn(len(tbl.Cols))]
 		val := types.ValueForType(col.Type, eg.ctx.LCG, col.Name)
-		subquery = fmt.Sprintf("SELECT 1 FROM %s WHERE %s = %s", quoteIdent(tbl.Name), quoteIdent(col.Name), val)
+		subquery = fmt.Sprintf("SELECT 1 FROM %s WHERE %s = %s", QuoteIdent(tbl.Name), QuoteIdent(col.Name), val)
 	} else {
-		subquery = fmt.Sprintf("SELECT 1 FROM %s", quoteIdent(tbl.Name))
+		subquery = fmt.Sprintf("SELECT 1 FROM %s", QuoteIdent(tbl.Name))
 	}
 
 	notClause := ""
@@ -550,14 +550,14 @@ func (eg *ExprGenerator) GenFilterExpr(tbls []helper.TableInfo) string {
 			cols = tbl.Cols
 		}
 		col := cols[eg.ctx.Intn(len(cols))]
-		aggArg = quoteIdent(col.Name)
+		aggArg = QuoteIdent(col.Name)
 	}
 
 	// Generate WHERE condition for FILTER
 	filterCol := tbl.Cols[eg.ctx.Intn(len(tbl.Cols))]
 	filterVal := types.ValueForType(filterCol.Type, eg.ctx.LCG, filterCol.Name)
 
-	return fmt.Sprintf("%s(%s) FILTER (WHERE %s = %s)", agg, aggArg, quoteIdent(filterCol.Name), filterVal)
+	return fmt.Sprintf("%s(%s) FILTER (WHERE %s = %s)", agg, aggArg, QuoteIdent(filterCol.Name), filterVal)
 }
 
 // GenOverExpr generates a window function with OVER clause: func() OVER (...)
@@ -589,9 +589,9 @@ func (eg *ExprGenerator) GenOverExpr(tbls []helper.TableInfo) string {
 	var overClause string
 	if eg.ctx.Intn(2) == 0 && len(tbl.Cols) > 1 {
 		partCol := tbl.Cols[eg.ctx.Intn(len(tbl.Cols))]
-		overClause = fmt.Sprintf("PARTITION BY %s ORDER BY %s", quoteIdent(partCol.Name), quoteIdent(col.Name))
+		overClause = fmt.Sprintf("PARTITION BY %s ORDER BY %s", QuoteIdent(partCol.Name), QuoteIdent(col.Name))
 	} else {
-		overClause = fmt.Sprintf("ORDER BY %s", quoteIdent(col.Name))
+		overClause = fmt.Sprintf("ORDER BY %s", QuoteIdent(col.Name))
 	}
 
 	return fmt.Sprintf("%s(%s) OVER (%s)", fn, fnArg, overClause)

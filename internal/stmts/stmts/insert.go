@@ -66,7 +66,7 @@ func genInsertSingleWithFlavor(db *sql.DB, lcg *common.LCG, flavor FlavorConfig)
 	tbl := tables[rnd(len(tables))]
 	if len(tbl.Cols) == 0 {
 		// no columns -> use DEFAULT VALUES
-		return &InsertStmt{sql: fmt.Sprintf("INSERT INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name)), flavor: flavor}, nil
+		return &InsertStmt{sql: fmt.Sprintf("INSERT INTO %s DEFAULT VALUES;", QuoteIdent(tbl.Name)), flavor: flavor}, nil
 	}
 
 	// Filter columns (skip 'id') and build values together
@@ -79,7 +79,7 @@ func genInsertSingleWithFlavor(db *sql.DB, lcg *common.LCG, flavor FlavorConfig)
 	}
 
 	if len(filteredCols) == 0 {
-		return &InsertStmt{sql: fmt.Sprintf("INSERT INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name)), flavor: flavor}, nil
+		return &InsertStmt{sql: fmt.Sprintf("INSERT INTO %s DEFAULT VALUES;", QuoteIdent(tbl.Name)), flavor: flavor}, nil
 	}
 
 	cols := colsNames(filteredCols)
@@ -88,18 +88,13 @@ func genInsertSingleWithFlavor(db *sql.DB, lcg *common.LCG, flavor FlavorConfig)
 		return nil, err
 	}
 
-	sql := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s);", quoteIdent(tbl.Name), strings.Join(cols, ", "), vals)
+	sql := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s);", QuoteIdent(tbl.Name), strings.Join(cols, ", "), vals)
 	return &InsertStmt{sql: sql, flavor: flavor}, nil
 }
 
 // QuoteIdent quotes an SQL identifier (table/column name) for safe use in SQL.
 func QuoteIdent(s string) string {
 	return fmt.Sprintf("\"%s\"", strings.ReplaceAll(s, "\"", "\"\""))
-}
-
-// quoteIdent is deprecated: use QuoteIdent instead.
-func quoteIdent(s string) string {
-	return QuoteIdent(s)
 }
 
 // GenInsertMultiple generates an INSERT with multiple VALUES rows (2..N rows).
@@ -141,7 +136,7 @@ func GenUpsert(db *sql.DB, lcgOrRand interface{}) (Stmt, error) {
 
 	tbl := tables[rnd(len(tables))]
 	if len(tbl.Cols) == 0 {
-		return &InsertStmt{sql: fmt.Sprintf("INSERT INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return &InsertStmt{sql: fmt.Sprintf("INSERT INTO %s DEFAULT VALUES;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// choose a subset of non-PK columns for insert (skip id if present)
@@ -153,7 +148,7 @@ func GenUpsert(db *sql.DB, lcgOrRand interface{}) (Stmt, error) {
 		cols = append(cols, c)
 	}
 	if len(cols) == 0 {
-		return &InsertStmt{sql: fmt.Sprintf("INSERT INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return &InsertStmt{sql: fmt.Sprintf("INSERT INTO %s DEFAULT VALUES;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// pick conflict target: try to use first UNIQUE-like column name (email, key) else use id
@@ -190,14 +185,14 @@ func GenUpsert(db *sql.DB, lcgOrRand interface{}) (Stmt, error) {
 		if c.Name == conflictCol {
 			continue
 		}
-		setParts = append(setParts, fmt.Sprintf("%s=excluded.%s", quoteIdent(c.Name), quoteIdent(c.Name)))
+		setParts = append(setParts, fmt.Sprintf("%s=excluded.%s", QuoteIdent(c.Name), QuoteIdent(c.Name)))
 	}
 	setClause := ""
 	if len(setParts) > 0 {
 		setClause = " DO UPDATE SET " + strings.Join(setParts, ", ")
 	}
 
-	sql := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s) ON CONFLICT(%s)%s;", quoteIdent(tbl.Name), strings.Join(colsNames(cols), ", "), vals, quoteIdent(conflictCol), setClause)
+	sql := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s) ON CONFLICT(%s)%s;", QuoteIdent(tbl.Name), strings.Join(colsNames(cols), ", "), vals, QuoteIdent(conflictCol), setClause)
 	return &InsertStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
@@ -250,10 +245,10 @@ func GenInsertFromSelect(db *sql.DB, lcgOrRand interface{}) (Stmt, error) {
 	// build SELECT projection from source: use the same column names
 	selectCols := []string{}
 	for _, c := range cols {
-		selectCols = append(selectCols, quoteIdent(c.Name))
+		selectCols = append(selectCols, QuoteIdent(c.Name))
 	}
 
-	sql := fmt.Sprintf("INSERT INTO %s (%s) SELECT %s FROM %s LIMIT %d;", quoteIdent(target.Name), strings.Join(colsNames(cols), ", "), strings.Join(selectCols, ", "), quoteIdent(source.Name), 1+rnd(10))
+	sql := fmt.Sprintf("INSERT INTO %s (%s) SELECT %s FROM %s LIMIT %d;", QuoteIdent(target.Name), strings.Join(colsNames(cols), ", "), strings.Join(selectCols, ", "), QuoteIdent(source.Name), 1+rnd(10))
 	return &InsertStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
@@ -274,7 +269,7 @@ func genInsertInternal(db *sql.DB, lcgOrRand interface{}, rowsCount int) (Stmt, 
 
 	tbl := tables[rnd(len(tables))]
 	if len(tbl.Cols) == 0 {
-		return &InsertStmt{sql: fmt.Sprintf("INSERT INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return &InsertStmt{sql: fmt.Sprintf("INSERT INTO %s DEFAULT VALUES;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// Filter columns (skip 'id')
@@ -286,7 +281,7 @@ func genInsertInternal(db *sql.DB, lcgOrRand interface{}, rowsCount int) (Stmt, 
 		filteredCols = append(filteredCols, c)
 	}
 	if len(filteredCols) == 0 {
-		return &InsertStmt{sql: fmt.Sprintf("INSERT INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return &InsertStmt{sql: fmt.Sprintf("INSERT INTO %s DEFAULT VALUES;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	rowsVals := []string{}
@@ -298,7 +293,7 @@ func genInsertInternal(db *sql.DB, lcgOrRand interface{}, rowsCount int) (Stmt, 
 		rowsVals = append(rowsVals, fmt.Sprintf("(%s)", vals))
 	}
 
-	sql := fmt.Sprintf("INSERT INTO %s (%s) VALUES %s;", quoteIdent(tbl.Name), strings.Join(colsNames(filteredCols), ", "), strings.Join(rowsVals, ", "))
+	sql := fmt.Sprintf("INSERT INTO %s (%s) VALUES %s;", QuoteIdent(tbl.Name), strings.Join(colsNames(filteredCols), ", "), strings.Join(rowsVals, ", "))
 	return &InsertStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
@@ -330,7 +325,7 @@ func buildValuesRow(cols []helper.ColumnInfo, lcgOrRand interface{}) (string, er
 func colsNames(cols []helper.ColumnInfo) []string {
 	n := make([]string, len(cols))
 	for i, c := range cols {
-		n[i] = quoteIdent(c.Name)
+		n[i] = QuoteIdent(c.Name)
 	}
 	return n
 }
@@ -362,7 +357,7 @@ func GenInsertOrReplace(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 
 	tbl := tables[rnd(len(tables))]
 	if len(tbl.Cols) == 0 {
-		return &InsertStmt{sql: fmt.Sprintf("INSERT OR REPLACE INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return &InsertStmt{sql: fmt.Sprintf("INSERT OR REPLACE INTO %s DEFAULT VALUES;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// Filter columns (skip 'id')
@@ -375,7 +370,7 @@ func GenInsertOrReplace(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	}
 
 	if len(filteredCols) == 0 {
-		return &InsertStmt{sql: fmt.Sprintf("INSERT OR REPLACE INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return &InsertStmt{sql: fmt.Sprintf("INSERT OR REPLACE INTO %s DEFAULT VALUES;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	cols := colsNames(filteredCols)
@@ -384,7 +379,7 @@ func GenInsertOrReplace(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 		return nil, err
 	}
 
-	sql := fmt.Sprintf("INSERT OR REPLACE INTO %s (%s) VALUES (%s);", quoteIdent(tbl.Name), strings.Join(cols, ", "), vals)
+	sql := fmt.Sprintf("INSERT OR REPLACE INTO %s (%s) VALUES (%s);", QuoteIdent(tbl.Name), strings.Join(cols, ", "), vals)
 	return &InsertStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
@@ -404,7 +399,7 @@ func GenInsertOrIgnore(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 
 	tbl := tables[rnd(len(tables))]
 	if len(tbl.Cols) == 0 {
-		return &InsertStmt{sql: fmt.Sprintf("INSERT OR IGNORE INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return &InsertStmt{sql: fmt.Sprintf("INSERT OR IGNORE INTO %s DEFAULT VALUES;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// Filter columns (skip 'id')
@@ -417,7 +412,7 @@ func GenInsertOrIgnore(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	}
 
 	if len(filteredCols) == 0 {
-		return &InsertStmt{sql: fmt.Sprintf("INSERT OR IGNORE INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return &InsertStmt{sql: fmt.Sprintf("INSERT OR IGNORE INTO %s DEFAULT VALUES;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	cols := colsNames(filteredCols)
@@ -426,7 +421,7 @@ func GenInsertOrIgnore(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 		return nil, err
 	}
 
-	sql := fmt.Sprintf("INSERT OR IGNORE INTO %s (%s) VALUES (%s);", quoteIdent(tbl.Name), strings.Join(cols, ", "), vals)
+	sql := fmt.Sprintf("INSERT OR IGNORE INTO %s (%s) VALUES (%s);", QuoteIdent(tbl.Name), strings.Join(cols, ", "), vals)
 	return &InsertStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
@@ -446,7 +441,7 @@ func GenInsertOrAbort(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 
 	tbl := tables[rnd(len(tables))]
 	if len(tbl.Cols) == 0 {
-		return &InsertStmt{sql: fmt.Sprintf("INSERT OR ABORT INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return &InsertStmt{sql: fmt.Sprintf("INSERT OR ABORT INTO %s DEFAULT VALUES;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	filteredCols := []helper.ColumnInfo{}
@@ -458,7 +453,7 @@ func GenInsertOrAbort(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	}
 
 	if len(filteredCols) == 0 {
-		return &InsertStmt{sql: fmt.Sprintf("INSERT OR ABORT INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return &InsertStmt{sql: fmt.Sprintf("INSERT OR ABORT INTO %s DEFAULT VALUES;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	cols := colsNames(filteredCols)
@@ -467,7 +462,7 @@ func GenInsertOrAbort(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 		return nil, err
 	}
 
-	sql := fmt.Sprintf("INSERT OR ABORT INTO %s (%s) VALUES (%s);", quoteIdent(tbl.Name), strings.Join(cols, ", "), vals)
+	sql := fmt.Sprintf("INSERT OR ABORT INTO %s (%s) VALUES (%s);", QuoteIdent(tbl.Name), strings.Join(cols, ", "), vals)
 	return &InsertStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
@@ -487,7 +482,7 @@ func GenInsertOrRollback(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 
 	tbl := tables[rnd(len(tables))]
 	if len(tbl.Cols) == 0 {
-		return &InsertStmt{sql: fmt.Sprintf("INSERT OR ROLLBACK INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return &InsertStmt{sql: fmt.Sprintf("INSERT OR ROLLBACK INTO %s DEFAULT VALUES;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	filteredCols := []helper.ColumnInfo{}
@@ -499,7 +494,7 @@ func GenInsertOrRollback(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	}
 
 	if len(filteredCols) == 0 {
-		return &InsertStmt{sql: fmt.Sprintf("INSERT OR ROLLBACK INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return &InsertStmt{sql: fmt.Sprintf("INSERT OR ROLLBACK INTO %s DEFAULT VALUES;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	cols := colsNames(filteredCols)
@@ -508,7 +503,7 @@ func GenInsertOrRollback(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 		return nil, err
 	}
 
-	sql := fmt.Sprintf("INSERT OR ROLLBACK INTO %s (%s) VALUES (%s);", quoteIdent(tbl.Name), strings.Join(cols, ", "), vals)
+	sql := fmt.Sprintf("INSERT OR ROLLBACK INTO %s (%s) VALUES (%s);", QuoteIdent(tbl.Name), strings.Join(cols, ", "), vals)
 	return &InsertStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
@@ -528,7 +523,7 @@ func GenInsertOrFail(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 
 	tbl := tables[rnd(len(tables))]
 	if len(tbl.Cols) == 0 {
-		return &InsertStmt{sql: fmt.Sprintf("INSERT OR FAIL INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return &InsertStmt{sql: fmt.Sprintf("INSERT OR FAIL INTO %s DEFAULT VALUES;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	filteredCols := []helper.ColumnInfo{}
@@ -540,7 +535,7 @@ func GenInsertOrFail(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	}
 
 	if len(filteredCols) == 0 {
-		return &InsertStmt{sql: fmt.Sprintf("INSERT OR FAIL INTO %s DEFAULT VALUES;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return &InsertStmt{sql: fmt.Sprintf("INSERT OR FAIL INTO %s DEFAULT VALUES;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	cols := colsNames(filteredCols)
@@ -549,6 +544,6 @@ func GenInsertOrFail(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 		return nil, err
 	}
 
-	sql := fmt.Sprintf("INSERT OR FAIL INTO %s (%s) VALUES (%s);", quoteIdent(tbl.Name), strings.Join(cols, ", "), vals)
+	sql := fmt.Sprintf("INSERT OR FAIL INTO %s (%s) VALUES (%s);", QuoteIdent(tbl.Name), strings.Join(cols, ", "), vals)
 	return &InsertStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }

@@ -23,7 +23,7 @@ func GenSelectOrderBy(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 
 	tbl := tbls[rnd(len(tbls))]
 	if len(tbl.Cols) == 0 {
-		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", quoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
+		return SelectStmt{sql: fmt.Sprintf("SELECT * FROM %s;", QuoteIdent(tbl.Name)), flavor: GetDefaultFlavor()}, nil
 	}
 
 	// pick columns
@@ -34,11 +34,11 @@ func GenSelectOrderBy(db *sql.DB, lcg *common.LCG) (SelectStmt, error) {
 	}
 
 	// build order by
-	order := quoteIdent(cols[0].Name)
+	order := QuoteIdent(cols[0].Name)
 	if len(cols) > 1 {
-		order += ", " + quoteIdent(cols[1].Name)
+		order += ", " + QuoteIdent(cols[1].Name)
 	}
 
-	sql := fmt.Sprintf("SELECT %s FROM %s ORDER BY %s;", joinCols(cols), quoteIdent(tbl.Name), order)
+	sql := fmt.Sprintf("SELECT %s FROM %s ORDER BY %s;", joinCols(cols), QuoteIdent(tbl.Name), order)
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }

@@ -27,7 +27,7 @@ type CreateSchemaStmt struct {
 // GenCreateSchema generates a CREATE SCHEMA statement.
 // Reference: https://duckdb.org/docs/stable/sql/statements/create_schema
 func GenCreateSchema(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}
@@ -68,7 +68,7 @@ type DropSchemaStmt struct {
 // GenDropSchema generates a DROP SCHEMA statement.
 // Reference: https://duckdb.org/docs/stable/sql/statements/drop
 func GenDropSchema(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}

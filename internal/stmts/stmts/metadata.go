@@ -28,7 +28,7 @@ type DescribeStmt struct {
 // DESCRIBE shows information about a table, view, or query.
 // Reference: https://duckdb.org/docs/stable/sql/statements/describe
 func GenDescribe(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}
@@ -76,7 +76,7 @@ type ShowStmt struct {
 // SHOW displays various database metadata.
 // Reference: https://duckdb.org/docs/stable/sql/statements/show
 func GenShow(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}
@@ -118,7 +118,7 @@ type SummarizeStmt struct {
 // SUMMARIZE provides a quick statistical summary of data.
 // Reference: https://duckdb.org/docs/stable/sql/statements/summarize
 func GenSummarize(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}

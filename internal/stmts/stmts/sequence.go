@@ -27,7 +27,7 @@ type CreateSequenceStmt struct {
 // GenCreateSequence generates a CREATE SEQUENCE statement.
 // Reference: https://duckdb.org/docs/stable/sql/statements/create_sequence
 func GenCreateSequence(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}
@@ -86,7 +86,7 @@ type DropSequenceStmt struct {
 // GenDropSequence generates a DROP SEQUENCE statement.
 // Reference: https://duckdb.org/docs/stable/sql/statements/drop
 func GenDropSequence(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}

@@ -106,7 +106,7 @@ func GenCreateIndex(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 		col := tbl.Cols[idx]
 		// Turso supports column references only, not arbitrary expressions
 		// Optionally add ASC/DESC and COLLATE
-		colSpec := quoteIdent(col.Name)
+		colSpec := QuoteIdent(col.Name)
 
 		// 30% chance to add sort order
 		if rnd(10) < 3 {
@@ -132,7 +132,7 @@ func GenCreateIndex(db *sql.DB, lcg *common.LCG) (Stmt, error) {
 	}
 
 	sql := fmt.Sprintf("CREATE %sINDEX %s%s ON %s (%s);",
-		unique, ifNotExists, quoteIdent(indexName), quoteIdent(tbl.Name), strings.Join(indexCols, ", "))
+		unique, ifNotExists, QuoteIdent(indexName), QuoteIdent(tbl.Name), strings.Join(indexCols, ", "))
 	return &CreateIndexStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 

@@ -46,7 +46,7 @@ type DetachStmt struct {
 // GenAttachDatabase generates an ATTACH DATABASE statement.
 // According to Turso COMPAT.md: Partial support (only for reads, modifications will fail).
 func GenAttachDatabase(lcg *common.LCG) Stmt {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 
 	// Generate a database file path and alias
 	// Use temporary in-memory or file-based databases
@@ -78,7 +78,7 @@ func GenAttachDatabase(lcg *common.LCG) Stmt {
 // GenDetachDatabase generates a DETACH DATABASE statement.
 // According to Turso COMPAT.md: Yes (full support).
 func GenDetachDatabase(lcg *common.LCG) Stmt {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 
 	// Generate database alias matching the naming scheme from GenAttachDatabase
 	alias := fmt.Sprintf("db_%d", lcg.Uint64()%1000)

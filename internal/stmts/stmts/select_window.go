@@ -49,7 +49,7 @@ func genSelectWithWindowFunctionInternal(ctx *GenContext) (SelectStmt, error) {
 				continue
 			}
 			selected[idx] = struct{}{}
-			selectedCols = append(selectedCols, quoteIdent(tbl.Cols[idx].Name))
+			selectedCols = append(selectedCols, QuoteIdent(tbl.Cols[idx].Name))
 		}
 
 		// Add ROWID as alternative to ROW_NUMBER()
@@ -57,7 +57,7 @@ func genSelectWithWindowFunctionInternal(ctx *GenContext) (SelectStmt, error) {
 
 		limit := 1 + rnd(50)
 		sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;",
-			strings.Join(selectedCols, ", "), quoteIdent(tbl.Name), limit)
+			strings.Join(selectedCols, ", "), QuoteIdent(tbl.Name), limit)
 		return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 	}
 
@@ -118,7 +118,7 @@ func genSelectWithWindowFunctionInternal(ctx *GenContext) (SelectStmt, error) {
 		if len(tbl.Cols) > 0 {
 			col := tbl.Cols[rnd(len(tbl.Cols))]
 			offset := 1 + rnd(3) // offset 1-3
-			windowExpr = fmt.Sprintf("%s(%s, %d)", funcName, quoteIdent(col.Name), offset)
+			windowExpr = fmt.Sprintf("%s(%s, %d)", funcName, QuoteIdent(col.Name), offset)
 		} else {
 			windowExpr = fmt.Sprintf("%s(1, 1)", funcName)
 		}
@@ -126,7 +126,7 @@ func genSelectWithWindowFunctionInternal(ctx *GenContext) (SelectStmt, error) {
 		// FIRST_VALUE/LAST_VALUE work with any column
 		if len(tbl.Cols) > 0 {
 			col := tbl.Cols[rnd(len(tbl.Cols))]
-			windowExpr = fmt.Sprintf("%s(%s)", funcName, quoteIdent(col.Name))
+			windowExpr = fmt.Sprintf("%s(%s)", funcName, QuoteIdent(col.Name))
 		} else {
 			windowExpr = fmt.Sprintf("%s(1)", funcName)
 		}
@@ -135,7 +135,7 @@ func genSelectWithWindowFunctionInternal(ctx *GenContext) (SelectStmt, error) {
 		if len(tbl.Cols) > 0 {
 			col := tbl.Cols[rnd(len(tbl.Cols))]
 			n := 1 + rnd(5) // 1-5
-			windowExpr = fmt.Sprintf("NTH_VALUE(%s, %d)", quoteIdent(col.Name), n)
+			windowExpr = fmt.Sprintf("NTH_VALUE(%s, %d)", QuoteIdent(col.Name), n)
 		} else {
 			windowExpr = fmt.Sprintf("NTH_VALUE(1, 2)")
 		}
@@ -159,7 +159,7 @@ func genSelectWithWindowFunctionInternal(ctx *GenContext) (SelectStmt, error) {
 			if rnd(2) == 0 {
 				orderDir = "DESC"
 			}
-			overClause = fmt.Sprintf("OVER (ORDER BY %s %s)", quoteIdent(col.Name), orderDir)
+			overClause = fmt.Sprintf("OVER (ORDER BY %s %s)", QuoteIdent(col.Name), orderDir)
 		} else {
 			overClause = "OVER ()"
 		}
@@ -167,7 +167,7 @@ func genSelectWithWindowFunctionInternal(ctx *GenContext) (SelectStmt, error) {
 		// OVER (PARTITION BY col)
 		if len(tbl.Cols) > 1 {
 			col := tbl.Cols[rnd(len(tbl.Cols))]
-			overClause = fmt.Sprintf("OVER (PARTITION BY %s)", quoteIdent(col.Name))
+			overClause = fmt.Sprintf("OVER (PARTITION BY %s)", QuoteIdent(col.Name))
 		} else {
 			overClause = "OVER ()"
 		}
@@ -181,7 +181,7 @@ func genSelectWithWindowFunctionInternal(ctx *GenContext) (SelectStmt, error) {
 				orderDir = "DESC"
 			}
 			overClause = fmt.Sprintf("OVER (PARTITION BY %s ORDER BY %s %s)",
-				quoteIdent(partCol.Name), quoteIdent(orderCol.Name), orderDir)
+				QuoteIdent(partCol.Name), QuoteIdent(orderCol.Name), orderDir)
 		} else {
 			overClause = "OVER ()"
 		}
@@ -213,16 +213,16 @@ func genSelectWithWindowFunctionInternal(ctx *GenContext) (SelectStmt, error) {
 			continue
 		}
 		selected[idx] = struct{}{}
-		selectedCols = append(selectedCols, quoteIdent(tbl.Cols[idx].Name))
+		selectedCols = append(selectedCols, QuoteIdent(tbl.Cols[idx].Name))
 	}
 
 	// Add the window function expression
 	windowAlias := fmt.Sprintf("win_func_%d", rnd(1000))
-	selectedCols = append(selectedCols, fmt.Sprintf("%s %s AS %s", windowExpr, overClause, quoteIdent(windowAlias)))
+	selectedCols = append(selectedCols, fmt.Sprintf("%s %s AS %s", windowExpr, overClause, QuoteIdent(windowAlias)))
 
 	limit := 1 + rnd(50)
 	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;",
-		strings.Join(selectedCols, ", "), quoteIdent(tbl.Name), limit)
+		strings.Join(selectedCols, ", "), QuoteIdent(tbl.Name), limit)
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 
@@ -278,7 +278,7 @@ func genSelectWithMultipleWindowsInternal(ctx *GenContext) (SelectStmt, error) {
 		if len(tbl.Cols) > 0 {
 			groupCol := tbl.Cols[rnd(len(tbl.Cols))]
 			sql := fmt.Sprintf("SELECT %s, COUNT(*) AS cnt FROM %s GROUP BY %s LIMIT %d;",
-				quoteIdent(groupCol.Name), quoteIdent(tbl.Name), quoteIdent(groupCol.Name), 1+rnd(30))
+				QuoteIdent(groupCol.Name), QuoteIdent(tbl.Name), QuoteIdent(groupCol.Name), 1+rnd(30))
 			return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 		}
 	}
@@ -315,7 +315,7 @@ func genSelectWithMultipleWindowsInternal(ctx *GenContext) (SelectStmt, error) {
 			continue
 		}
 		selected[idx] = struct{}{}
-		selectedCols = append(selectedCols, quoteIdent(tbl.Cols[idx].Name))
+		selectedCols = append(selectedCols, QuoteIdent(tbl.Cols[idx].Name))
 	}
 
 	// Add window functions
@@ -340,7 +340,7 @@ func genSelectWithMultipleWindowsInternal(ctx *GenContext) (SelectStmt, error) {
 				}
 			}
 			if found {
-				funcExpr = fmt.Sprintf("%s(%s)", funcType, quoteIdent(numCol.Name))
+				funcExpr = fmt.Sprintf("%s(%s)", funcType, QuoteIdent(numCol.Name))
 			} else {
 				funcExpr = fmt.Sprintf("%s(1)", funcType)
 			}
@@ -351,29 +351,29 @@ func genSelectWithMultipleWindowsInternal(ctx *GenContext) (SelectStmt, error) {
 		if i == 0 && len(tbl.Cols) > 0 {
 			// First: simple ORDER BY
 			col := tbl.Cols[rnd(len(tbl.Cols))]
-			overClause = fmt.Sprintf("OVER (ORDER BY %s)", quoteIdent(col.Name))
+			overClause = fmt.Sprintf("OVER (ORDER BY %s)", QuoteIdent(col.Name))
 		} else if i == 1 && len(tbl.Cols) > 1 {
 			// Second: PARTITION BY
 			col := tbl.Cols[rnd(len(tbl.Cols))]
-			overClause = fmt.Sprintf("OVER (PARTITION BY %s)", quoteIdent(col.Name))
+			overClause = fmt.Sprintf("OVER (PARTITION BY %s)", QuoteIdent(col.Name))
 		} else if len(tbl.Cols) > 1 {
 			// Third: both
 			partCol := tbl.Cols[rnd(len(tbl.Cols))]
 			orderCol := tbl.Cols[rnd(len(tbl.Cols))]
 			overClause = fmt.Sprintf("OVER (PARTITION BY %s ORDER BY %s DESC)",
-				quoteIdent(partCol.Name), quoteIdent(orderCol.Name))
+				QuoteIdent(partCol.Name), QuoteIdent(orderCol.Name))
 		} else {
 			overClause = "OVER ()"
 		}
 
 		windowAlias := fmt.Sprintf("win%d", i+1)
-		windowExprs = append(windowExprs, fmt.Sprintf("%s %s AS %s", funcExpr, overClause, quoteIdent(windowAlias)))
+		windowExprs = append(windowExprs, fmt.Sprintf("%s %s AS %s", funcExpr, overClause, QuoteIdent(windowAlias)))
 	}
 
 	allCols := append(selectedCols, windowExprs...)
 	limit := 1 + rnd(30)
 	sql := fmt.Sprintf("SELECT %s FROM %s LIMIT %d;",
-		strings.Join(allCols, ", "), quoteIdent(tbl.Name), limit)
+		strings.Join(allCols, ", "), QuoteIdent(tbl.Name), limit)
 	return SelectStmt{sql: sql, flavor: GetDefaultFlavor()}, nil
 }
 

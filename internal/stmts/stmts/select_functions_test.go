@@ -360,7 +360,7 @@ func TestSpecificAggregateFunctions(t *testing.T) {
 			// Aggregate functions need FROM clause with actual table
 			var sql string
 			if len(tables) > 0 && len(tables[0].Cols) > 0 {
-				sql = fmt.Sprintf("SELECT %s FROM %s;", funcExpr, quoteIdent(tables[0].Name))
+				sql = fmt.Sprintf("SELECT %s FROM %s;", funcExpr, QuoteIdent(tables[0].Name))
 			} else {
 				sql = fmt.Sprintf("SELECT %s;", funcExpr)
 			}
@@ -1198,7 +1198,7 @@ func TestGoSQLite3SpecificAggregateFunctionGenerators(t *testing.T) {
 			// Aggregate functions need FROM clause with actual table
 			var sql string
 			if len(tables) > 0 && len(tables[0].Cols) > 0 {
-				sql = fmt.Sprintf("SELECT %s FROM %s;", funcExpr, quoteIdent(tables[0].Name))
+				sql = fmt.Sprintf("SELECT %s FROM %s;", funcExpr, QuoteIdent(tables[0].Name))
 			} else {
 				sql = fmt.Sprintf("SELECT %s;", funcExpr)
 			}

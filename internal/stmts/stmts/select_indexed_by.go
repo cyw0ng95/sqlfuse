@@ -59,18 +59,18 @@ func genSelectIndexedBy(db *sql.DB, lcg interface{ Intn(int) int }, flavor Flavo
 		if i > 0 {
 			colNames += ", "
 		}
-		colNames += quoteIdent(table.Cols[i].Name)
+		colNames += QuoteIdent(table.Cols[i].Name)
 	}
 
 	sql := fmt.Sprintf("SELECT %s FROM %s INDEXED BY %s",
 		colNames,
-		quoteIdent(table.Name),
-		quoteIdent(indexName))
+		QuoteIdent(table.Name),
+		QuoteIdent(indexName))
 
 	// Optionally add WHERE clause
 	if lcg.Intn(100) < 50 { // 50% chance
 		whereCol := table.Cols[lcg.Intn(len(table.Cols))]
-		sql += fmt.Sprintf(" WHERE %s > %d", quoteIdent(whereCol.Name), lcg.Intn(100))
+		sql += fmt.Sprintf(" WHERE %s > %d", QuoteIdent(whereCol.Name), lcg.Intn(100))
 	}
 
 	// Optionally add LIMIT
@@ -126,17 +126,17 @@ func genSelectNotIndexed(db *sql.DB, lcg interface{ Intn(int) int }, flavor Flav
 		if i > 0 {
 			colNames += ", "
 		}
-		colNames += quoteIdent(table.Cols[i].Name)
+		colNames += QuoteIdent(table.Cols[i].Name)
 	}
 
 	sql := fmt.Sprintf("SELECT %s FROM %s NOT INDEXED",
 		colNames,
-		quoteIdent(table.Name))
+		QuoteIdent(table.Name))
 
 	// Optionally add WHERE clause
 	if lcg.Intn(100) < 50 { // 50% chance
 		whereCol := table.Cols[lcg.Intn(len(table.Cols))]
-		sql += fmt.Sprintf(" WHERE %s IS NOT NULL", quoteIdent(whereCol.Name))
+		sql += fmt.Sprintf(" WHERE %s IS NOT NULL", QuoteIdent(whereCol.Name))
 	}
 
 	// Optionally add LIMIT

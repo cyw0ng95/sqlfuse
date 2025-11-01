@@ -28,7 +28,7 @@ type CreateTypeStmt struct {
 // DuckDB supports ENUM types.
 // Reference: https://duckdb.org/docs/stable/sql/statements/create_type
 func GenCreateType(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}
@@ -76,7 +76,7 @@ type DropTypeStmt struct {
 // GenDropType generates a DROP TYPE statement.
 // Reference: https://duckdb.org/docs/stable/sql/statements/drop
 func GenDropType(db *sql.DB, lcg *common.LCG, flavor FlavorConfig) (Stmt, error) {
-	lcg = ensureLCG(lcg)
+	lcg = EnsureLCG(lcg)
 	if flavor == nil {
 		flavor = GetDefaultFlavor()
 	}
