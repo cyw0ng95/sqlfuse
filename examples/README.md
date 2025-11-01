@@ -56,6 +56,44 @@ Blacklisted Statement Types:
 No statement types blacklisted (good compatibility!)
 ```
 
+### oracle_example.go
+
+Demonstrates oracle-based validation inspired by SQLRight for detecting logical bugs in database systems.
+
+**Note**: This example uses internal packages for demonstration purposes. In a production setting, these features would be integrated into the executors or exposed through public APIs.
+
+**Features shown:**
+- NOREC oracle - verifies COUNT(*) matches actual row count
+- TLP oracle - validates ternary logic partitioning
+- Query transformation and result comparison
+- Multiple oracle types on the same query
+- Detecting logical bugs vs syntax/crash bugs
+
+**How to run:**
+```bash
+cd examples
+go run oracle_example.go
+```
+
+**Expected output:**
+```
+Oracle-Based Validation Example
+=================================
+
+1. NOREC Oracle (No Empty Result Check)
+   Verifies that COUNT(*) matches actual row count
+
+   Base Query: SELECT name, age FROM users WHERE age > 25
+   Transformed: SELECT COUNT(*) FROM (SELECT name, age FROM users WHERE age > 25)
+   Result: Pass
+
+   ✓  Query passed validation
+
+2. TLP Oracle (Ternary Logic Partitioning)
+   Verifies WHERE clause evaluation with TRUE/FALSE/NULL partitioning
+...
+```
+
 ## Dependencies
 
 All examples require:
@@ -86,5 +124,6 @@ To add a new example:
 ## Related Documentation
 
 - [SQLSMITH_COMPARISON.md](../docs/SQLSMITH_COMPARISON.md) - Comparison with original SQLsmith
+- [SQLRIGHT_INTEGRATION.md](../docs/SQLRIGHT_INTEGRATION.md) - Oracle-based validation from SQLRight
 - [ARCHITECTURE.md](../docs/ARCHITECTURE.md) - Project architecture
 - [README.md](../README.md) - Main project README
