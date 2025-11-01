@@ -4,6 +4,7 @@ use (
 	./cmd/executors/chai_embedded
 	./cmd/executors/duckdb_embedded
 	./cmd/executors/go_sqlite3_embedded
+	./cmd/executors/go_sqlite3_oracle
 	./cmd/executors/turso_embedded
 	./cmd/server
 	./internal
