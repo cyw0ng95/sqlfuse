@@ -71,7 +71,7 @@ func TestIntLiteral_EdgeCases(t *testing.T) {
 func TestIntLiteral_MaxInt(t *testing.T) {
 	// Test that max int values can be generated
 	found := false
-	for seed := uint64(0); seed < 500; seed++ {
+	for seed := uint64(0); seed < 200 && !found; seed++ {
 		lcg := common.NewLCG(seed)
 		for i := 0; i < 5; i++ {
 			v := IntLiteral(lcg, "value")
@@ -81,9 +81,6 @@ func TestIntLiteral_MaxInt(t *testing.T) {
 				break
 			}
 		}
-		if found {
-			break
-		}
 	}
 	// Finding max values is not guaranteed but should be possible
 }
@@ -91,7 +88,7 @@ func TestIntLiteral_MaxInt(t *testing.T) {
 func TestIntLiteral_MinInt(t *testing.T) {
 	// Test that min int values can be generated
 	found := false
-	for seed := uint64(0); seed < 500; seed++ {
+	for seed := uint64(0); seed < 200 && !found; seed++ {
 		lcg := common.NewLCG(seed)
 		for i := 0; i < 5; i++ {
 			v := IntLiteral(lcg, "value")
@@ -100,9 +97,6 @@ func TestIntLiteral_MinInt(t *testing.T) {
 				found = true
 				break
 			}
-		}
-		if found {
-			break
 		}
 	}
 	// Finding min values is not guaranteed but should be possible

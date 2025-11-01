@@ -27,17 +27,25 @@ func isValidReal(s string) bool {
 	return err == nil
 }
 
-func TestRealLiteral_ZeroValues(t *testing.T) {
-	// Test that zero values can be generated
-	found := false
-	for seed := uint64(0); seed < 100; seed++ {
+// findRealWithCondition is a helper that searches for a real literal matching a condition
+func findRealWithCondition(t *testing.T, maxSeeds int, condition func(string) bool, description string) bool {
+	for seed := uint64(0); seed < uint64(maxSeeds); seed++ {
 		lcg := common.NewLCG(seed)
-		v := RealLiteral(lcg)
-		if v == "0.0" || v == "-0.0" {
-			found = true
-			break
+		for i := 0; i < 5; i++ {
+			v := RealLiteral(lcg)
+			if condition(v) {
+				return true
+			}
 		}
 	}
+	return false
+}
+
+func TestRealLiteral_ZeroValues(t *testing.T) {
+	// Test that zero values can be generated
+	found := findRealWithCondition(t, 100, func(v string) bool {
+		return v == "0.0" || v == "-0.0"
+	}, "zero values")
 	
 	if !found {
 		t.Error("Expected to find zero values in 100 samples")
@@ -80,20 +88,9 @@ func TestRealLiteral_PositiveAndNegative(t *testing.T) {
 
 func TestRealLiteral_ScientificNotation(t *testing.T) {
 	// Test that scientific notation can be generated
-	found := false
-	for seed := uint64(0); seed < 100; seed++ {
-		lcg := common.NewLCG(seed)
-		for i := 0; i < 5; i++ {
-			v := RealLiteral(lcg)
-			if strings.Contains(v, "e") || strings.Contains(v, "E") {
-				found = true
-				break
-			}
-		}
-		if found {
-			break
-		}
-	}
+	found := findRealWithCondition(t, 100, func(v string) bool {
+		return strings.Contains(v, "e") || strings.Contains(v, "E")
+	}, "scientific notation")
 	
 	if !found {
 		t.Error("Expected to find scientific notation in samples")

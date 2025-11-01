@@ -33,7 +33,7 @@ func TestStringLiteral_QuotedFormat(t *testing.T) {
 func TestStringLiteral_EmptyString(t *testing.T) {
 	// Test that empty string can be generated
 	found := false
-	for seed := uint64(0); seed < 200; seed++ {
+	for seed := uint64(0); seed < 100; seed++ {
 		lcg := common.NewLCG(seed)
 		for i := 0; i < 5; i++ {
 			s := StringLiteral(lcg, "description")
