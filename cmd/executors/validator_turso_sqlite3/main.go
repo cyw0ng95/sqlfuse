@@ -449,9 +449,27 @@ func compareTableData(tursoDb, sqlite3Db *sql.DB, tableName string, queryNum int
 func hashTableData(data []map[string]interface{}) string {
 	h := sha256.New()
 	for _, row := range data {
-		// Convert row to deterministic string
-		rowStr := fmt.Sprintf("%v", row)
-		h.Write([]byte(rowStr))
+		// Sort keys for deterministic output
+		keys := make([]string, 0, len(row))
+		for k := range row {
+			keys = append(keys, k)
+		}
+		// Sort keys alphabetically
+		for i := 0; i < len(keys); i++ {
+			for j := i + 1; j < len(keys); j++ {
+				if keys[i] > keys[j] {
+					keys[i], keys[j] = keys[j], keys[i]
+				}
+			}
+		}
+		// Build deterministic string from sorted keys
+		for _, k := range keys {
+			h.Write([]byte(k))
+			h.Write([]byte(":"))
+			h.Write([]byte(fmt.Sprintf("%v", row[k])))
+			h.Write([]byte(";"))
+		}
+		h.Write([]byte("\n"))
 	}
 	return hex.EncodeToString(h.Sum(nil))
 }
