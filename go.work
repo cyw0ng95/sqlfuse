@@ -5,6 +5,7 @@ use (
 	./cmd/executors/duckdb_embedded
 	./cmd/executors/go_sqlite3_embedded
 	./cmd/executors/turso_embedded
+	./cmd/executors/validator_turso_sqlite3
 	./cmd/server
 	./internal
 )

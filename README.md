@@ -79,6 +79,7 @@ bash build.sh
 # - output/turso_embedded_executor
 # - output/go_sqlite3_embedded_executor
 # - output/duckdb_embedded_executor
+# - output/validator_turso_sqlite3
 # - output/server
 ```
 
@@ -120,6 +121,22 @@ bash build.sh
   --queries 1000 \
   --workers 4 \
   --verbose
+```
+
+**Validator (Turso vs SQLite3):**
+
+```bash
+# Compare Turso and SQLite3 behavior with 100 queries
+./output/validator_turso_sqlite3 --queries 100 --seed 42
+
+# Verbose mode to see all SQL statements
+./output/validator_turso_sqlite3 --queries 50 --verbose
+
+# Stop on first incompatibility
+./output/validator_turso_sqlite3 --stop-on-error
+
+# Use custom schema
+./output/validator_turso_sqlite3 --init-sql ./my_schema.sql
 ```
 
 **HTTP Server:**
@@ -222,10 +239,11 @@ FROM products;
 sqlfuse/
 ├── cmd/
 │   ├── executors/
-│   │   ├── turso_embedded/      # Turso LibSQL executor
-│   │   ├── go_sqlite3_embedded/ # go-sqlite3 executor
-│   │   └── duckdb_embedded/     # DuckDB executor
-│   └── server/                  # HTTP API server
+│   │   ├── turso_embedded/           # Turso LibSQL executor
+│   │   ├── go_sqlite3_embedded/      # go-sqlite3 executor
+│   │   ├── duckdb_embedded/          # DuckDB executor
+│   │   └── validator_turso_sqlite3/  # Turso vs SQLite3 validator
+│   └── server/                       # HTTP API server
 │
 ├── internal/
 │   ├── common/                  # Logger, LCG utilities
@@ -335,7 +353,12 @@ Verify SQL compatibility across flavors:
 
 # Test full SQLite3 features
 ./output/go_sqlite3_embedded_executor --seed 100 --queries 1000
+
+# Validate Turso vs SQLite3 compatibility
+./output/validator_turso_sqlite3 --queries 500 --seed 42 --verbose
 ```
+
+The validator executes the same SQL on both Turso and SQLite3, comparing results to detect compatibility issues. See [validator documentation](cmd/executors/validator_turso_sqlite3/README.md) for details.
 
 ## API Server
 
