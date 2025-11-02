@@ -84,3 +84,4 @@ output/
 # Server binary built in source directory
 /cmd/server/server
 /server
+validator_turso_sqlite3
