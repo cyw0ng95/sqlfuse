@@ -4,8 +4,10 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -53,21 +55,32 @@ comparing results to detect differences. This helps ensure compatibility between
 
 func runValidator(flags *validatorFlags) error {
 	common.InitLogger()
-	common.Logger.Info().Msg("Starting validator_turso_sqlite3")
+	
+	// Validate input flags
+	if err := validateFlags(flags); err != nil {
+		common.Logger.Error().Msg("Invalid configuration")
+		return err
+	}
+	
+	common.Logger.Info().
+		Str("action", "validator_start").
+		Int("queries", flags.queries).
+		Int64("seed", flags.seed).
+		Msg("Starting validator_turso_sqlite3")
 
 	// Open Turso database (in-memory)
 	tursoDb, err := sql.Open("turso", ":memory:")
 	if err != nil {
-		common.Logger.Error().Err(err).Msg("Failed to open Turso database")
-		return err
+		common.Logger.Error().Msg("Failed to open database")
+		return errors.New("database initialization failed")
 	}
 	defer tursoDb.Close()
 
 	// Open SQLite3 database (in-memory)
 	sqlite3Db, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
-		common.Logger.Error().Err(err).Msg("Failed to open SQLite3 database")
-		return err
+		common.Logger.Error().Msg("Failed to open database")
+		return errors.New("database initialization failed")
 	}
 	defer sqlite3Db.Close()
 
@@ -79,7 +92,9 @@ func runValidator(flags *validatorFlags) error {
 		return err
 	}
 
-	common.Logger.Info().Msg("Both databases initialized successfully")
+	common.Logger.Info().
+		Str("action", "databases_initialized").
+		Msg("Both databases initialized successfully")
 
 	// Verify schema consistency
 	if err := verifySchemas(tursoDb, sqlite3Db); err != nil {
@@ -103,37 +118,58 @@ func runValidator(flags *validatorFlags) error {
 	easyWeights := getEasyStmtWeights()
 	tursoGen.SetWeights(easyWeights)
 
-	common.Logger.Info().Msgf("Running %d queries with seed %d", flags.queries, seed)
+	common.Logger.Info().
+		Str("action", "execution_start").
+		Int("queries", flags.queries).
+		Uint64("seed", seed).
+		Msg("Starting query execution")
 
 	bugCount := 0
 	errorCount := 0
 
 	for i := 0; i < flags.queries; i++ {
 		query := tursoGen.GenerateWithDB(tursoDb)
+		queryType := getQueryType(query)
 
 		if flags.verbose {
-			common.Logger.Info().Msgf("Query %d: %s", i+1, query)
+			common.Logger.Info().
+				Int("query_num", i+1).
+				Str("query_type", queryType).
+				Msg("Executing query")
 		}
 
 		// Execute on both databases and compare results
 		bug, err := executeAndCompare(tursoDb, sqlite3Db, query, i+1, flags.verbose)
 		if err != nil {
 			errorCount++
+			common.Logger.Warn().
+				Str("action", "query_error").
+				Int("query_num", i+1).
+				Str("query_type", queryType).
+				Msg("Query execution error")
 			if flags.stopOnErr {
-				common.Logger.Error().Err(err).Msg("Stopping due to error")
-				return err
-			}
-			if flags.verbose {
-				common.Logger.Warn().Err(err).Msgf("Query %d execution error", i+1)
+				common.Logger.Error().
+					Str("action", "validator_stopped").
+					Str("reason", "execution_error").
+					Msg("Stopping due to error")
+				return errors.New("validation stopped due to execution error")
 			}
 			continue
 		}
 
 		if bug {
 			bugCount++
+			common.Logger.Error().
+				Str("action", "bug_detected").
+				Int("query_num", i+1).
+				Str("query_type", queryType).
+				Msg("Bug detected")
 			if flags.stopOnErr {
-				common.Logger.Error().Msgf("Stopping due to bug detection on query %d", i+1)
-				return fmt.Errorf("bug detected")
+				common.Logger.Error().
+					Str("action", "validator_stopped").
+					Str("reason", "bug_detected").
+					Msg("Stopping due to bug detection")
+				return errors.New("validation stopped due to bug detection")
 			}
 		}
 
@@ -149,33 +185,54 @@ func runValidator(flags *validatorFlags) error {
 	}
 
 	// Final table comparison
-	common.Logger.Info().Msg("Performing final table comparison...")
+	common.Logger.Info().
+		Str("action", "final_comparison").
+		Msg("Performing final table comparison")
 	if err := compareAllTables(tursoDb, sqlite3Db, flags.queries, flags.verbose); err != nil {
 		bugCount++
 	}
 
-	// Summary
-	common.Logger.Info().Msg("=== Validation Summary ===")
-	common.Logger.Info().Msgf("Total queries: %d", flags.queries)
-	common.Logger.Info().Msgf("Errors encountered: %d", errorCount)
-	common.Logger.Info().Msgf("Bugs detected: %d", bugCount)
+	// Summary with audit trail
+	common.Logger.Info().
+		Str("action", "validation_complete").
+		Int("total_queries", flags.queries).
+		Int("errors", errorCount).
+		Int("bugs", bugCount).
+		Time("timestamp", time.Now()).
+		Msg("Validation Summary")
 
 	if bugCount > 0 {
-		common.Logger.Error().Msgf("VALIDATION FAILED: %d bugs detected", bugCount)
+		common.Logger.Error().
+			Str("action", "validation_failed").
+			Int("bug_count", bugCount).
+			Msg("VALIDATION FAILED")
 		return fmt.Errorf("validation failed with %d bugs", bugCount)
 	}
 
-	common.Logger.Info().Msg("VALIDATION PASSED: No bugs detected")
+	common.Logger.Info().
+		Str("action", "validation_passed").
+		Msg("VALIDATION PASSED: No bugs detected")
 	return nil
 }
 
 func initDatabase(db *sql.DB, initSQLPath, dbName string) error {
-	common.Logger.Info().Msgf("Initializing %s database from %s", dbName, initSQLPath)
+	// Validate and sanitize file path
+	cleanPath := filepath.Clean(initSQLPath)
+	if !filepath.IsAbs(cleanPath) {
+		return errors.New("init SQL path must be absolute")
+	}
 
-	initSQL, err := os.ReadFile(initSQLPath)
+	common.Logger.Info().
+		Str("action", "database_init").
+		Str("database", dbName).
+		Msg("Initializing database")
+
+	initSQL, err := os.ReadFile(cleanPath)
 	if err != nil {
-		common.Logger.Error().Err(err).Str("path", initSQLPath).Msg("Failed to read init SQL file")
-		return err
+		common.Logger.Error().
+			Str("database", dbName).
+			Msg("Failed to read initialization file")
+		return errors.New("failed to read initialization file")
 	}
 
 	for _, stmt := range strings.Split(string(initSQL), ";") {
@@ -184,8 +241,10 @@ func initDatabase(db *sql.DB, initSQLPath, dbName string) error {
 			continue
 		}
 		if _, err := db.Exec(stmt); err != nil {
-			common.Logger.Error().Err(err).Str("db", dbName).Str("stmt", stmt).Msg("Init SQL error")
-			return err
+			common.Logger.Error().
+				Str("database", dbName).
+				Msg("Initialization statement failed")
+			return fmt.Errorf("database initialization failed for %s", dbName)
 		}
 	}
 
@@ -237,21 +296,29 @@ func compareSelectResults(tursoDb, sqlite3Db *sql.DB, query string, queryNum int
 		if sqlite3Err != nil {
 			// Both failed - this is expected for some queries
 			if verbose {
-				common.Logger.Debug().Msgf("Query %d: Both databases failed (expected): %v", queryNum, err)
+				common.Logger.Debug().
+					Int("query_num", queryNum).
+					Msg("Both databases failed (expected)")
 			}
 			return false, nil
 		}
 		sqlite3Rows.Close()
-		common.Logger.Error().Msgf("BUG DETECTED in query %d: Turso failed but SQLite3 succeeded\nQuery: %s\nTurso error: %v",
-			queryNum, query, err)
+		common.Logger.Error().
+			Str("action", "bug_detected").
+			Int("query_num", queryNum).
+			Str("issue", "turso_failed_sqlite3_succeeded").
+			Msg("BUG: Execution mismatch")
 		return true, nil
 	}
 	defer tursoRows.Close()
 
 	sqlite3Rows, err := sqlite3Db.Query(query)
 	if err != nil {
-		common.Logger.Error().Msgf("BUG DETECTED in query %d: Turso succeeded but SQLite3 failed\nQuery: %s\nSQLite3 error: %v",
-			queryNum, query, err)
+		common.Logger.Error().
+			Str("action", "bug_detected").
+			Int("query_num", queryNum).
+			Str("issue", "turso_succeeded_sqlite3_failed").
+			Msg("BUG: Execution mismatch")
 		return true, nil
 	}
 	defer sqlite3Rows.Close()
@@ -261,12 +328,13 @@ func compareSelectResults(tursoDb, sqlite3Db *sql.DB, query string, queryNum int
 	sqlite3Results := fetchAllRows(sqlite3Rows)
 
 	if !resultsEqual(tursoResults, sqlite3Results) {
-		common.Logger.Error().Msgf("BUG DETECTED in query %d: Results differ\nQuery: %s\nTurso rows: %d, SQLite3 rows: %d",
-			queryNum, query, len(tursoResults), len(sqlite3Results))
-		if verbose && len(tursoResults) < 10 && len(sqlite3Results) < 10 {
-			common.Logger.Info().Msgf("Turso results: %v", tursoResults)
-			common.Logger.Info().Msgf("SQLite3 results: %v", sqlite3Results)
-		}
+		common.Logger.Error().
+			Str("action", "bug_detected").
+			Int("query_num", queryNum).
+			Str("issue", "result_mismatch").
+			Int("turso_rows", len(tursoResults)).
+			Int("sqlite3_rows", len(sqlite3Results)).
+			Msg("BUG: Results differ")
 		return true, nil
 	}
 
@@ -290,23 +358,33 @@ func compareModificationResults(tursoDb, sqlite3Db *sql.DB, query string, queryN
 
 	// Compare error states
 	if (err == nil) != (err2 == nil) {
-		common.Logger.Error().Msgf("BUG DETECTED in query %d: Error state differs\nQuery: %s\nTurso error: %v\nSQLite3 error: %v",
-			queryNum, query, err, err2)
+		common.Logger.Error().
+			Str("action", "bug_detected").
+			Int("query_num", queryNum).
+			Str("issue", "error_state_differs").
+			Msg("BUG: Error state mismatch")
 		return true, nil
 	}
 
 	// If both failed, that's expected for some queries
 	if err != nil && err2 != nil {
 		if verbose {
-			common.Logger.Debug().Msgf("Query %d: Both databases failed (expected)", queryNum)
+			common.Logger.Debug().
+				Int("query_num", queryNum).
+				Msg("Both databases failed (expected)")
 		}
 		return false, nil
 	}
 
 	// Compare affected rows
 	if tursoAffected != sqlite3Affected {
-		common.Logger.Error().Msgf("BUG DETECTED in query %d: Rows affected differs\nQuery: %s\nTurso: %d rows, SQLite3: %d rows",
-			queryNum, query, tursoAffected, sqlite3Affected)
+		common.Logger.Error().
+			Str("action", "bug_detected").
+			Int("query_num", queryNum).
+			Str("issue", "rows_affected_differs").
+			Int64("turso_rows", tursoAffected).
+			Int64("sqlite3_rows", sqlite3Affected).
+			Msg("BUG: Rows affected mismatch")
 		return true, nil
 	}
 
@@ -409,13 +487,13 @@ func compareTableData(tursoDb, sqlite3Db *sql.DB, tableName string, queryNum int
 
 	tursoRows, err := tursoDb.Query(query)
 	if err != nil {
-		return fmt.Errorf("failed to query Turso table %s: %w", tableName, err)
+		return fmt.Errorf("failed to query table %s", tableName)
 	}
 	defer tursoRows.Close()
 
 	sqlite3Rows, err := sqlite3Db.Query(query)
 	if err != nil {
-		return fmt.Errorf("failed to query SQLite3 table %s: %w", tableName, err)
+		return fmt.Errorf("failed to query table %s", tableName)
 	}
 	defer sqlite3Rows.Close()
 
@@ -424,8 +502,14 @@ func compareTableData(tursoDb, sqlite3Db *sql.DB, tableName string, queryNum int
 
 	// Compare row counts
 	if len(tursoData) != len(sqlite3Data) {
-		common.Logger.Error().Msgf("BUG DETECTED after query %d: Table %s has different row counts\nTurso: %d rows, SQLite3: %d rows",
-			queryNum, tableName, len(tursoData), len(sqlite3Data))
+		common.Logger.Error().
+			Str("action", "bug_detected").
+			Int("query_num", queryNum).
+			Str("table", tableName).
+			Str("issue", "row_count_mismatch").
+			Int("turso_rows", len(tursoData)).
+			Int("sqlite3_rows", len(sqlite3Data)).
+			Msg("BUG: Table row count differs")
 		return fmt.Errorf("table %s row count mismatch", tableName)
 	}
 
@@ -434,12 +518,12 @@ func compareTableData(tursoDb, sqlite3Db *sql.DB, tableName string, queryNum int
 	sqlite3Hash := hashTableData(sqlite3Data)
 
 	if tursoHash != sqlite3Hash {
-		common.Logger.Error().Msgf("BUG DETECTED after query %d: Table %s has different data\nTurso hash: %s, SQLite3 hash: %s",
-			queryNum, tableName, tursoHash, sqlite3Hash)
-		if verbose && len(tursoData) < 20 {
-			common.Logger.Info().Msgf("Turso data: %v", tursoData)
-			common.Logger.Info().Msgf("SQLite3 data: %v", sqlite3Data)
-		}
+		common.Logger.Error().
+			Str("action", "bug_detected").
+			Int("query_num", queryNum).
+			Str("table", tableName).
+			Str("issue", "data_hash_mismatch").
+			Msg("BUG: Table data differs")
 		return fmt.Errorf("table %s data mismatch", tableName)
 	}
 
@@ -519,4 +603,64 @@ func getEasyStmtWeights() map[stmts.StmtType]uint64 {
 	w[stmts.StmtReindex] = 0
 	
 	return w
+}
+
+// validateFlags validates input flags for security and correctness
+func validateFlags(flags *validatorFlags) error {
+	// Validate queries count
+	if flags.queries <= 0 {
+		return errors.New("queries must be a positive number")
+	}
+	if flags.queries > 1000000 {
+		return errors.New("queries exceeds maximum allowed (1000000)")
+	}
+
+	// Validate and sanitize init SQL path
+	if flags.initSQL == "" {
+		return errors.New("init SQL path cannot be empty")
+	}
+	
+	cleanPath := filepath.Clean(flags.initSQL)
+	if !filepath.IsAbs(cleanPath) {
+		return errors.New("init SQL path must be absolute")
+	}
+
+	// Check if file exists and is readable
+	info, err := os.Stat(cleanPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return errors.New("init SQL file does not exist")
+		}
+		return errors.New("cannot access init SQL file")
+	}
+
+	// Verify it's a regular file
+	if !info.Mode().IsRegular() {
+		return errors.New("init SQL path must be a regular file")
+	}
+
+	// Check file size (prevent extremely large files)
+	const maxFileSize = 10 * 1024 * 1024 // 10MB
+	if info.Size() > maxFileSize {
+		return errors.New("init SQL file exceeds maximum size (10MB)")
+	}
+
+	return nil
+}
+
+// getQueryType returns a simplified query type for logging (without exposing SQL)
+func getQueryType(query string) string {
+	trimmed := strings.TrimSpace(strings.ToUpper(query))
+	if strings.HasPrefix(trimmed, "SELECT") {
+		return "SELECT"
+	} else if strings.HasPrefix(trimmed, "INSERT") {
+		return "INSERT"
+	} else if strings.HasPrefix(trimmed, "UPDATE") {
+		return "UPDATE"
+	} else if strings.HasPrefix(trimmed, "DELETE") {
+		return "DELETE"
+	} else if strings.HasPrefix(trimmed, "WITH") {
+		return "CTE"
+	}
+	return "OTHER"
 }
